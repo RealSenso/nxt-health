@@ -1,0 +1,402 @@
+import { User, ProblemStatement, FundingApplication, Category, Step, Resource, UserProgress } from '../types';
+
+export const SEED_USERS: User[] = [
+  {
+    id: 'user-admin-1',
+    email: 'admin@medplatform.org',
+    name: 'Dr. Sarah Lin (Chief Clinical Officer)',
+    role: 'admin',
+    is_member: true,
+    password: 'demo1234',
+  },
+  {
+    id: 'user-member-1',
+    email: 'entrepreneur@healthtech.io',
+    name: 'Marcus Vance (Founder, PulseVibe)',
+    role: 'member',
+    is_member: true,
+    password: 'demo1234',
+  },
+  {
+    id: 'user-guest-1',
+    email: 'guest@medstartup.com',
+    name: 'Alex Chen (Exploring Founder)',
+    role: 'member',
+    is_member: false,
+    password: 'demo1234',
+  }
+];
+
+export const SEED_PROBLEM_STATEMENTS: ProblemStatement[] = [
+  {
+    id: 'prob-1',
+    title: 'Early Detection of Post-Operative ICU Sepsis via Real-time Hemodynamics',
+    description: 'Current ICU protocols detect sepsis 4-8 hours after physiological deterioration begins. We need continuous multi-sensor predictive alerting that integrates arterial line waveforms with central venous pressure to identify microcirculatory collapse before organ hypoperfusion occurs.',
+    department: 'Critical Care & Surgical ICU',
+    funded: true,
+    funding_amount: '$250,000 Non-Dilutive Grant Pool',
+    created_by_admin: 'user-admin-1',
+    created_at: '2025-01-15T09:30:00Z',
+  },
+  {
+    id: 'prob-2',
+    title: 'Sterile Field Optical Tracking for Retained Surgical Sponges and Instruments',
+    description: 'Retained surgical bodies remain a catastrophic preventable adverse event in high-throughput operating rooms. An automated computer-vision or RFID-assisted scanning field is required that does not interrupt laminar air flow or surgical scrub routines.',
+    department: 'Operative & General Surgery',
+    funded: true,
+    funding_amount: '$175,000 Milestone Grant Pool',
+    created_by_admin: 'user-admin-1',
+    created_at: '2025-02-01T11:00:00Z',
+  },
+  {
+    id: 'prob-3',
+    title: 'Non-Invasive Point-of-Care Pediatric Bilirubin and Hemolysis Monitor',
+    description: 'Frequent heel-stick blood draws in neonatal ICUs cause trauma, infection risk, and parental distress. We seek a transcutaneous optical or saliva-based biosensor that accurately quantifies total serum bilirubin in neonates across all skin tones.',
+    department: 'Neonatology & Pediatrics',
+    funded: false,
+    funding_amount: 'Unfunded (Seeking Co-Developer / Sponsor)',
+    created_by_admin: 'user-admin-1',
+    created_at: '2025-02-18T14:15:00Z',
+  },
+  {
+    id: 'prob-4',
+    title: 'Automated Triaging of Emergent Cranial CT for Acute Intracranial Hemorrhage',
+    description: 'Community emergency departments often face a 45-minute delay for overnight radiologist over-reads. A lightweight, on-premise deep learning pipeline is needed to prioritize true-positive intracranial hemorrhages to the top of the PACS worklist within 90 seconds.',
+    department: 'Emergency Medicine & Neuroradiology',
+    funded: true,
+    funding_amount: '$300,000 Clinical Seed Fund',
+    created_by_admin: 'user-admin-1',
+    created_at: '2025-03-02T08:45:00Z',
+  },
+  {
+    id: 'prob-5',
+    title: 'High-Fidelity Telemetric Cough & Respiratory Acoustic Biomarker Tracker for COPD',
+    description: 'Chronic Obstructive Pulmonary Disease exacerbations cause preventable hospital readmissions. An ambient acoustic sensor system is required that isolates respiratory effort, nocturnal wheezing, and productive cough frequency without violating patient privacy.',
+    department: 'Pulmonology & Remote Monitoring',
+    funded: false,
+    funding_amount: 'Unfunded (Validation Open)',
+    created_by_admin: 'user-admin-1',
+    created_at: '2025-03-10T16:20:00Z',
+  },
+  {
+    id: 'prob-6',
+    title: 'Rapid Antimicrobial Susceptibility Testing (AST) for Bloodstream Infections in Under 2 Hours',
+    description: 'Standard phenotypic blood cultures take 24-72 hours to yield actionable antibiotic sensitivity, forcing physicians to rely on broad-spectrum antibiotics that drive resistance. We need a rapid microfluidic single-cell imaging diagnostic.',
+    department: 'Infectious Disease & Clinical Microbiology',
+    funded: true,
+    funding_amount: '$500,000 Translational Partnership',
+    created_by_admin: 'user-admin-1',
+    created_at: '2025-03-12T13:00:00Z',
+  }
+];
+
+export const SEED_CATEGORIES: Category[] = [
+  { id: 'cat-1', name: 'Device Product', description: 'Class I, II, & III physical medical hardware, surgical instruments, and therapeutic tools', order: 1 },
+  { id: 'cat-2', name: 'Digital Health App', description: 'Software as a Medical Device (SaMD), clinical workflows, patient-facing digital therapeutics', order: 2 },
+  { id: 'cat-3', name: 'Diagnostic Tool', description: 'In-vitro diagnostics (IVD), point-of-care assays, and molecular detection platforms', order: 3 },
+  { id: 'cat-4', name: 'Surgical Instrument & Hardware', description: 'Ergonomic surgical tools, powered cutting/stapling devices, and laparoscopic robotics', order: 4 },
+  { id: 'cat-5', name: 'Telehealth & Remote Patient Monitoring', description: 'Continuous at-home vitals acquisition, cellular-connected hubs, and clinical dashboards', order: 5 },
+  { id: 'cat-6', name: 'Point-of-Care Testing (POCT)', description: 'Rapid benchtop and lateral-flow clinical testing units for bedside and clinic use', order: 6 },
+  { id: 'cat-7', name: 'AI/ML Clinical Decision Support', description: 'Diagnostic radiology models, triage algorithms, and EHR predictive analytics', order: 7 },
+  { id: 'cat-8', name: 'Wearable Biometric Sensor', description: 'Continuous skin patches, ambulatory ECG monitors, and smart fabric wearables', order: 8 },
+  { id: 'cat-9', name: 'Rehabilitation & Physical Therapy Tech', description: 'Exoskeletons, robotic gait trainers, and sensor-guided musculoskeletal recovery', order: 9 },
+  { id: 'cat-10', name: 'Hospital Workflow & EHR Optimization', description: 'Bedside documentation assistants, automated nursing shift handoffs, and asset tracking', order: 10 },
+  { id: 'cat-11', name: 'Drug Delivery System', description: 'Microneedle transdermal patches, smart auto-injectors, and targeted aerosol nebulizers', order: 11 },
+  { id: 'cat-12', name: 'Therapeutic Biomaterials & Implants', description: 'Bioabsorbable orthopedic fixation, hydrogel scaffolds, and biocompatible grafts', order: 12 },
+  { id: 'cat-13', name: 'Pathology & Imaging Informatics', description: 'Digital whole-slide histology analysis, stain normalization, and cloud PACS pipelines', order: 13 },
+  { id: 'cat-14', name: 'Neonatal & Pediatric Care Innovation', description: 'NICU infant monitoring, specialized pediatric vascular access, and congenital care', order: 14 },
+  { id: 'cat-15', name: 'Oncology Precision Screening', description: 'Liquid biopsy circulating tumor DNA assays and optical early-stage mucosal screening', order: 15 },
+  { id: 'cat-16', name: 'Mental & Behavioral Health Platform', description: 'Evidence-based cognitive behavioral therapy tools and neuropsychiatric trackers', order: 16 },
+  { id: 'cat-17', name: 'Emergency & Trauma Care Solution', description: 'Pre-hospital tourniquets, field ultrasound, and rapid hemorrhagic shock stabilization', order: 17 },
+  { id: 'cat-18', name: 'Genomic & Molecular Diagnostics', description: 'Targeted next-generation sequencing assays and rare disease variant interpretation', order: 18 },
+  { id: 'cat-19', name: 'Infection Control & Hospital Hygiene', description: 'UV-C disinfection robots, automated hand hygiene compliance, and catheter coatings', order: 19 },
+  { id: 'cat-20', name: 'Elder Care & Assistive Health Tech', description: 'Fall impact mitigation airbags, cognitive assistance prompts, and mobility robotics', order: 20 },
+  { id: 'cat-21', name: 'Ophthalmic & Vision Diagnostics', description: 'Smartphone-adapted retinal cameras, anterior segment OCT, and glaucoma tonometry', order: 21 },
+];
+
+export const SEED_STEPS: Step[] = [
+  {
+    id: 'step-dev-1',
+    category_id: 'cat-1',
+    name: 'Market Research & Clinical Unmet Need',
+    description: 'Perform clinician ethnographic shadowing, surgeon voice-of-customer interviews, existing standard-of-care cost analysis, and freedom-to-operate patent landscaping.',
+    order: 1,
+    stage_tag: 'Discovery',
+  },
+  {
+    id: 'step-dev-2',
+    category_id: 'cat-1',
+    name: 'Feasibility & Low-Fidelity Prototype (MVP)',
+    description: 'Design benchtop proof-of-concept models using 3D printing and biocompatible rapid prototyping to prove core mechanical and electrical feasibility.',
+    order: 2,
+    stage_tag: 'Engineering',
+  },
+  {
+    id: 'step-dev-3',
+    category_id: 'cat-1',
+    name: 'Clinical Validation & Usability Testing',
+    description: 'Conduct human factors evaluations, simulated surgical dry-lab studies, and formal hospital pilot protocols to validate clinical ergonomics and efficacy.',
+    order: 3,
+    stage_tag: 'Clinical Validation',
+  },
+  {
+    id: 'step-dev-4',
+    category_id: 'cat-1',
+    name: 'Regulatory Clearance (FDA 510(k) / CE Mark / ISO 13485)',
+    description: 'Assemble design history files (DHF), biocompatibility testing (ISO 10993), electrical safety (IEC 60601), and submit FDA pre-submission Q-Sub or 510(k).',
+    order: 4,
+    stage_tag: 'Regulatory',
+  },
+  {
+    id: 'step-dev-5',
+    category_id: 'cat-1',
+    name: 'Go-To-Market (GTM) & Hospital Value Analysis (VAC)',
+    description: 'Prepare Value Analysis Committee dossiers, CPT reimbursement pathway coding, distributor channel strategy, and initial Key Opinion Leader (KOL) partnerships.',
+    order: 5,
+    stage_tag: 'Commercialization',
+  },
+  {
+    id: 'step-dev-6',
+    category_id: 'cat-1',
+    name: 'Scaling & Contract Manufacturing (CMO)',
+    description: 'Lock cleanroom production lines, transfer tooling to ISO 13485 certified medical device contract manufacturers, and institute lot release sampling.',
+    order: 6,
+    stage_tag: 'Manufacturing',
+  },
+  {
+    id: 'step-dev-7',
+    category_id: 'cat-1',
+    name: 'Other Market Access & International Expansion',
+    description: 'Establish European MDR conformity assessments, PMDA Japan clearances, and health economics & outcomes research (HEOR) registries for regional coverage.',
+    order: 7,
+    stage_tag: 'Global Access',
+  },
+
+  {
+    id: 'step-dh-1',
+    category_id: 'cat-2',
+    name: 'Clinical Workflow Definition & Patient Journey Mapping',
+    description: 'Establish clinical protocols, identify trigger moments in the EHR workflow, and detail patient adherence barriers.',
+    order: 1,
+    stage_tag: 'Discovery',
+  },
+  {
+    id: 'step-dh-2',
+    category_id: 'cat-2',
+    name: 'HIPAA Architecture, SOC2 & Software MVP Prototype',
+    description: 'Build end-to-end encrypted infrastructure, OAuth2/SMART on FHIR endpoints, and user-tested clinical interface.',
+    order: 2,
+    stage_tag: 'Software Engineering',
+  },
+  {
+    id: 'step-dh-3',
+    category_id: 'cat-2',
+    name: 'Clinical Validation & Health System Pilot',
+    description: 'Deploy sandbox integration with partner clinic, measure primary clinical outcome endpoints against standard-of-care.',
+    order: 3,
+    stage_tag: 'Clinical Validation',
+  },
+  {
+    id: 'step-dh-4',
+    category_id: 'cat-2',
+    name: 'SaMD Regulatory Classification & Cyber Security Audit',
+    description: 'Determine FDA enforcement discretion vs. 510(k) De Novo pathway, execute FDA cybersecurity BOM (SBOM) documentation.',
+    order: 4,
+    stage_tag: 'Regulatory',
+  },
+  {
+    id: 'step-dh-5',
+    category_id: 'cat-2',
+    name: 'Provider Integration & Remote Reimbursement (CPT Codes)',
+    description: 'Integrate Epic App Orchard / Cerner Millennium marketplace and activate Remote Patient Monitoring CPT 99453/99454 billing.',
+    order: 5,
+    stage_tag: 'Reimbursement',
+  },
+
+  {
+    id: 'step-diag-1',
+    category_id: 'cat-3',
+    name: 'Biomarker Assay Proof & Analytical Sensitivity',
+    description: 'Characterize limit of detection (LoD), cross-reactivity, precision, and coefficient of variation with spiked clinical samples.',
+    order: 1,
+    stage_tag: 'Assay Dev',
+  },
+  {
+    id: 'step-diag-2',
+    category_id: 'cat-3',
+    name: 'Cartridge Instrumentation & Reader MVP',
+    description: 'Develop microfluidic cartridge architecture, optical/electrochemical detection sensor, and companion reader unit.',
+    order: 2,
+    stage_tag: 'Hardware MVP',
+  },
+  {
+    id: 'step-diag-3',
+    category_id: 'cat-3',
+    name: 'Clinical Validation with Patient Specimen Biobanks',
+    description: 'Execute blinded prospective specimen study comparing diagnostic sensitivity and specificity against gold-standard PCR/ELISA.',
+    order: 3,
+    stage_tag: 'Clinical Validation',
+  },
+  {
+    id: 'step-diag-4',
+    category_id: 'cat-3',
+    name: 'CLIA Waiver Strategy & IVD FDA Clearance',
+    description: 'Formulate CLIA waiver protocol demonstrating simple usability by untrained operators and submission of FDA 510(k) IVD.',
+    order: 4,
+    stage_tag: 'Regulatory',
+  },
+  {
+    id: 'step-diag-5',
+    category_id: 'cat-3',
+    name: 'Lab Information System (LIS) & Distribution Network',
+    description: 'Interface with HL7/ASTM laboratory analyzers and establish cold-chain distribution channels for reagent shelf life.',
+    order: 5,
+    stage_tag: 'Commercialization',
+  }
+];
+
+export const SEED_RESOURCES: Resource[] = [
+  {
+    id: 'res-hosp-1',
+    step_id: 'step-dev-3',
+    type: 'hospital_connection',
+    title: 'Johns Hopkins Medical Device Pilot & Simulation Center',
+    description: 'Collaborative testbed offering access to mock surgical suites, biomechanical testing labs, and 45+ credentialed surgical faculty for usability evaluations.',
+    hospital_name: 'The Johns Hopkins Hospital',
+    clinical_department: 'Department of Surgery & Medical Device Innovation Center',
+    contact_person: 'Dr. Katherine Miller, MD (Director of Clinical Technology Assessment)',
+    contact_email: 'kmiller@jhmi.edu.pilot',
+    pilot_status: 'Accepting Device Validation Cohort Applications'
+  },
+  {
+    id: 'res-hosp-2',
+    step_id: 'step-dev-3',
+    type: 'hospital_connection',
+    title: 'Mayo Clinic Center for Innovation & Cardiac Tech Testbed',
+    description: 'Specialized clinical research unit for electrophysiology and cardiovascular hardware testing. Equipped with hemodynamic simulators and IRB fast-track protocols.',
+    hospital_name: 'Mayo Clinic Rochester',
+    clinical_department: 'Division of Cardiovascular Diseases & Biomechanics Testing',
+    contact_person: 'Marcus Sterling, PhD (Head of MedTech Industry Alliances)',
+    contact_email: 'msterling@mayoclinic.org.alliances',
+    pilot_status: 'Active Partnership Window Open'
+  },
+  {
+    id: 'res-hosp-3',
+    step_id: 'step-dev-3',
+    type: 'hospital_connection',
+    title: 'Cleveland Clinic Lerner Research Institute Clinical Liaison',
+    description: 'Comprehensive preclinical and clinical validation pathway with on-site biomedical engineering workshops, animal model facilities, and patient cohort access.',
+    hospital_name: 'Cleveland Clinic Main Campus',
+    clinical_department: 'Biomedical Engineering & General Surgery Collaborative',
+    contact_person: 'Elena Rostova, RN, MBA (Clinical Trial Operations Manager)',
+    contact_email: 'erostova@ccf.org.trials',
+    pilot_status: 'Reviewing Q2 MedTech Pilots'
+  },
+  {
+    id: 'res-gen-1',
+    step_id: 'step-dev-3',
+    type: 'session',
+    title: '1-on-1 Clinical Trial Protocol Design with Dr. Raymond Vance',
+    description: 'A 45-minute structured clinic review focusing on formulating IRB-compliant sample size calculations and clinical safety endpoints.',
+    date: 'Every Thursday, 2:00 PM EST',
+    host_or_speaker: 'Dr. Raymond Vance, MD, FACC (Clinical Trialist)',
+    link: 'https://meet.medplatform.org/clinical-review-vance'
+  },
+  {
+    id: 'res-gen-2',
+    step_id: 'step-dev-3',
+    type: 'webinar',
+    title: 'Usability & Human Factors Engineering (ANSI/AAMI HE75 & IEC 62366)',
+    description: 'Masterclass on conducting formative and summative usability studies that satisfy FDA human factors requirements for surgical and patient-worn devices.',
+    date: 'March 26, 2025 • 1:00 PM EST',
+    host_or_speaker: 'Claire Dupont (Lead Human Factors Scientist, MedTech Quality)',
+    link: 'https://webinars.medplatform.org/human-factors-62366'
+  },
+
+  {
+    id: 'res-mr-1',
+    step_id: 'step-dev-1',
+    type: 'seminar',
+    title: 'Clinical Unmet Need & Hospital Procurement Economics Seminar',
+    description: 'How hospital Value Analysis Committees (VAC) decide what devices to approve and how to calculate hospital ROI and length-of-stay reduction.',
+    date: 'April 4, 2025 • 3:00 PM EST',
+    host_or_speaker: 'Gregory Bell, FACHE (Former VP of Hospital Supply Chain)',
+    link: 'https://seminars.medplatform.org/hospital-economics'
+  },
+  {
+    id: 'res-mr-2',
+    step_id: 'step-dev-1',
+    type: 'session',
+    title: 'Freedom-to-Operate (FTO) & Prior Art IP Office Hours',
+    description: 'Review your provisional patent scope with registered medical device patent attorneys.',
+    date: 'Every Tuesday, 11:00 AM EST',
+    host_or_speaker: 'Alistair Vance, Esq. (Partner, Life Science IP)',
+    link: 'https://meet.medplatform.org/ip-office-hours'
+  },
+
+  {
+    id: 'res-reg-1',
+    step_id: 'step-dev-4',
+    type: 'webinar',
+    title: 'De-mystifying the FDA 510(k) Pre-Submission (Q-Sub) Program',
+    description: 'Step-by-step tactics to get written binding feedback from FDA CDRH reviewers without committing to an expensive trial prematurely.',
+    date: 'April 18, 2025 • 2:00 PM EST',
+    host_or_speaker: 'Theresa Wong, RAC (Former FDA Senior Reviewer)',
+    link: 'https://webinars.medplatform.org/fda-qsub-tactics'
+  },
+
+  {
+    id: 'res-dh-hosp-1',
+    step_id: 'step-dh-3',
+    type: 'hospital_connection',
+    title: 'Mount Sinai Digital Health Innovation Sandbox',
+    description: 'Direct testing sandbox integrating SMART-on-FHIR apps within live ambulatory clinics for hypertension and diabetic remote care cohorts.',
+    hospital_name: 'Mount Sinai Health System, New York',
+    clinical_department: 'Department of Digital Health & Ambulatory Medicine',
+    contact_person: 'Dr. Nikhil Patel (Digital Clinical Director)',
+    contact_email: 'npatel@mountsinai.org.pilot',
+    pilot_status: 'Accepting SaMD Digital Health Pilots'
+  }
+];
+
+export const SEED_APPLICATIONS: FundingApplication[] = [
+  {
+    id: 'app-sample-1',
+    user_id: 'user-member-1',
+    applicant_name: 'Marcus Vance',
+    applicant_email: 'entrepreneur@healthtech.io',
+    startup_name: 'PulseVibe Biosystems',
+    problem_statement_id: 'prob-1',
+    problem_title: 'Early Detection of Post-Operative ICU Sepsis via Real-time Hemodynamics',
+    pitch: 'PulseVibe has engineered a dual-luminescence non-invasive optical sensor coupled with a micro-catheter probe that detects arterial wall stiffness changes 3 hours prior to septic shock onset. We have completed early benchtop testing on simulated microvascular beds.',
+    amount_requested: 125000,
+    supporting_notes: 'Prototype CAD complete; seeking funding for IRB-approved 40-patient ICU observational validation study with partner hospital.',
+    status: 'Pending',
+    admin_feedback: 'Application under initial clinical review by Dr. Lin. Fast-track committee scheduled for Thursday.',
+    submitted_at: '2025-03-14T10:20:00Z',
+  }
+];
+
+export const SEED_PROGRESS: UserProgress[] = [
+  {
+    user_id: 'user-member-1',
+    category_id: 'cat-1',
+    step_id: 'step-dev-1',
+    completed: true,
+    updated_at: '2025-03-01T12:00:00Z'
+  },
+  {
+    user_id: 'user-member-1',
+    category_id: 'cat-1',
+    step_id: 'step-dev-2',
+    completed: true,
+    updated_at: '2025-03-10T14:30:00Z'
+  },
+  {
+    user_id: 'user-member-1',
+    category_id: 'cat-1',
+    step_id: 'step-dev-3',
+    completed: false,
+    updated_at: '2025-03-14T15:00:00Z'
+  }
+];

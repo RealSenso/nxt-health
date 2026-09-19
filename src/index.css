@@ -1,0 +1,205 @@
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sora:wght@400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+:root {
+  /* NxT Health — pastel green theme */
+  --nxt-bg: #F6FAF3;
+  --nxt-bg-soft: #EAF4E2;
+  --nxt-surface: #FFFFFF;
+
+  /* Single confident accent — pastel-but-legible green, used everywhere instead of a multi-hue palette */
+  --nxt-mint: #DCF2D3;
+  --nxt-mint-deep: #2F7A4F;
+  --nxt-mint-strong: #52B074;
+
+  /* A touch of blue as a secondary accent — used sparingly against the pastel green */
+  --nxt-blue: #DEEBFC;
+  --nxt-blue-deep: #1E5FA8;
+  --nxt-blue-strong: #2F7FE0;
+
+  /* Status/secondary accents — used sparingly, not decoratively */
+  --nxt-lavender: #ECEBFB;
+  --nxt-lavender-deep: #6B63D6;
+  --nxt-lavender-strong: #4A42C4;
+
+  --nxt-peach: #FBEAE1;
+  --nxt-peach-deep: #D96B3C;
+
+  --nxt-sky: #E6F1F8;
+  --nxt-sky-deep: #2E7FB3;
+
+  --nxt-ink: #16241C;
+  --nxt-ink-soft: #57695F;
+  --nxt-line: #DCEAD5;
+
+  /* Always-dark, theme-independent — for logo marks and chips meant to stay a fixed dark accent */
+  --nxt-ink-fixed: #101A14;
+
+  --nxt-font-display: 'Sora', 'Plus Jakarta Sans', system-ui, sans-serif;
+  --nxt-font-hero: 'Anton', 'Sora', system-ui, sans-serif;
+  --nxt-font-body: 'Plus Jakarta Sans', system-ui, sans-serif;
+
+  --nxt-ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --nxt-bg: #0F1712;
+    --nxt-bg-soft: #16211A;
+    --nxt-surface: #1C2921;
+
+    --nxt-mint: #1E3327;
+    --nxt-mint-deep: #8FE0AE;
+    --nxt-mint-strong: #4FBE79;
+
+    --nxt-blue: #1B2C40;
+    --nxt-blue-deep: #8FC0F2;
+    --nxt-blue-strong: #4C8FE8;
+
+    --nxt-lavender: #262246;
+    --nxt-lavender-deep: #BDB6F7;
+    --nxt-lavender-strong: #7C74E8;
+
+    --nxt-peach: #3A2A22;
+    --nxt-peach-deep: #F0A47C;
+
+    --nxt-sky: #1C2E38;
+    --nxt-sky-deep: #8FCBEA;
+
+    --nxt-ink: #EAF3EA;
+    --nxt-ink-soft: #9BB2A2;
+    --nxt-line: #2A3B30;
+
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --nxt-bg: #0F1712;
+  --nxt-bg-soft: #16211A;
+  --nxt-surface: #1C2921;
+
+  --nxt-mint: #1E3327;
+  --nxt-mint-deep: #8FE0AE;
+  --nxt-mint-strong: #4FBE79;
+
+  --nxt-blue: #1B2C40;
+  --nxt-blue-deep: #8FC0F2;
+  --nxt-blue-strong: #4C8FE8;
+
+  --nxt-lavender: #262246;
+  --nxt-lavender-deep: #BDB6F7;
+  --nxt-lavender-strong: #7C74E8;
+
+  --nxt-peach: #3A2A22;
+  --nxt-peach-deep: #F0A47C;
+
+  --nxt-sky: #1C2E38;
+  --nxt-sky-deep: #8FCBEA;
+
+  --nxt-ink: #EAF3EA;
+  --nxt-ink-soft: #9BB2A2;
+  --nxt-line: #2A3B30;
+
+  color-scheme: dark;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--nxt-bg);
+  color: var(--nxt-ink);
+  font-family: var(--nxt-font-body);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.font-display {
+  font-family: var(--nxt-font-display);
+}
+
+.font-hero {
+  font-family: var(--nxt-font-hero);
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+}
+
+::selection {
+  background: var(--nxt-ink);
+  color: var(--nxt-mint);
+}
+
+.nxt-dashed-rule {
+  border-top: 1.5px dashed color-mix(in srgb, var(--nxt-ink) 14%, transparent);
+}
+
+/* Faint blueprint-style grid lines, echoing the reference site's dashed rules — decorative only */
+.nxt-grid-lines {
+  position: relative;
+}
+.nxt-grid-lines::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--nxt-ink) 6%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--nxt-ink) 6%, transparent) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: linear-gradient(to bottom, black, transparent 85%);
+}
+
+/* Faint dot-grid, used on white sections between hero/CTA blocks */
+.nxt-dot-grid {
+  background-image: radial-gradient(color-mix(in srgb, var(--nxt-ink) 14%, transparent) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+/* Subtle film-grain, layered over dark hero/CTA panels */
+.nxt-noise {
+  position: relative;
+}
+.nxt-noise::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.35;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Serrated "stamp"/ticket edge, top & bottom — the reference site's recurring card motif */
+.nxt-stamp-edge {
+  clip-path: polygon(
+    0% 0%, 5% 3%, 10% 0%, 15% 3%, 20% 0%, 25% 3%, 30% 0%, 35% 3%, 40% 0%, 45% 3%, 50% 0%,
+    55% 3%, 60% 0%, 65% 3%, 70% 0%, 75% 3%, 80% 0%, 85% 3%, 90% 0%, 95% 3%, 100% 0%,
+    100% 100%, 95% 97%, 90% 100%, 85% 97%, 80% 100%, 75% 97%, 70% 100%, 65% 97%, 60% 100%,
+    55% 97%, 50% 100%, 45% 97%, 40% 100%, 35% 97%, 30% 100%, 25% 97%, 20% 100%, 15% 97%,
+    10% 100%, 5% 97%, 0% 100%
+  );
+}
+
+/* Endless scrolling marquee band */
+@keyframes nxt-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.nxt-marquee-track {
+  display: flex;
+  width: max-content;
+  animation: nxt-marquee 16s linear infinite;
+}
+
+* {
+  transition-timing-function: var(--nxt-ease);
+}
+
+:focus-visible {
+  outline: 2px solid var(--nxt-mint-strong);
+  outline-offset: 2px;
+}
