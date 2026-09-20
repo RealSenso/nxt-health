@@ -3,9 +3,9 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   Circle, ArrowRight, ArrowLeft, Hospital,
   Layers, Search, ChevronRight, Check, X, RotateCcw, Plus,
-  FolderKanban, DollarSign, AlertCircle, Settings, Sparkles, Paperclip
+  FolderKanban, DollarSign, AlertCircle, Settings, Sparkles, Paperclip, Bookmark
 } from 'lucide-react';
-import { User, Step } from '../types';
+import { User, Step, ProblemStatement } from '../types';
 import { store } from '../services/store';
 import { StepDetailModal } from './StepDetailModal';
 import { ProjectSettingsModal } from './ProjectSettingsModal';
@@ -38,6 +38,11 @@ export const TaskManagementPage: React.FC<TaskManagementPageProps> = ({
   const workingProblemIds = store.getWorkingProblemIds(scopeKey);
   const workingProblems = allProblems.filter(p => workingProblemIds.includes(p.id));
   const unselectedProblems = allProblems.filter(p => !workingProblemIds.includes(p.id));
+
+  const appliedProblemIds = new Set(
+    store.getScopedApplications(currentUser).filter(a => a.status !== 'Draft').map(a => a.problem_statement_id)
+  );
+  const savedProblemIds = new Set(store.getSavedProblemIds(currentUser.id));
 
   useEffect(() => {
     if (initialProblemId) {
@@ -156,7 +161,7 @@ export const TaskManagementPage: React.FC<TaskManagementPageProps> = ({
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>You haven't picked any problem statements to work on yet — choose one or more below to get started.</span>
             </Reveal>
-            <ProblemPickerGrid problems={allProblems} onPick={handleAddProblem} />
+            <ProblemPickerGrid problems={allProblems} onPick={handleAddProblem} appliedIds={appliedProblemIds} savedIds={savedProblemIds} />
           </div>
         ) : (
           <RevealGroup className="grid grid-cols-1 md:grid-cols-2 gap-4" stagger={0.05}>
@@ -229,7 +234,7 @@ export const TaskManagementPage: React.FC<TaskManagementPageProps> = ({
                 {unselectedProblems.length === 0 ? (
                   <p className="text-xs text-[var(--nxt-ink-soft)]">You've already added every available problem statement.</p>
                 ) : (
-                  <ProblemPickerGrid problems={unselectedProblems} onPick={handleAddProblem} />
+                  <ProblemPickerGrid problems={unselectedProblems} onPick={handleAddProblem} appliedIds={appliedProblemIds} savedIds={savedProblemIds} />
                 )}
               </motion.div>
             </motion.div>
@@ -581,40 +586,104 @@ const Breadcrumb: React.FC<{ items: { label: string; onClick?: () => void }[] }>
   </div>
 );
 
-const ProblemPickerGrid: React.FC<{ problems: ReturnType<typeof store.getProblems>; onPick: (id: string) => void }> = ({ problems, onPick }) => (
-  <RevealGroup className="grid grid-cols-1 md:grid-cols-2 gap-4" stagger={0.04}>
-    {problems.map(problem => (
-      <RevealItem key={problem.id}>
-        <motion.button
-          whileHover={{ y: -3 }}
-          transition={{ type: 'spring', stiffness: 300, damping: 22 }}
-          onClick={() => onPick(problem.id)}
-          className="w-full text-left bg-[var(--nxt-surface)] rounded-2xl border border-[var(--nxt-line)] p-5 shadow-sm hover:shadow-md hover:border-[var(--nxt-blue-strong)]/30 transition-shadow h-full flex flex-col justify-between"
-        >
-          <div>
-            <div className="flex items-start justify-between gap-2 mb-2">
-              <span className="text-[11px] font-semibold text-[var(--nxt-mint-deep)] bg-[var(--nxt-mint)] px-2.5 py-0.5 rounded-full">
-                {problem.department}
-              </span>
-              {problem.funded && (
-                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[var(--nxt-mint-deep)]">
-                  <DollarSign className="w-3 h-3" /> Funded
-                </span>
-              )}
-            </div>
-            <h3 className="font-display text-sm font-bold text-[var(--nxt-ink)] leading-snug">
-              {problem.title}
-            </h3>
-            <p className="text-xs text-[var(--nxt-ink-soft)] leading-relaxed line-clamp-2 mt-1.5">
-              {problem.description}
-            </p>
-          </div>
-          <div className="mt-3 flex items-center justify-end gap-1 text-xs font-bold text-[var(--nxt-blue-strong)]">
-            <Plus className="w-3.5 h-3.5" />
-            <span>Work on this</span>
-          </div>
-        </motion.button>
-      </RevealItem>
-    ))}
-  </RevealGroup>
+const ProblemPickerCard: React.FC<{
+  problem: ProblemStatement;
+  onPick: (id: string) => void;
+  applied?: boolean;
+  saved?: boolean;
+}> = ({ problem, onPick, applied, saved }) => (
+  <motion.button
+    whileHover={{ y: -3 }}
+    transition={{ type: 'spring', stiffness: 300, damping: 22 }}
+    onClick={() => onPick(problem.id)}
+    className="w-full text-left bg-[var(--nxt-surface)] rounded-2xl border border-[var(--nxt-line)] p-5 shadow-sm hover:shadow-md hover:border-[var(--nxt-blue-strong)]/30 transition-shadow h-full flex flex-col justify-between"
+  >
+    <div>
+      <div className="flex items-start justify-between gap-2 mb-2">
+        <span className="text-[11px] font-semibold text-[var(--nxt-mint-deep)] bg-[var(--nxt-mint)] px-2.5 py-0.5 rounded-full">
+          {problem.department}
+        </span>
+        <div className="flex items-center gap-1.5 shrink-0">
+          {applied && (
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[var(--nxt-blue-strong)] bg-[var(--nxt-blue)] px-2 py-0.5 rounded-full">
+              <DollarSign className="w-3 h-3" /> Applied
+            </span>
+          )}
+          {saved && (
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[var(--nxt-lavender-strong)] bg-[var(--nxt-lavender)] px-2 py-0.5 rounded-full">
+              <Bookmark className="w-3 h-3" /> Saved
+            </span>
+          )}
+          {problem.funded && (
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[var(--nxt-mint-deep)]">
+              <DollarSign className="w-3 h-3" /> Funded
+            </span>
+          )}
+        </div>
+      </div>
+      <h3 className="font-display text-sm font-bold text-[var(--nxt-ink)] leading-snug">
+        {problem.title}
+      </h3>
+      <p className="text-xs text-[var(--nxt-ink-soft)] leading-relaxed line-clamp-2 mt-1.5">
+        {problem.description}
+      </p>
+    </div>
+    <div className="mt-3 flex items-center justify-end gap-1 text-xs font-bold text-[var(--nxt-blue-strong)]">
+      <Plus className="w-3.5 h-3.5" />
+      <span>Work on this</span>
+    </div>
+  </motion.button>
 );
+
+const ProblemPickerGrid: React.FC<{
+  problems: ProblemStatement[];
+  onPick: (id: string) => void;
+  appliedIds?: Set<string>;
+  savedIds?: Set<string>;
+}> = ({ problems, onPick, appliedIds, savedIds }) => {
+  const isPriority = (id: string) => !!appliedIds?.has(id) || !!savedIds?.has(id);
+  const priorityProblems = problems.filter(p => isPriority(p.id));
+  const otherProblems = problems.filter(p => !isPriority(p.id));
+
+  return (
+    <div className="space-y-6">
+      {priorityProblems.length > 0 && (
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--nxt-mint-strong)] mb-3 flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5" />
+            Applied or Saved by You
+          </p>
+          <RevealGroup className="grid grid-cols-1 md:grid-cols-2 gap-4" stagger={0.04}>
+            {priorityProblems.map(problem => (
+              <RevealItem key={problem.id}>
+                <ProblemPickerCard
+                  problem={problem}
+                  onPick={onPick}
+                  applied={appliedIds?.has(problem.id)}
+                  saved={savedIds?.has(problem.id)}
+                />
+              </RevealItem>
+            ))}
+          </RevealGroup>
+        </div>
+      )}
+
+      {otherProblems.length > 0 && (
+        <div>
+          {priorityProblems.length > 0 && (
+            <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--nxt-ink-soft)] mb-3">
+              Other Problem Statements
+            </p>
+          )}
+          <RevealGroup className="grid grid-cols-1 md:grid-cols-2 gap-4" stagger={0.04}>
+            {otherProblems.map(problem => (
+              <RevealItem key={problem.id}>
+                <ProblemPickerCard problem={problem} onPick={onPick} />
+              </RevealItem>
+            ))}
+          </RevealGroup>
+        </div>
+      )}
+    </div>
+  );
+};
