@@ -4,7 +4,7 @@ import {
   Shield, Plus, Trash2, Edit, Check, X, Clock, CheckCircle2,
   XCircle, ListFilter, AlertCircle, Hospital,
   Users, FolderPlus, FileText, ChevronDown, Layers, ShieldOff, Copy,
-  BarChart3, TrendingUp, Paperclip, Download, MessageSquareWarning
+  BarChart3, TrendingUp, Paperclip, Download, MessageSquareWarning, RefreshCw
 } from 'lucide-react';
 import {
   ProblemStatement, FundingApplication, Category, Step, Resource,
@@ -23,6 +23,15 @@ type AdminTab = 'applications' | 'problems' | 'categories' | 'steps' | 'resource
 export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateToTab }) => {
   const [adminTab, setAdminTab] = useState<AdminTab>('applications');
   const [showSectionMenu, setShowSectionMenu] = useState(false);
+  const [resetSuccess, setResetSuccess] = useState(false);
+
+  const handleResetDemoData = () => {
+    if (window.confirm('Reset all demo data back to the original seed state? This clears every application, roadmap progress, saved problem, team, and notification created in this browser. This cannot be undone.')) {
+      store.initIfEmpty(true);
+      setResetSuccess(true);
+      setTimeout(() => setResetSuccess(false), 3000);
+    }
+  };
 
   const problems = store.getProblems();
   const [editingProblem, setEditingProblem] = useState<Partial<ProblemStatement> | null>(null);
@@ -218,7 +227,23 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
             Manage clinical problem statements, review grant applications, and configure categories, steps, and hospital resources.
           </p>
         </div>
+        <button
+          id="btn-admin-reset-demo-data"
+          onClick={handleResetDemoData}
+          className="shrink-0 px-3.5 py-2 bg-white/10 hover:bg-white/20 text-white rounded-full text-xs font-semibold flex items-center gap-1.5 border border-white/15 transition-colors"
+          title="Reset all demo data back to the original seed state"
+        >
+          <RefreshCw className="w-3.5 h-3.5" />
+          <span>Reset Demo Data</span>
+        </button>
       </div>
+
+      {resetSuccess && (
+        <div className="p-3 bg-[var(--nxt-mint)]/40 border border-[var(--nxt-mint-strong)]/20 text-[var(--nxt-mint-strong)] text-xs font-semibold rounded-xl flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 text-[var(--nxt-mint-strong)]" />
+          <span>Demo data reset — every application, roadmap, and saved problem is back to the original seed state.</span>
+        </div>
+      )}
 
       <div className="relative inline-block">
         <button

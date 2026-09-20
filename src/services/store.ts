@@ -67,16 +67,25 @@ class LocalDataStore {
   }
 
   public initIfEmpty(forceReset = false): void {
-    if (forceReset || !localStorage.getItem(STORAGE_KEYS.USERS)) {
+    const isFirstInit = !localStorage.getItem(STORAGE_KEYS.USERS);
+    if (forceReset || isFirstInit) {
       this.setItem(STORAGE_KEYS.SLACK_URL, DEFAULT_SLACK_URL);
       this.setItem(STORAGE_KEYS.USERS, SEED_USERS);
-      this.setItem(STORAGE_KEYS.CURRENT_USER_ID, SEED_USERS[1].id);
       this.setItem(STORAGE_KEYS.PROBLEMS, SEED_PROBLEM_STATEMENTS);
       this.setItem(STORAGE_KEYS.CATEGORIES, SEED_CATEGORIES);
       this.setItem(STORAGE_KEYS.STEPS, SEED_STEPS);
       this.setItem(STORAGE_KEYS.RESOURCES, SEED_RESOURCES);
       this.setItem(STORAGE_KEYS.APPLICATIONS, SEED_APPLICATIONS);
       this.setItem(STORAGE_KEYS.PROGRESS, SEED_PROGRESS);
+      this.setItem(STORAGE_KEYS.WORKING_PROBLEMS, {});
+      this.setItem(STORAGE_KEYS.SAVED_PROBLEMS, {});
+      this.setItem(STORAGE_KEYS.PROJECT_NOTES, {});
+      this.setItem(STORAGE_KEYS.NOTIFICATIONS, []);
+      this.setItem(STORAGE_KEYS.TEAMS, []);
+      this.setItem(STORAGE_KEYS.STEP_SUBMISSIONS, []);
+      if (isFirstInit) {
+        this.setItem(STORAGE_KEYS.CURRENT_USER_ID, SEED_USERS[1].id);
+      }
       this.notify();
     }
   }
