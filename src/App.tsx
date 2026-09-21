@@ -31,9 +31,7 @@ export default function App() {
   const currentUser = isAuthenticated ? store.getCurrentUser() : null;
 
   const [publicView, setPublicView] = useState<'home' | 'login' | 'app'>('home');
-  const [currentTab, setCurrentTab] = useState<'dashboard' | 'problems' | 'funds' | 'tasks' | 'resources' | 'admin'>(
-    () => (isAuthenticated ? 'dashboard' : 'problems')
-  );
+  const [currentTab, setCurrentTab] = useState<'dashboard' | 'problems' | 'funds' | 'tasks' | 'resources' | 'admin'>('problems');
   const [roadmapProblemId, setRoadmapProblemId] = useState<string | undefined>(undefined);
   const [resourceStepId, setResourceStepId] = useState<string | undefined>(undefined);
 
@@ -54,7 +52,7 @@ export default function App() {
   const wasAuthenticated = useRef(isAuthenticated);
   useEffect(() => {
     if (!wasAuthenticated.current && isAuthenticated) {
-      setCurrentTab('dashboard');
+      setCurrentTab('problems');
     }
     wasAuthenticated.current = isAuthenticated;
   }, [isAuthenticated]);
@@ -109,6 +107,7 @@ export default function App() {
             if (!currentUser) setPublicView('login');
             else setIsMembershipModalOpen(true);
           } else {
+            if (tab === 'resources') setResourceStepId(undefined);
             setCurrentTab(tab as any);
           }
         }}

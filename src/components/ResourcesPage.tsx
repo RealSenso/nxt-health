@@ -208,7 +208,7 @@ export const ResourcesPage: React.FC<ResourcesPageProps> = ({
         </div>
         <select
           value={categoryFilter}
-          onChange={(e) => setCategoryFilter(e.target.value)}
+          onChange={(e) => { setCategoryFilter(e.target.value); setStepFilter(null); }}
           className="px-3 py-1.5 text-xs bg-[var(--nxt-surface)] border border-[var(--nxt-line)] rounded-full text-[var(--nxt-ink)] focus:outline-hidden focus:ring-2 focus:ring-[var(--nxt-mint-strong)]"
         >
           <option value="all">All Categories</option>
