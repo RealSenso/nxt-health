@@ -1,6 +1,6 @@
 import {
   User, UserRole, ProblemStatement, FundingApplication, Category, Step, Resource, UserProgress, ApplicationStatus,
-  Team, AppNotification, NotificationType, StepSubmission, SubmissionStatus, SubmissionFile
+  Team, AppNotification, NotificationType, StepSubmission, SubmissionStatus, SubmissionFile, Gender
 } from '../types';
 import {
   SEED_USERS, SEED_PROBLEM_STATEMENTS, SEED_CATEGORIES,
@@ -326,7 +326,12 @@ class LocalDataStore {
     return this.getUsers().find(u => u.id === sessionUserId) || null;
   }
 
-  public signup(name: string, email: string, password: string): { user?: User; error?: string } {
+  public signup(
+    name: string,
+    email: string,
+    password: string,
+    extra?: { location?: string; gender?: Gender }
+  ): { user?: User; error?: string } {
     const trimmedEmail = email.trim().toLowerCase();
     if (!name.trim() || !trimmedEmail || !password) {
       return { error: 'Name, email, and password are all required.' };
@@ -342,6 +347,8 @@ class LocalDataStore {
       role: 'member',
       is_member: false,
       password,
+      ...(extra?.location ? { location: extra.location.trim() } : {}),
+      ...(extra?.gender ? { gender: extra.gender } : {}),
     };
     users.push(newUser);
     this.setItem(STORAGE_KEYS.USERS, users);
@@ -380,7 +387,10 @@ class LocalDataStore {
     this.notify();
   }
 
-  public updateProfile(userId: string, updates: { name?: string; email?: string; password?: string }): { error?: string } {
+  public updateProfile(
+    userId: string,
+    updates: { name?: string; email?: string; password?: string; location?: string; gender?: Gender }
+  ): { error?: string } {
     const trimmedName = updates.name?.trim();
     const trimmedEmail = updates.email?.trim().toLowerCase();
 
@@ -407,6 +417,8 @@ class LocalDataStore {
         ...(trimmedName !== undefined ? { name: trimmedName } : {}),
         ...(trimmedEmail !== undefined ? { email: trimmedEmail } : {}),
         ...(updates.password ? { password: updates.password } : {}),
+        ...(updates.location !== undefined ? { location: updates.location.trim() } : {}),
+        ...(updates.gender !== undefined ? { gender: updates.gender } : {}),
       };
     });
     this.setItem(STORAGE_KEYS.USERS, users);

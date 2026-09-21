@@ -1,7 +1,7 @@
 import React from 'react';
 import {
   LayoutDashboard, DollarSign, Bookmark, FolderKanban, Users2, ArrowRight,
-  Clock, CheckCircle2, XCircle, PenLine, ShieldCheck, Sparkles
+  Clock, CheckCircle2, XCircle, PenLine, ShieldCheck, Sparkles, MessageSquare
 } from 'lucide-react';
 import { User } from '../types';
 import { store } from '../services/store';
@@ -13,6 +13,7 @@ interface FounderDashboardProps {
   onNavigateToFunds: () => void;
   onNavigateToRoadmap: (problemId?: string) => void;
   onOpenTeamModal: () => void;
+  onOpenSlackModal: () => void;
 }
 
 const STATUS_BADGE: Record<string, { icon: React.ElementType; bg: string; text: string; label: string }> = {
@@ -28,6 +29,7 @@ export const FounderDashboard: React.FC<FounderDashboardProps> = ({
   onNavigateToFunds,
   onNavigateToRoadmap,
   onOpenTeamModal,
+  onOpenSlackModal,
 }) => {
   const isMember = currentUser.is_member;
   const scopeKey = store.getScopeKey(currentUser);
@@ -303,6 +305,24 @@ export const FounderDashboard: React.FC<FounderDashboardProps> = ({
                 </PillButton>
               </div>
             )}
+          </Reveal>
+
+          <Reveal className="bg-[var(--nxt-surface)] border border-[var(--nxt-line)] rounded-2xl p-5 shadow-sm flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <span className="p-1.5 rounded-lg bg-[var(--nxt-bg-soft)] text-[var(--nxt-ink-soft)] shrink-0">
+                <MessageSquare className="w-4 h-4" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-[var(--nxt-ink)]">Founder Slack</p>
+                <p className="text-[11px] text-[var(--nxt-ink-soft)] truncate">Talk to peer founders & experts</p>
+              </div>
+            </div>
+            <button
+              onClick={onOpenSlackModal}
+              className="text-xs font-semibold text-[var(--nxt-mint-strong)] hover:underline shrink-0"
+            >
+              Join
+            </button>
           </Reveal>
 
           {workingProblems.length > 0 && (

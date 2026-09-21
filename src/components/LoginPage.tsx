@@ -1,8 +1,16 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Stethoscope, Mail, Lock, User as UserIcon, ArrowRight, ArrowLeft, AlertCircle } from 'lucide-react';
+import { Stethoscope, Mail, Lock, User as UserIcon, ArrowRight, ArrowLeft, AlertCircle, MapPin } from 'lucide-react';
 import { store, PLATFORM_NAME } from '../services/store';
+import { Gender } from '../types';
 import { ThemeToggle } from './ThemeToggle';
+
+const GENDER_OPTIONS: { value: Gender; label: string }[] = [
+  { value: 'female', label: 'Female' },
+  { value: 'male', label: 'Male' },
+  { value: 'other', label: 'Other' },
+  { value: 'prefer_not_to_say', label: 'Prefer not to say' },
+];
 
 interface LoginPageProps {
   onBack?: () => void;
@@ -13,6 +21,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBack }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [location, setLocation] = useState('');
+  const [gender, setGender] = useState<Gender | ''>('');
   const [error, setError] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -20,7 +30,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBack }) => {
     setError('');
     const result = mode === 'login'
       ? store.login(email, password)
-      : store.signup(name, email, password);
+      : store.signup(name, email, password, { location, ...(gender ? { gender } : {}) });
     if (result.error) setError(result.error);
   };
 
@@ -102,6 +112,37 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBack }) => {
                       placeholder="Dr. Alex Mercer"
                       className="w-full pl-9 pr-3 py-2.5 text-sm bg-[var(--nxt-bg-soft)] border border-[var(--nxt-line)] rounded-2xl text-[var(--nxt-ink)] focus:ring-2 focus:ring-[var(--nxt-mint-strong)] focus:outline-hidden focus:bg-[var(--nxt-surface)] transition-colors"
                     />
+                  </div>
+                </div>
+              )}
+
+              {mode === 'signup' && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-[var(--nxt-ink-soft)] mb-1">Location <span className="font-normal text-[var(--nxt-ink-soft)]">(optional)</span></label>
+                    <div className="relative">
+                      <MapPin className="w-4 h-4 text-[var(--nxt-ink-soft)] absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input
+                        id="input-signup-location"
+                        type="text"
+                        value={location}
+                        onChange={(e) => setLocation(e.target.value)}
+                        placeholder="City, State"
+                        className="w-full pl-9 pr-3 py-2.5 text-sm bg-[var(--nxt-bg-soft)] border border-[var(--nxt-line)] rounded-2xl text-[var(--nxt-ink)] focus:ring-2 focus:ring-[var(--nxt-mint-strong)] focus:outline-hidden focus:bg-[var(--nxt-surface)] transition-colors"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-[var(--nxt-ink-soft)] mb-1">Gender <span className="font-normal text-[var(--nxt-ink-soft)]">(optional)</span></label>
+                    <select
+                      id="input-signup-gender"
+                      value={gender}
+                      onChange={(e) => setGender(e.target.value as Gender)}
+                      className="w-full px-3 py-2.5 text-sm bg-[var(--nxt-bg-soft)] border border-[var(--nxt-line)] rounded-2xl text-[var(--nxt-ink)] focus:ring-2 focus:ring-[var(--nxt-mint-strong)] focus:outline-hidden focus:bg-[var(--nxt-surface)] transition-colors"
+                    >
+                      <option value="">Prefer not to say</option>
+                      {GENDER_OPTIONS.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
+                    </select>
                   </div>
                 </div>
               )}

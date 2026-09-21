@@ -3,29 +3,37 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   Circle, ArrowRight, ArrowLeft, Hospital,
   Layers, Search, ChevronRight, Check, X, RotateCcw, Plus,
-  FolderKanban, DollarSign, AlertCircle, Settings, Sparkles, Paperclip, Bookmark
+  FolderKanban, DollarSign, AlertCircle, Settings, Sparkles, Paperclip, Bookmark, Lock
 } from 'lucide-react';
-import { User, Step, ProblemStatement } from '../types';
+import { User, Step, ProblemStatement, Category } from '../types';
 import { store } from '../services/store';
 import { StepDetailModal } from './StepDetailModal';
 import { ProjectSettingsModal } from './ProjectSettingsModal';
-import { Reveal, RevealGroup, RevealItem } from './ui/Reveal';
+import { Reveal, RevealGroup, RevealItem, PillButton } from './ui/Reveal';
 
 interface TaskManagementPageProps {
-  currentUser: User;
+  currentUser: User | null;
   initialProblemId?: string;
   onOpenAdminPanel?: () => void;
+  onOpenLogin: () => void;
+  onOpenMembershipModal: () => void;
+  onViewResources: (stepId: string) => void;
 }
 
 type View = 'problems' | 'categories' | 'roadmap';
 
+const PREVIEW_UNLOCKED_STEPS = 3;
+
 export const TaskManagementPage: React.FC<TaskManagementPageProps> = ({
   currentUser,
   initialProblemId,
+  onOpenLogin,
+  onOpenMembershipModal,
+  onViewResources,
 }) => {
   const categories = store.getCategories();
   const allProblems = store.getProblems();
-  const scopeKey = store.getScopeKey(currentUser);
+  const scopeKey = currentUser ? store.getScopeKey(currentUser) : '';
 
   const [view, setView] = useState<View>('problems');
   const [selectedProblemId, setSelectedProblemId] = useState<string | null>(null);
@@ -40,18 +48,30 @@ export const TaskManagementPage: React.FC<TaskManagementPageProps> = ({
   const unselectedProblems = allProblems.filter(p => !workingProblemIds.includes(p.id));
 
   const appliedProblemIds = new Set(
-    store.getScopedApplications(currentUser).filter(a => a.status !== 'Draft').map(a => a.problem_statement_id)
+    currentUser
+      ? store.getScopedApplications(currentUser).filter(a => a.status !== 'Draft').map(a => a.problem_statement_id)
+      : []
   );
-  const savedProblemIds = new Set(store.getSavedProblemIds(currentUser.id));
+  const savedProblemIds = new Set(currentUser ? store.getSavedProblemIds(currentUser.id) : []);
 
   useEffect(() => {
-    if (initialProblemId) {
+    if (initialProblemId && currentUser) {
       store.addWorkingProblem(scopeKey, initialProblemId);
       setSelectedProblemId(initialProblemId);
       setSelectedCategoryId(null);
       setView('categories');
     }
-  }, [initialProblemId]);
+  }, [initialProblemId, currentUser]);
+
+  if (!currentUser || !currentUser.is_member) {
+    return (
+      <RoadmapTrailer
+        isLoggedIn={!!currentUser}
+        onOpenLogin={onOpenLogin}
+        onOpenMembershipModal={onOpenMembershipModal}
+      />
+    );
+  }
 
   const selectedProblem = allProblems.find(p => p.id === selectedProblemId) || null;
   const selectedCategory = categories.find(c => c.id === selectedCategoryId) || null;
@@ -538,6 +558,7 @@ export const TaskManagementPage: React.FC<TaskManagementPageProps> = ({
           isCompleted={!!userProgress[selectedStep.id]}
           onToggleComplete={() => handleToggleStep(selectedStep.id)}
           onClose={() => setSelectedStep(null)}
+          onViewResources={onViewResources}
         />
       )}
 
@@ -565,6 +586,188 @@ export const TaskManagementPage: React.FC<TaskManagementPageProps> = ({
           setSettingsProblemId(null);
         }}
       />
+    </div>
+  );
+};
+
+const RoadmapTrailer: React.FC<{
+  isLoggedIn: boolean;
+  onOpenLogin: () => void;
+  onOpenMembershipModal: () => void;
+}> = ({ isLoggedIn, onOpenLogin, onOpenMembershipModal }) => {
+  const categories = store.getCategories();
+  const allProblems = store.getProblems();
+  const [view, setView] = useState<View>('problems');
+  const [selectedProblemId, setSelectedProblemId] = useState<string | null>(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [categorySearch, setCategorySearch] = useState('');
+
+  const selectedProblem = allProblems.find(p => p.id === selectedProblemId) || null;
+  const selectedCategory = categories.find(c => c.id === selectedCategoryId) || null;
+  const steps = selectedCategoryId ? store.getSteps(selectedCategoryId) : [];
+
+  const filteredCategories = categories.filter(c =>
+    c.name.toLowerCase().includes(categorySearch.toLowerCase()) ||
+    c.description.toLowerCase().includes(categorySearch.toLowerCase())
+  );
+
+  const upgradeAction = isLoggedIn ? onOpenMembershipModal : onOpenLogin;
+  const upgradeLabel = isLoggedIn ? 'Become a Member' : 'Log In / Register';
+
+  const UpgradeBanner = () => (
+    <Reveal className="bg-[var(--nxt-peach)] border border-[var(--nxt-peach-deep)]/20 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="flex items-center gap-2.5">
+        <Lock className="w-4 h-4 text-[var(--nxt-peach-deep)] shrink-0" />
+        <p className="text-xs font-semibold text-[var(--nxt-peach-deep)]">
+          You're viewing a preview — {isLoggedIn ? 'become a member' : 'log in and become a member'} to unlock every category, track progress, and submit evidence.
+        </p>
+      </div>
+      <PillButton tone="ghost" onClick={upgradeAction} className="px-3.5 py-1.5 text-xs shrink-0">
+        {upgradeLabel}
+      </PillButton>
+    </Reveal>
+  );
+
+  if (view === 'problems') {
+    return (
+      <div className="space-y-6">
+        <Reveal className="bg-[var(--nxt-surface)] rounded-2xl border border-[var(--nxt-line)] p-6 shadow-sm">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="p-1.5 rounded-lg bg-[var(--nxt-blue)] text-[var(--nxt-blue-strong)]">
+              <FolderKanban className="w-5 h-5" />
+            </span>
+            <h1 className="font-display text-xl sm:text-2xl font-bold text-[var(--nxt-ink)]">
+              Task Roadmaps
+            </h1>
+          </div>
+          <p className="text-xs sm:text-sm text-[var(--nxt-ink-soft)]">
+            A preview of the step-by-step roadmap founders follow once they join — pick a problem to look around.
+          </p>
+        </Reveal>
+
+        <UpgradeBanner />
+
+        <ProblemPickerGrid
+          problems={allProblems}
+          onPick={(id) => { setSelectedProblemId(id); setSelectedCategoryId(null); setView('categories'); }}
+        />
+      </div>
+    );
+  }
+
+  if (view === 'categories' && selectedProblem) {
+    return (
+      <div className="space-y-6">
+        <Breadcrumb
+          items={[
+            { label: 'Roadmaps', onClick: () => setView('problems') },
+            { label: selectedProblem.title },
+          ]}
+        />
+
+        <Reveal className="bg-[var(--nxt-surface)] rounded-2xl border border-[var(--nxt-line)] p-6 shadow-sm">
+          <span className="text-[11px] font-semibold text-[var(--nxt-mint-deep)] bg-[var(--nxt-mint)] px-2.5 py-0.5 rounded-full">
+            {selectedProblem.department}
+          </span>
+          <h1 className="font-display text-lg sm:text-xl font-bold text-[var(--nxt-ink)] mt-2">
+            {selectedProblem.title}
+          </h1>
+        </Reveal>
+
+        <UpgradeBanner />
+
+        <Reveal delay={0.05} className="relative min-w-[220px]">
+          <Search className="w-3.5 h-3.5 text-[var(--nxt-ink-soft)] absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            placeholder="Search 21 categories..."
+            value={categorySearch}
+            onChange={(e) => setCategorySearch(e.target.value)}
+            className="w-full pl-9 pr-3 py-2 text-xs bg-[var(--nxt-surface)] border border-[var(--nxt-line)] rounded-full text-[var(--nxt-ink)] placeholder:text-[var(--nxt-ink-soft)] focus:outline-hidden focus:ring-2 focus:ring-[var(--nxt-blue-strong)] transition-all shadow-sm"
+          />
+        </Reveal>
+
+        <RevealGroup className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" stagger={0.03}>
+          {filteredCategories.map((cat) => (
+            <RevealItem key={cat.id}>
+              <motion.div
+                whileHover={{ y: -2 }}
+                onClick={() => { setSelectedCategoryId(cat.id); setView('roadmap'); }}
+                className="cursor-pointer bg-[var(--nxt-surface)] rounded-2xl border border-[var(--nxt-line)] p-4 shadow-sm hover:shadow-md hover:border-[var(--nxt-blue-strong)]/30 transition-shadow h-full flex flex-col justify-between"
+              >
+                <div>
+                  <span className="text-[10px] font-bold text-[var(--nxt-ink-soft)]">#{cat.order}</span>
+                  <h3 className="font-display text-sm font-bold text-[var(--nxt-ink)] leading-snug mt-1">
+                    {cat.name}
+                  </h3>
+                  <p className="text-[11px] text-[var(--nxt-ink-soft)] mt-1 line-clamp-2">
+                    {cat.description}
+                  </p>
+                </div>
+                <div className="mt-3 flex items-center justify-end text-[var(--nxt-blue-strong)]">
+                  <ChevronRight className="w-4 h-4" />
+                </div>
+              </motion.div>
+            </RevealItem>
+          ))}
+        </RevealGroup>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <Breadcrumb
+        items={[
+          { label: 'Roadmaps', onClick: () => setView('problems') },
+          { label: selectedProblem?.title || '—', onClick: () => setView('categories') },
+          { label: selectedCategory?.name || '—' },
+        ]}
+      />
+
+      <Reveal className="bg-[var(--nxt-surface)] rounded-2xl border border-[var(--nxt-line)] p-6 shadow-sm">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="p-1.5 rounded-lg bg-[var(--nxt-blue)] text-[var(--nxt-blue-strong)]">
+            <Layers className="w-5 h-5" />
+          </span>
+          <h1 className="font-display text-xl sm:text-2xl font-bold text-[var(--nxt-ink)]">
+            {selectedCategory?.name} Roadmap
+          </h1>
+        </div>
+        <p className="text-xs sm:text-sm text-[var(--nxt-ink-soft)]">
+          For: <span className="font-semibold text-[var(--nxt-ink)]">{selectedProblem?.title}</span>
+        </p>
+      </Reveal>
+
+      <UpgradeBanner />
+
+      <RevealGroup className="space-y-3" stagger={0.04}>
+        {steps.map((step, i) => {
+          const unlocked = i < PREVIEW_UNLOCKED_STEPS;
+          return (
+            <RevealItem key={step.id}>
+              <div className={`rounded-2xl border p-5 ${unlocked ? 'bg-[var(--nxt-surface)] border-[var(--nxt-line)] shadow-sm' : 'bg-[var(--nxt-bg-soft)] border-[var(--nxt-line)] border-dashed'}`}>
+                <div className="flex items-start gap-3.5">
+                  <div className={`shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${unlocked ? 'bg-[var(--nxt-bg-soft)] text-[var(--nxt-ink-soft)]' : 'bg-[var(--nxt-line)] text-[var(--nxt-ink-soft)]'}`}>
+                    {unlocked ? <Circle className="w-5 h-5" /> : <Lock className="w-4 h-4" />}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <span className="text-xs font-bold text-[var(--nxt-blue-strong)]">Step {step.order}</span>
+                    <h3 className={`font-display text-base font-bold mt-0.5 ${unlocked ? 'text-[var(--nxt-ink)]' : 'text-[var(--nxt-ink-soft)]'}`}>
+                      {step.name}
+                    </h3>
+                    {unlocked ? (
+                      <p className="text-xs text-[var(--nxt-ink-soft)] mt-1">{step.description}</p>
+                    ) : (
+                      <p className="text-xs text-[var(--nxt-ink-soft)] mt-1 italic">Unlock membership to view this milestone.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </RevealItem>
+          );
+        })}
+      </RevealGroup>
     </div>
   );
 };

@@ -472,20 +472,18 @@ export const ProblemStatementsList: React.FC<ProblemStatementsListProps> = ({
         </div>
       </Reveal>
 
-      <RevealGroup className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6 nxt-dot-grid bg-[var(--nxt-bg-soft)] rounded-3xl p-4 sm:p-6" stagger={0.06}>
+      <RevealGroup className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6 bg-[var(--nxt-bg-soft)] rounded-3xl p-4 sm:p-6" stagger={0.06}>
         {filteredProblems.map((problem, i) => (
           <RevealItem key={problem.id}>
             <motion.div
               id={`problem-card-${problem.id}`}
-              initial={{ rotate: i % 2 === 0 ? -0.8 : 0.8 }}
-              whileHover={{ y: -6, rotate: 0, scale: 1.01 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 22 }}
-              style={{ filter: 'drop-shadow(0 6px 14px rgba(10,10,12,0.08))' }}
+              whileHover={{ y: -3 }}
+              transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
               className="h-full"
             >
               <div
                 onClick={() => setSelectedProblem(problem)}
-                className="nxt-stamp-edge bg-[var(--nxt-surface)] pt-6 pb-7 px-5 sm:px-6 flex flex-col justify-between h-full border-x border-[var(--nxt-line)] cursor-pointer"
+                className="bg-[var(--nxt-surface)] rounded-2xl pt-6 pb-7 px-5 sm:px-6 flex flex-col justify-between h-full border border-[var(--nxt-line)] shadow-sm hover:shadow-md transition-shadow cursor-pointer"
               >
                 <div>
                   <div className="flex items-start justify-between gap-2 mb-3">

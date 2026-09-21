@@ -14,6 +14,7 @@ import { SlackModal } from './components/SlackModal';
 import { TeamModal } from './components/TeamModal';
 import { EditProfileModal } from './components/EditProfileModal';
 import { FounderDashboard } from './components/FounderDashboard';
+import { ResourcesPage } from './components/ResourcesPage';
 import { AppNotification } from './types';
 
 export default function App() {
@@ -30,10 +31,11 @@ export default function App() {
   const currentUser = isAuthenticated ? store.getCurrentUser() : null;
 
   const [publicView, setPublicView] = useState<'home' | 'login' | 'app'>('home');
-  const [currentTab, setCurrentTab] = useState<'dashboard' | 'problems' | 'funds' | 'tasks' | 'admin'>(
+  const [currentTab, setCurrentTab] = useState<'dashboard' | 'problems' | 'funds' | 'tasks' | 'resources' | 'admin'>(
     () => (isAuthenticated ? 'dashboard' : 'problems')
   );
   const [roadmapProblemId, setRoadmapProblemId] = useState<string | undefined>(undefined);
+  const [resourceStepId, setResourceStepId] = useState<string | undefined>(undefined);
 
   const [isMembershipModalOpen, setIsMembershipModalOpen] = useState(false);
   const [isSlackModalOpen, setIsSlackModalOpen] = useState(false);
@@ -103,7 +105,7 @@ export default function App() {
       <Navbar
         currentTab={currentTab}
         setCurrentTab={(tab) => {
-          if ((tab === 'funds' || tab === 'tasks') && !(currentUser && currentUser.is_member)) {
+          if (tab === 'funds' && !(currentUser && currentUser.is_member)) {
             if (!currentUser) setPublicView('login');
             else setIsMembershipModalOpen(true);
           } else {
@@ -113,7 +115,6 @@ export default function App() {
         currentUser={currentUser}
         platformName={PLATFORM_NAME}
         onOpenMembershipModal={() => setIsMembershipModalOpen(true)}
-        onOpenSlackModal={() => setIsSlackModalOpen(true)}
         onOpenTeamModal={() => setIsTeamModalOpen(true)}
         onOpenEditProfile={() => setIsEditProfileModalOpen(true)}
         onLoginClick={() => setPublicView('login')}
@@ -171,6 +172,7 @@ export default function App() {
                   }
                 }}
                 onOpenTeamModal={() => setIsTeamModalOpen(true)}
+                onOpenSlackModal={() => setIsSlackModalOpen(true)}
               />
             )}
 
@@ -193,10 +195,22 @@ export default function App() {
               />
             )}
 
-            {currentTab === 'tasks' && currentUser && (
+            {currentTab === 'tasks' && (
               <TaskManagementPage
                 currentUser={currentUser}
                 initialProblemId={roadmapProblemId}
+                onOpenLogin={() => setPublicView('login')}
+                onOpenMembershipModal={() => setIsMembershipModalOpen(true)}
+                onViewResources={(stepId) => { setResourceStepId(stepId); setCurrentTab('resources'); }}
+              />
+            )}
+
+            {currentTab === 'resources' && (
+              <ResourcesPage
+                currentUser={currentUser}
+                initialStepId={resourceStepId}
+                onOpenLogin={() => setPublicView('login')}
+                onOpenMembershipModal={() => setIsMembershipModalOpen(true)}
               />
             )}
 
@@ -220,6 +234,12 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-4 text-xs">
+            <button
+              onClick={() => setIsSlackModalOpen(true)}
+              className="hover:text-white transition-colors"
+            >
+              Join Founder Slack
+            </button>
             {currentUser ? (
               <>
                 <button

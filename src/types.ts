@@ -1,4 +1,5 @@
 export type UserRole = 'admin' | 'member';
+export type Gender = 'female' | 'male' | 'other' | 'prefer_not_to_say';
 
 export interface User {
   id: string;
@@ -8,6 +9,8 @@ export interface User {
   is_member: boolean;
   password?: string;
   team_id?: string;
+  location?: string;
+  gender?: Gender;
 }
 
 export interface Team {

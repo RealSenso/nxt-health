@@ -2,38 +2,37 @@
 @import "tailwindcss";
 
 :root {
-  /* NxT Health — pastel green theme */
-  --nxt-bg: #F6FAF3;
-  --nxt-bg-soft: #EAF4E2;
+  /* NxT Health — clinical teal, 60/30/10 */
+  --nxt-bg: #F6F8F8;
+  --nxt-bg-soft: #EDF1F1;
   --nxt-surface: #FFFFFF;
 
-  /* Single confident accent — pastel-but-legible green, used everywhere instead of a multi-hue palette */
-  --nxt-mint: #DCF2D3;
-  --nxt-mint-deep: #2F7A4F;
-  --nxt-mint-strong: #52B074;
+  /* 10% — the one accent color, used for CTAs, links, active state, progress, success */
+  --nxt-mint: #E1F3F1;
+  --nxt-mint-deep: #0F766E;
+  --nxt-mint-strong: #0D9488;
 
-  /* A touch of blue as a secondary accent — used sparingly against the pastel green */
-  --nxt-blue: #DEEBFC;
-  --nxt-blue-deep: #1E5FA8;
-  --nxt-blue-strong: #2F7FE0;
+  /* Muted secondary hues — part of the 30% neutral field, kept only for functional status meaning */
+  --nxt-blue: #E9EEF1;
+  --nxt-blue-deep: #3E6478;
+  --nxt-blue-strong: #55788C;
 
-  /* Status/secondary accents — used sparingly, not decoratively */
-  --nxt-lavender: #ECEBFB;
-  --nxt-lavender-deep: #6B63D6;
-  --nxt-lavender-strong: #4A42C4;
+  --nxt-lavender: #ECEAF3;
+  --nxt-lavender-deep: #5B5480;
+  --nxt-lavender-strong: #6B6394;
 
-  --nxt-peach: #FBEAE1;
-  --nxt-peach-deep: #D96B3C;
+  --nxt-peach: #F3E9E4;
+  --nxt-peach-deep: #A85B3C;
 
-  --nxt-sky: #E6F1F8;
-  --nxt-sky-deep: #2E7FB3;
+  --nxt-sky: #E9EEF1;
+  --nxt-sky-deep: #3E6478;
 
-  --nxt-ink: #16241C;
-  --nxt-ink-soft: #57695F;
-  --nxt-line: #DCEAD5;
+  --nxt-ink: #172321;
+  --nxt-ink-soft: #5E6E6C;
+  --nxt-line: #E1E7E6;
 
   /* Always-dark, theme-independent — for logo marks and chips meant to stay a fixed dark accent */
-  --nxt-ink-fixed: #101A14;
+  --nxt-ink-fixed: #12201D;
 
   --nxt-font-display: 'Sora', 'Plus Jakarta Sans', system-ui, sans-serif;
   --nxt-font-hero: 'Anton', 'Sora', system-ui, sans-serif;
@@ -46,62 +45,62 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --nxt-bg: #0F1712;
-    --nxt-bg-soft: #16211A;
-    --nxt-surface: #1C2921;
+    --nxt-bg: #101716;
+    --nxt-bg-soft: #17201F;
+    --nxt-surface: #1C2726;
 
-    --nxt-mint: #1E3327;
-    --nxt-mint-deep: #8FE0AE;
-    --nxt-mint-strong: #4FBE79;
+    --nxt-mint: #163531;
+    --nxt-mint-deep: #5EEAD4;
+    --nxt-mint-strong: #2DD4BF;
 
-    --nxt-blue: #1B2C40;
-    --nxt-blue-deep: #8FC0F2;
-    --nxt-blue-strong: #4C8FE8;
+    --nxt-blue: #1B2529;
+    --nxt-blue-deep: #A9C4D2;
+    --nxt-blue-strong: #7FA3B5;
 
-    --nxt-lavender: #262246;
-    --nxt-lavender-deep: #BDB6F7;
-    --nxt-lavender-strong: #7C74E8;
+    --nxt-lavender: #211F30;
+    --nxt-lavender-deep: #C2BCE0;
+    --nxt-lavender-strong: #9089C2;
 
-    --nxt-peach: #3A2A22;
-    --nxt-peach-deep: #F0A47C;
+    --nxt-peach: #2C221D;
+    --nxt-peach-deep: #E0A582;
 
-    --nxt-sky: #1C2E38;
-    --nxt-sky-deep: #8FCBEA;
+    --nxt-sky: #1B2529;
+    --nxt-sky-deep: #A9C4D2;
 
-    --nxt-ink: #EAF3EA;
-    --nxt-ink-soft: #9BB2A2;
-    --nxt-line: #2A3B30;
+    --nxt-ink: #EAF2F0;
+    --nxt-ink-soft: #97ACA9;
+    --nxt-line: #283432;
 
     color-scheme: dark;
   }
 }
 
 :root[data-theme="dark"] {
-  --nxt-bg: #0F1712;
-  --nxt-bg-soft: #16211A;
-  --nxt-surface: #1C2921;
+  --nxt-bg: #101716;
+  --nxt-bg-soft: #17201F;
+  --nxt-surface: #1C2726;
 
-  --nxt-mint: #1E3327;
-  --nxt-mint-deep: #8FE0AE;
-  --nxt-mint-strong: #4FBE79;
+  --nxt-mint: #163531;
+  --nxt-mint-deep: #5EEAD4;
+  --nxt-mint-strong: #2DD4BF;
 
-  --nxt-blue: #1B2C40;
-  --nxt-blue-deep: #8FC0F2;
-  --nxt-blue-strong: #4C8FE8;
+  --nxt-blue: #1B2529;
+  --nxt-blue-deep: #A9C4D2;
+  --nxt-blue-strong: #7FA3B5;
 
-  --nxt-lavender: #262246;
-  --nxt-lavender-deep: #BDB6F7;
-  --nxt-lavender-strong: #7C74E8;
+  --nxt-lavender: #211F30;
+  --nxt-lavender-deep: #C2BCE0;
+  --nxt-lavender-strong: #9089C2;
 
-  --nxt-peach: #3A2A22;
-  --nxt-peach-deep: #F0A47C;
+  --nxt-peach: #2C221D;
+  --nxt-peach-deep: #E0A582;
 
-  --nxt-sky: #1C2E38;
-  --nxt-sky-deep: #8FCBEA;
+  --nxt-sky: #1B2529;
+  --nxt-sky-deep: #A9C4D2;
 
-  --nxt-ink: #EAF3EA;
-  --nxt-ink-soft: #9BB2A2;
-  --nxt-line: #2A3B30;
+  --nxt-ink: #EAF2F0;
+  --nxt-ink-soft: #97ACA9;
+  --nxt-line: #283432;
 
   color-scheme: dark;
 }
@@ -134,10 +133,10 @@ body {
 }
 
 .nxt-dashed-rule {
-  border-top: 1.5px dashed color-mix(in srgb, var(--nxt-ink) 14%, transparent);
+  border-top: 1.5px dashed color-mix(in srgb, var(--nxt-ink) 12%, transparent);
 }
 
-/* Faint blueprint-style grid lines, echoing the reference site's dashed rules — decorative only */
+/* Faint blueprint-style grid lines — decorative only, used sparingly */
 .nxt-grid-lines {
   position: relative;
 }
@@ -147,15 +146,15 @@ body {
   inset: 0;
   pointer-events: none;
   background-image:
-    linear-gradient(to right, color-mix(in srgb, var(--nxt-ink) 6%, transparent) 1px, transparent 1px),
-    linear-gradient(to bottom, color-mix(in srgb, var(--nxt-ink) 6%, transparent) 1px, transparent 1px);
+    linear-gradient(to right, color-mix(in srgb, var(--nxt-ink) 4%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--nxt-ink) 4%, transparent) 1px, transparent 1px);
   background-size: 48px 48px;
   mask-image: linear-gradient(to bottom, black, transparent 85%);
 }
 
-/* Faint dot-grid, used on white sections between hero/CTA blocks */
+/* Faint dot-grid, used sparingly on section backgrounds */
 .nxt-dot-grid {
-  background-image: radial-gradient(color-mix(in srgb, var(--nxt-ink) 14%, transparent) 1px, transparent 1px);
+  background-image: radial-gradient(color-mix(in srgb, var(--nxt-ink) 9%, transparent) 1px, transparent 1px);
   background-size: 22px 22px;
 }
 
@@ -168,20 +167,9 @@ body {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  opacity: 0.35;
+  opacity: 0.2;
   mix-blend-mode: overlay;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-}
-
-/* Serrated "stamp"/ticket edge, top & bottom — the reference site's recurring card motif */
-.nxt-stamp-edge {
-  clip-path: polygon(
-    0% 0%, 5% 3%, 10% 0%, 15% 3%, 20% 0%, 25% 3%, 30% 0%, 35% 3%, 40% 0%, 45% 3%, 50% 0%,
-    55% 3%, 60% 0%, 65% 3%, 70% 0%, 75% 3%, 80% 0%, 85% 3%, 90% 0%, 95% 3%, 100% 0%,
-    100% 100%, 95% 97%, 90% 100%, 85% 97%, 80% 100%, 75% 97%, 70% 100%, 65% 97%, 60% 100%,
-    55% 97%, 50% 100%, 45% 97%, 40% 100%, 35% 97%, 30% 100%, 25% 97%, 20% 100%, 15% 97%,
-    10% 100%, 5% 97%, 0% 100%
-  );
 }
 
 /* Endless scrolling marquee band */
@@ -192,7 +180,7 @@ body {
 .nxt-marquee-track {
   display: flex;
   width: max-content;
-  animation: nxt-marquee 16s linear infinite;
+  animation: nxt-marquee 22s linear infinite;
 }
 
 * {
@@ -202,4 +190,12 @@ body {
 :focus-visible {
   outline: 2px solid var(--nxt-mint-strong);
   outline-offset: 2px;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }

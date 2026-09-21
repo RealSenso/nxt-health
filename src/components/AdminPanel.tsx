@@ -36,6 +36,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
   const problems = store.getProblems();
   const [editingProblem, setEditingProblem] = useState<Partial<ProblemStatement> | null>(null);
 
+  const workingProblemsMap = store.getAllWorkingProblems();
+  const allProgressForCounts = store.getAllProgress();
+  const founderCountForProblem = (problemId: string) =>
+    Object.values(workingProblemsMap).filter(ids => ids.includes(problemId)).length;
+  const founderCountForCategory = (categoryId: string) =>
+    new Set(allProgressForCounts.filter(p => p.category_id === categoryId).map(p => p.user_id)).size;
+
   const applications = store.getApplications().filter(a => a.status !== 'Draft');
   const [applicationFilter, setApplicationFilter] = useState<'all' | 'Pending' | 'Approved' | 'Rejected'>('all');
   const [reviewNotes, setReviewNotes] = useState<Record<string, string>>({});
@@ -578,6 +585,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
                       }`}>
                         {p.funded ? `Funded • ${p.funding_amount}` : 'Unfunded'}
                       </span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-[var(--nxt-blue)] text-[var(--nxt-blue-strong)] flex items-center gap-1">
+                        <Users className="w-3 h-3" />
+                        {founderCountForProblem(p.id)} working on this
+                      </span>
                     </div>
                     <h4 className="text-xs sm:text-sm font-bold text-[var(--nxt-ink)]">{p.title}</h4>
                     <p className="text-xs text-[var(--nxt-ink-soft)] line-clamp-1 mt-0.5">{p.description}</p>
@@ -680,6 +691,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
                   <th className="py-2.5 px-4 w-12">#</th>
                   <th className="py-2.5 px-4">Category Name</th>
                   <th className="py-2.5 px-4 hidden sm:table-cell">Description</th>
+                  <th className="py-2.5 px-4 w-32">Founders Engaged</th>
                   <th className="py-2.5 px-4 w-28 text-right">Actions</th>
                 </tr>
               </thead>
@@ -692,6 +704,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
                       <p className="sm:hidden text-[10px] text-[var(--nxt-ink-soft)] font-normal">{c.description}</p>
                     </td>
                     <td className="py-2.5 px-4 text-[var(--nxt-ink-soft)] hidden sm:table-cell">{c.description}</td>
+                    <td className="py-2.5 px-4">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-[var(--nxt-blue)] text-[var(--nxt-blue-strong)] whitespace-nowrap">
+                        {founderCountForCategory(c.id)} founders
+                      </span>
+                    </td>
                     <td className="py-2.5 px-4 text-right">
                       <div className="flex items-center justify-end gap-1">
                         <button
@@ -1536,6 +1553,48 @@ const AdminAnalytics: React.FC = () => {
     });
   })();
 
+  const BAR_COLORS = ['var(--nxt-mint-strong)', 'var(--nxt-blue-strong)', 'var(--nxt-lavender-strong)', 'var(--nxt-peach-deep)', 'var(--nxt-sky-deep)', 'var(--nxt-mint-deep)'];
+  const founders = store.getUsers().filter(u => u.role === 'member');
+
+  const locationCounts = founders.reduce((acc, u) => {
+    const key = u.location?.trim() || 'Not specified';
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+  const locationChartData = Object.entries(locationCounts)
+    .sort((a, b) => b[1] - a[1])
+    .map(([label, value], i) => ({ label, value, color: BAR_COLORS[i % BAR_COLORS.length] }));
+
+  const GENDER_LABEL: Record<string, string> = {
+    female: 'Female', male: 'Male', other: 'Other', prefer_not_to_say: 'Prefer not to say', unspecified: 'Not specified',
+  };
+  const genderCounts = founders.reduce((acc, u) => {
+    const key = u.gender || 'unspecified';
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+  const genderChartData = Object.entries(genderCounts)
+    .sort((a, b) => b[1] - a[1])
+    .map(([key, value], i) => ({ label: GENDER_LABEL[key] || key, value, color: BAR_COLORS[i % BAR_COLORS.length] }));
+
+  const founderStageStats = Array.from(engagedScopes).map(scope => {
+    const scopeProgress = allProgress.filter(p => p.user_id === scope);
+    const touchedCategoryIds = Array.from(new Set(scopeProgress.map(p => p.category_id)));
+    const catPcts = touchedCategoryIds
+      .map(catId => {
+        const catSteps = store.getSteps(catId);
+        const done = scopeProgress.filter(p => p.category_id === catId && p.completed).length;
+        return { category: categories.find(c => c.id === catId), pct: catSteps.length ? Math.round((done / catSteps.length) * 100) : 0 };
+      })
+      .filter(c => !!c.category)
+      .sort((a, b) => b.pct - a.pct);
+    const topStage = catPcts[0];
+    const workingIds = workingProblemsMap[scope] || [];
+    const problemTitle = workingIds.map(id => problems.find(p => p.id === id)?.title).find(Boolean) || '—';
+    const displayName = store.getUsers().find(u => u.id === scope)?.name || store.getTeam(scope)?.name || scope;
+    return { scope, displayName, stage: topStage?.category?.name || '—', pct: topStage?.pct ?? 0, problemTitle };
+  }).sort((a, b) => b.pct - a.pct);
+
   const funnelSteps = [
     { label: 'Problem Statements', value: problems.length, tone: 'mint' as const },
     { label: 'Applications Submitted', value: applications.length, tone: 'blue' as const },
@@ -1662,6 +1721,55 @@ const AdminAnalytics: React.FC = () => {
             <p className="text-xs text-[var(--nxt-ink-soft)]">No roadmap activity tracked yet.</p>
           )}
         </div>
+      </div>
+
+      <div className="bg-[var(--nxt-surface)] p-4 rounded-xl border border-[var(--nxt-line)] shadow-sm">
+        <h3 className="font-display text-sm font-bold text-[var(--nxt-ink)] flex items-center gap-1.5">
+          <Users className="w-4 h-4 text-[var(--nxt-blue-strong)]" />
+          Founder Demographics
+        </h3>
+        <p className="text-xs text-[var(--nxt-ink-soft)]">Self-reported at signup or in the founder's profile — optional, so some entries are unspecified.</p>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="bg-[var(--nxt-surface)] rounded-xl border border-[var(--nxt-line)] p-5 shadow-sm">
+          <h4 className="text-xs font-bold text-[var(--nxt-ink)] uppercase tracking-wider mb-4">Founders by Location</h4>
+          <SimpleBarChart data={locationChartData} />
+        </div>
+        <div className="bg-[var(--nxt-surface)] rounded-xl border border-[var(--nxt-line)] p-5 shadow-sm">
+          <h4 className="text-xs font-bold text-[var(--nxt-ink)] uppercase tracking-wider mb-4">Founders by Gender</h4>
+          <SimpleBarChart data={genderChartData} />
+        </div>
+      </div>
+
+      <div className="bg-[var(--nxt-surface)] rounded-xl border border-[var(--nxt-line)] p-5 shadow-sm">
+        <h4 className="text-xs font-bold text-[var(--nxt-ink)] uppercase tracking-wider mb-3">Founders by Stage</h4>
+        {founderStageStats.length === 0 ? (
+          <p className="text-xs text-[var(--nxt-ink-soft)]">No roadmap activity tracked yet.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="text-left text-[var(--nxt-ink-soft)] uppercase tracking-wider text-[10px]">
+                  <th className="pb-2 pr-3 font-bold">Founder</th>
+                  <th className="pb-2 pr-3 font-bold">Working On</th>
+                  <th className="pb-2 pr-3 font-bold">Current Stage</th>
+                  <th className="pb-2 font-bold">Progress</th>
+                </tr>
+              </thead>
+              <tbody>
+                {founderStageStats.map(s => (
+                  <tr key={s.scope} className="border-t border-[var(--nxt-line)]">
+                    <td className="py-2 pr-3 font-semibold text-[var(--nxt-ink)]">{s.displayName}</td>
+                    <td className="py-2 pr-3 text-[var(--nxt-ink-soft)] truncate max-w-[200px]">{s.problemTitle}</td>
+                    <td className="py-2 pr-3 text-[var(--nxt-ink-soft)]">{s.stage}</td>
+                    <td className="py-2 text-[var(--nxt-ink-soft)] font-bold">{s.pct}%</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

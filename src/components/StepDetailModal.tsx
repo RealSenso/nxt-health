@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import {
-  X, CheckCircle, Calendar, ExternalLink, Hospital,
-  Video, BookOpen, Users, Mail, Building, Check, Sparkles,
+  X, CheckCircle, Hospital, Check, Sparkles, ArrowRight,
   Paperclip, Upload, Download, AlertCircle, Clock, MessageSquareWarning
 } from 'lucide-react';
-import { Step, Resource, User, Category, SubmissionFile } from '../types';
+import { Step, User, Category, SubmissionFile } from '../types';
 import { store } from '../services/store';
 
 const MAX_FILE_BYTES = 4 * 1024 * 1024;
@@ -27,6 +26,7 @@ interface StepDetailModalProps {
   isCompleted: boolean;
   onToggleComplete: () => void;
   onClose: () => void;
+  onViewResources: (stepId: string) => void;
 }
 export const StepDetailModal: React.FC<StepDetailModalProps> = ({
   step,
@@ -36,9 +36,8 @@ export const StepDetailModal: React.FC<StepDetailModalProps> = ({
   isCompleted,
   onToggleComplete,
   onClose,
+  onViewResources,
 }) => {
-  const [activeTypeFilter, setActiveTypeFilter] = useState<'all' | 'hospital' | 'session' | 'webinar_seminar'>('all');
-  const [requestedIntroId, setRequestedIntroId] = useState<string | null>(null);
   const [submissionNote, setSubmissionNote] = useState('');
   const [pendingFiles, setPendingFiles] = useState<SubmissionFile[]>([]);
   const [fileError, setFileError] = useState('');
@@ -96,166 +95,11 @@ export const StepDetailModal: React.FC<StepDetailModalProps> = ({
   };
 
   const hospitalConnections = resources.filter(r => r.type === 'hospital_connection');
-  const filteredResources = resources.filter(r => {
-    if (activeTypeFilter === 'all') return true;
-    if (activeTypeFilter === 'hospital') return r.type === 'hospital_connection';
-    if (activeTypeFilter === 'session') return r.type === 'session';
-    if (activeTypeFilter === 'webinar_seminar') return r.type === 'webinar' || r.type === 'seminar';
-    return true;
-  });
-  const handleRequestIntro = (resId: string) => {
-    setRequestedIntroId(resId);
-    setTimeout(() => {
-      setRequestedIntroId(null);
-    }, 4000);
-  };
-  const getResourceTypeBadge = (type: string) => {
-    switch (type) {
-      case 'hospital_connection':
-        return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-[var(--nxt-lavender)] text-[var(--nxt-lavender-strong)] border border-[var(--nxt-lavender-strong)]/20">
-            <Hospital className="w-3 h-3 text-[var(--nxt-lavender-strong)]" />
-            Hospital Connection
-          </span>
-        );
-      case 'session':
-        return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[var(--nxt-sky)] text-[var(--nxt-sky-deep)] border border-[var(--nxt-sky-deep)]/20">
-            <Users className="w-3 h-3 text-[var(--nxt-sky-deep)]" />
-            Expert 1-on-1 Session
-          </span>
-        );
-      case 'webinar':
-        return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[var(--nxt-peach)] text-[var(--nxt-peach-deep)] border border-[var(--nxt-peach-deep)]/20">
-            <Video className="w-3 h-3 text-[var(--nxt-peach-deep)]" />
-            Webinar
-          </span>
-        );
-      case 'seminar':
-        return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[var(--nxt-mint)] text-[var(--nxt-mint-strong)] border border-[var(--nxt-mint-strong)]/20">
-            <BookOpen className="w-3 h-3 text-[var(--nxt-mint-strong)]" />
-            Masterclass Seminar
-          </span>
-        );
-      default:
-        return null;
-    }
-  };
+  const totalResources = resources.length + recommendedResources.length;
   const isValidationStep =
     step.name.toLowerCase().includes('validation') ||
     (step.stage_tag && step.stage_tag.toLowerCase().includes('validation')) ||
     hospitalConnections.length > 0;
-  const renderResourceCard = (res: Resource) => {
-    const isHospital = res.type === 'hospital_connection';
-    return (
-      <div
-        key={res.id}
-        id={`resource-item-${res.id}`}
-        className={`p-4 rounded-xl border transition-all ${
-          res.assigned_user_id
-            ? 'bg-[var(--nxt-mint)]/20 border-[var(--nxt-mint-strong)]/40 hover:border-[var(--nxt-mint-strong)]/60'
-            : isHospital
-            ? 'bg-[var(--nxt-lavender)]/30 border-[var(--nxt-lavender-strong)]/30 hover:border-[var(--nxt-lavender-strong)]/50'
-            : 'bg-[var(--nxt-surface)] border-[var(--nxt-line)] hover:border-[var(--nxt-mint-strong)]/30'
-        }`}
-      >
-        <div className="flex items-start justify-between gap-2 mb-2">
-          <div className="flex-1">
-            <div className="mb-1 flex items-center gap-1.5 flex-wrap">
-              {getResourceTypeBadge(res.type)}
-              {res.assigned_user_id && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-[var(--nxt-mint-strong)] text-white">
-                  <Sparkles className="w-3 h-3" />
-                  Recommended for You
-                </span>
-              )}
-            </div>
-            <h5 className="text-sm font-bold text-[var(--nxt-ink)] leading-snug">
-              {res.title}
-            </h5>
-          </div>
-        </div>
-        <p className="text-xs text-[var(--nxt-ink-soft)] leading-relaxed mb-3">
-          {res.description}
-        </p>
-        {isHospital && (
-          <div className="bg-[var(--nxt-surface)] rounded-xl p-3 border border-[var(--nxt-lavender-strong)]/20 space-y-1.5 mb-3 text-xs">
-            {res.hospital_name && (
-              <div className="flex items-center gap-2 text-[var(--nxt-ink)] font-semibold">
-                <Building className="w-3.5 h-3.5 text-[var(--nxt-lavender-strong)]" />
-                <span>{res.hospital_name}</span>
-              </div>
-            )}
-            {res.clinical_department && (
-              <p className="text-[var(--nxt-ink-soft)] text-[11px]">
-                <strong>Department:</strong> {res.clinical_department}
-              </p>
-            )}
-            {res.contact_person && (
-              <div className="flex items-center gap-1.5 text-[var(--nxt-ink-soft)] text-[11px]">
-                <Users className="w-3 h-3 text-[var(--nxt-ink-soft)]" />
-                <span>Clinical Lead: {res.contact_person}</span>
-              </div>
-            )}
-            {res.pilot_status && (
-              <div className="inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded bg-[var(--nxt-mint)] text-[var(--nxt-mint-strong)] border border-[var(--nxt-mint-strong)]/20">
-                Status: {res.pilot_status}
-              </div>
-            )}
-          </div>
-        )}
-        {!isHospital && (res.date || res.host_or_speaker) && (
-          <div className="flex flex-wrap items-center gap-3 text-xs text-[var(--nxt-ink-soft)] mb-3">
-            {res.date && (
-              <div className="flex items-center gap-1">
-                <Calendar className="w-3.5 h-3.5 text-[var(--nxt-ink-soft)]" />
-                <span>{res.date}</span>
-              </div>
-            )}
-            {res.host_or_speaker && (
-              <div className="flex items-center gap-1">
-                <Users className="w-3.5 h-3.5 text-[var(--nxt-ink-soft)]" />
-                <span>Host: {res.host_or_speaker}</span>
-              </div>
-            )}
-          </div>
-        )}
-        <div className="pt-2 border-t border-[var(--nxt-line)] flex items-center justify-between">
-          {isHospital ? (
-            <div className="flex items-center gap-2">
-              <button
-                id={`btn-connect-hospital-${res.id}`}
-                onClick={() => handleRequestIntro(res.id)}
-                className="px-3 py-1.5 bg-[var(--nxt-lavender-strong)] hover:bg-[var(--nxt-lavender-deep)] text-white rounded-full text-xs font-semibold shadow-sm transition-colors flex items-center gap-1.5"
-              >
-                <Mail className="w-3.5 h-3.5" />
-                <span>Request Pilot Introduction</span>
-              </button>
-              {requestedIntroId === res.id && (
-                <span className="text-[11px] text-[var(--nxt-mint-strong)] font-semibold flex items-center gap-1">
-                  <Check className="w-3 h-3" /> Intro packet sent to {res.contact_person || 'Clinical Liaison'}!
-                </span>
-              )}
-            </div>
-          ) : res.link ? (
-            <a
-              href={res.link}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--nxt-mint-strong)] hover:text-[var(--nxt-mint-deep)] hover:underline"
-            >
-              <span>Access Resource / Register</span>
-              <ExternalLink className="w-3 h-3" />
-            </a>
-          ) : (
-            <span className="text-[11px] text-[var(--nxt-ink-soft)]">Included in Founder Membership</span>
-          )}
-        </div>
-      </div>
-    );
-  };
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -317,79 +161,25 @@ export const StepDetailModal: React.FC<StepDetailModalProps> = ({
               </p>
             </div>
           )}
-          {recommendedResources.length > 0 && (
-            <div>
-              <h4 className="text-xs font-bold text-[var(--nxt-mint-deep)] uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5" />
-                Recommended for You ({recommendedResources.length})
-              </h4>
-              <div className="space-y-3">
-                {recommendedResources.map(renderResourceCard)}
+          <button
+            onClick={() => onViewResources(step.id)}
+            className="w-full flex items-center justify-between gap-3 bg-[var(--nxt-bg-soft)] hover:bg-[var(--nxt-line)]/40 rounded-2xl p-4 border border-[var(--nxt-line)] transition-colors text-left"
+          >
+            <div className="flex items-center gap-3">
+              <span className="p-2 rounded-xl bg-[var(--nxt-mint)] text-[var(--nxt-mint-strong)]">
+                <Sparkles className="w-4 h-4" />
+              </span>
+              <div>
+                <p className="text-sm font-bold text-[var(--nxt-ink)]">
+                  {totalResources} resource{totalResources === 1 ? '' : 's'} for this step
+                </p>
+                <p className="text-[11px] text-[var(--nxt-ink-soft)]">
+                  Sessions, webinars, and hospital connections{recommendedResources.length > 0 ? ' — including ones recommended for you' : ''}
+                </p>
               </div>
             </div>
-          )}
-          <div>
-            <div className="flex items-center justify-between gap-2 mb-3">
-              <h4 className="text-xs font-bold text-[var(--nxt-ink)] uppercase tracking-wider">
-                Common Resources ({resources.length})
-              </h4>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => setActiveTypeFilter('all')}
-                  className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
-                    activeTypeFilter === 'all'
-                      ? 'bg-[var(--nxt-ink-fixed)] text-white'
-                      : 'bg-[var(--nxt-bg-soft)] text-[var(--nxt-ink-soft)] hover:bg-[var(--nxt-line)]'
-                  }`}
-                >
-                  All
-                </button>
-                {hospitalConnections.length > 0 && (
-                  <button
-                    onClick={() => setActiveTypeFilter('hospital')}
-                    className={`px-2.5 py-1 rounded text-xs font-medium transition-colors flex items-center gap-1 ${
-                      activeTypeFilter === 'hospital'
-                        ? 'bg-[var(--nxt-lavender-strong)] text-white'
-                        : 'bg-[var(--nxt-lavender)] text-[var(--nxt-lavender-strong)] hover:bg-[var(--nxt-lavender)]/70'
-                    }`}
-                  >
-                    <Hospital className="w-3 h-3" />
-                    <span>Hospitals ({hospitalConnections.length})</span>
-                  </button>
-                )}
-                <button
-                  onClick={() => setActiveTypeFilter('session')}
-                  className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
-                    activeTypeFilter === 'session'
-                      ? 'bg-[var(--nxt-sky-deep)] text-white'
-                      : 'bg-[var(--nxt-sky)] text-[var(--nxt-sky-deep)] hover:bg-[var(--nxt-sky)]/70'
-                  }`}
-                >
-                  Sessions
-                </button>
-                <button
-                  onClick={() => setActiveTypeFilter('webinar_seminar')}
-                  className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
-                    activeTypeFilter === 'webinar_seminar'
-                      ? 'bg-[var(--nxt-peach-deep)] text-white'
-                      : 'bg-[var(--nxt-peach)] text-[var(--nxt-peach-deep)] hover:bg-[var(--nxt-peach)]/70'
-                  }`}
-                >
-                  Webinars
-                </button>
-              </div>
-            </div>
-            {filteredResources.length === 0 ? (
-              <div className="p-8 text-center bg-[var(--nxt-bg-soft)] rounded-2xl border border-dashed border-[var(--nxt-line)]">
-                <p className="text-xs font-semibold text-[var(--nxt-ink-soft)]">No resources assigned to this filter yet.</p>
-                <p className="text-[11px] text-[var(--nxt-ink-soft)] mt-0.5">Admin can add expert sessions, seminars, or hospital connections in the Admin Panel.</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {filteredResources.map(renderResourceCard)}
-              </div>
-            )}
-          </div>
+            <ArrowRight className="w-4 h-4 text-[var(--nxt-mint-strong)] shrink-0" />
+          </button>
           {problemId && category && (
             <div>
               <h4 className="text-xs font-bold text-[var(--nxt-ink)] uppercase tracking-wider mb-3 flex items-center gap-1.5">

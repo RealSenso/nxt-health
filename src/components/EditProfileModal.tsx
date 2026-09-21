@@ -1,8 +1,15 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, UserRound, Mail, Lock, AlertCircle, Check } from 'lucide-react';
-import { User } from '../types';
+import { X, UserRound, Mail, Lock, AlertCircle, Check, MapPin } from 'lucide-react';
+import { User, Gender } from '../types';
 import { store } from '../services/store';
+
+const GENDER_OPTIONS: { value: Gender; label: string }[] = [
+  { value: 'female', label: 'Female' },
+  { value: 'male', label: 'Male' },
+  { value: 'other', label: 'Other' },
+  { value: 'prefer_not_to_say', label: 'Prefer not to say' },
+];
 
 interface EditProfileModalProps {
   isOpen: boolean;
@@ -13,6 +20,8 @@ interface EditProfileModalProps {
 export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose, currentUser }) => {
   const [name, setName] = useState(currentUser.name);
   const [email, setEmail] = useState(currentUser.email);
+  const [location, setLocation] = useState(currentUser.location || '');
+  const [gender, setGender] = useState<Gender | ''>(currentUser.gender || '');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -26,6 +35,8 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
     const result = store.updateProfile(currentUser.id, {
       name,
       email,
+      location,
+      ...(gender ? { gender } : {}),
       ...(password ? { password } : {}),
     });
     if (result.error) {
@@ -99,6 +110,35 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-9 pr-3 py-2.5 text-sm bg-[var(--nxt-bg-soft)] border border-[var(--nxt-line)] rounded-2xl text-[var(--nxt-ink)] focus:ring-2 focus:ring-[var(--nxt-mint-strong)] focus:outline-hidden focus:bg-[var(--nxt-surface)] transition-colors"
                 />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-[var(--nxt-ink-soft)] mb-1">Location</label>
+                <div className="relative">
+                  <MapPin className="w-4 h-4 text-[var(--nxt-ink-soft)] absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    id="input-profile-location"
+                    type="text"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    placeholder="City, State"
+                    className="w-full pl-9 pr-3 py-2.5 text-sm bg-[var(--nxt-bg-soft)] border border-[var(--nxt-line)] rounded-2xl text-[var(--nxt-ink)] focus:ring-2 focus:ring-[var(--nxt-mint-strong)] focus:outline-hidden focus:bg-[var(--nxt-surface)] transition-colors"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-[var(--nxt-ink-soft)] mb-1">Gender</label>
+                <select
+                  id="input-profile-gender"
+                  value={gender}
+                  onChange={(e) => setGender(e.target.value as Gender)}
+                  className="w-full px-3 py-2.5 text-sm bg-[var(--nxt-bg-soft)] border border-[var(--nxt-line)] rounded-2xl text-[var(--nxt-ink)] focus:ring-2 focus:ring-[var(--nxt-mint-strong)] focus:outline-hidden focus:bg-[var(--nxt-surface)] transition-colors"
+                >
+                  <option value="">Prefer not to say</option>
+                  {GENDER_OPTIONS.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
+                </select>
               </div>
             </div>
 

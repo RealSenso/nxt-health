@@ -2,8 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Stethoscope, DollarSign, ListTodo, Shield,
-  CheckCircle2, Sparkles, MessageSquare, Check, ChevronDown, Lock, FileQuestion, LogOut, LogIn, Users2, UserCog,
-  LayoutDashboard
+  CheckCircle2, Sparkles, Lock, FileQuestion, LogOut, LogIn, Users2, UserCog,
+  LayoutDashboard, BookMarked
 } from 'lucide-react';
 import { User } from '../types';
 import { store } from '../services/store';
@@ -16,20 +16,20 @@ interface NavbarProps {
   currentUser: User | null;
   platformName: string;
   onOpenMembershipModal: () => void;
-  onOpenSlackModal: () => void;
   onOpenTeamModal: () => void;
   onOpenEditProfile: () => void;
   onLoginClick: () => void;
   onLogout: () => void;
 }
 
-type Mode = { id: string; label: string; icon: React.ElementType; locked?: boolean };
+type Mode = { id: string; label: string; icon: React.ElementType; locked?: boolean; preview?: boolean };
 
 const DASHBOARD_MODE: Mode = { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard };
 const BASE_MODES: Mode[] = [
   { id: 'problems', label: 'Problem Statements', icon: FileQuestion },
+  { id: 'tasks', label: 'Roadmaps', icon: ListTodo, locked: true, preview: true },
+  { id: 'resources', label: 'Resources', icon: BookMarked, locked: true, preview: true },
   { id: 'funds', label: 'Funds & Grants', icon: DollarSign, locked: true },
-  { id: 'tasks', label: 'Task Roadmaps', icon: ListTodo, locked: true },
 ];
 const ADMIN_MODE: Mode = { id: 'admin', label: 'Admin Panel', icon: Shield };
 
@@ -39,22 +39,16 @@ export const Navbar: React.FC<NavbarProps> = ({
   currentUser,
   platformName,
   onOpenMembershipModal,
-  onOpenSlackModal,
   onOpenTeamModal,
   onOpenEditProfile,
   onLoginClick,
   onLogout,
 }) => {
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [showModeMenu, setShowModeMenu] = useState(false);
-  const modeMenuRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (modeMenuRef.current && !modeMenuRef.current.contains(e.target as Node)) {
-        setShowModeMenu(false);
-      }
       if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
         setShowUserMenu(false);
       }
@@ -66,17 +60,14 @@ export const Navbar: React.FC<NavbarProps> = ({
   const MODES = currentUser
     ? [DASHBOARD_MODE, ...BASE_MODES, ...(store.isAdmin(currentUser) ? [ADMIN_MODE] : [])]
     : BASE_MODES;
-  const currentMode = MODES.find(m => m.id === currentTab) || MODES[0];
 
-  const handleSelectMode = (modeId: string, locked?: boolean) => {
-    setShowModeMenu(false);
-    if (locked && !currentUser) {
-      onLoginClick();
-    } else if (locked && !currentUser.is_member) {
-      onOpenMembershipModal();
-    } else {
-      setCurrentTab(modeId);
+  const handleSelectMode = (mode: Mode) => {
+    if (mode.locked && !mode.preview) {
+      if (!currentUser) onLoginClick();
+      else onOpenMembershipModal();
+      return;
     }
+    setCurrentTab(mode.id);
   };
 
   const roleTone = !currentUser
@@ -89,91 +80,62 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   return (
     <header className="sticky top-0 z-40 bg-[var(--nxt-bg)]/90 backdrop-blur-md border-b border-[var(--nxt-line)]">
-      <div className={`h-1 w-full ${roleTone.accent} transition-colors`} />
+      <div className={`h-0.5 w-full ${roleTone.accent} transition-colors`} />
 
       <div className="w-full px-3 sm:px-5 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          <div className="relative" ref={modeMenuRef}>
-            <motion.button
-              id="btn-logo-mode-switcher"
-              onClick={() => setShowModeMenu(!showModeMenu)}
-              className="flex items-center gap-2.5 cursor-pointer group"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+        <div className="flex items-center justify-between h-16 gap-4">
+          <div className="flex items-center gap-6 min-w-0">
+            <button
+              id="btn-logo-home"
+              onClick={() => setCurrentTab(currentUser ? 'dashboard' : 'problems')}
+              className="flex items-center gap-2.5 shrink-0"
             >
-              <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-colors ${roleTone.logoBg} ${roleTone.logoText}`}>
-                <Stethoscope className="w-5 h-5" />
+              <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${roleTone.logoBg} ${roleTone.logoText}`}>
+                <Stethoscope className="w-4.5 h-4.5" />
               </div>
-              <div className="text-left">
-                <div className="flex items-center gap-1.5">
-                  <span className="font-display font-black text-base sm:text-lg text-[var(--nxt-ink)] tracking-tighter">
-                    {platformName}
-                  </span>
-                  <ChevronDown className={`w-3.5 h-3.5 text-[var(--nxt-ink-soft)] transition-transform ${showModeMenu ? 'rotate-180' : ''}`} />
-                </div>
-                <p className="text-[11px] text-[var(--nxt-mint-strong)] font-semibold flex items-center gap-1">
-                  <currentMode.icon className="w-3 h-3" />
-                  {currentMode.label}
-                </p>
-              </div>
-            </motion.button>
+              <span className="hidden sm:inline font-display font-black text-base text-[var(--nxt-ink)] tracking-tighter">
+                {platformName}
+              </span>
+            </button>
 
-            <AnimatePresence>
-              {showModeMenu && (
-                <motion.div
-                  initial={{ opacity: 0, y: -8, scale: 0.97 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -8, scale: 0.97 }}
-                  transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
-                  className="absolute left-0 mt-2 w-72 bg-[var(--nxt-surface)] rounded-2xl shadow-lg border border-[var(--nxt-line)] py-2 z-50"
-                >
-                  <p className="px-3 pt-1 pb-2 text-[11px] font-bold uppercase tracking-widest text-[var(--nxt-ink-soft)]">
-                    Switch Mode
-                  </p>
-                  {MODES.map(mode => {
-                    const isLocked = mode.locked && !(currentUser && currentUser.is_member);
-                    const isActive = currentTab === mode.id;
-                    return (
-                      <button
-                        key={mode.id}
-                        id={`mode-option-${mode.id}`}
-                        onClick={() => handleSelectMode(mode.id, mode.locked)}
-                        className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm transition-colors ${
-                          isActive
-                            ? 'bg-[var(--nxt-mint)]/50 text-[var(--nxt-mint-deep)] font-bold'
-                            : 'text-[var(--nxt-ink-soft)] hover:bg-[var(--nxt-bg-soft)] hover:text-[var(--nxt-ink)]'
-                        }`}
-                      >
-                        <mode.icon className="w-4 h-4 shrink-0" />
-                        <span className="flex-1 text-left">{mode.label}</span>
-                        {isLocked && <Lock className="w-3.5 h-3.5 text-[var(--nxt-peach-deep)]" />}
-                        {isActive && <Check className="w-3.5 h-3.5 text-[var(--nxt-mint-strong)]" />}
-                      </button>
-                    );
-                  })}
-                </motion.div>
-              )}
-            </AnimatePresence>
+            <nav className="flex items-center gap-1 overflow-x-auto no-scrollbar min-w-0">
+              {MODES.map(mode => {
+                const isLocked = mode.locked && !mode.preview && !(currentUser && currentUser.is_member);
+                const isPreviewOnly = mode.preview && !(currentUser && currentUser.is_member);
+                const isActive = currentTab === mode.id;
+                return (
+                  <button
+                    key={mode.id}
+                    id={`nav-tab-${mode.id}`}
+                    onClick={() => handleSelectMode(mode)}
+                    title={mode.label}
+                    className={`relative shrink-0 flex items-center gap-1.5 px-2.5 lg:px-3 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-colors ${
+                      isActive
+                        ? 'bg-[var(--nxt-mint)] text-[var(--nxt-mint-deep)]'
+                        : 'text-[var(--nxt-ink-soft)] hover:text-[var(--nxt-ink)] hover:bg-[var(--nxt-bg-soft)]'
+                    }`}
+                  >
+                    <mode.icon className="w-3.5 h-3.5" />
+                    <span className="hidden lg:inline">{mode.label}</span>
+                    {isLocked && <Lock className="w-3 h-3 opacity-60" />}
+                    {isPreviewOnly && !isLocked && (
+                      <span className="hidden lg:inline text-[9px] font-bold uppercase tracking-wide text-[var(--nxt-peach-deep)]">Preview</span>
+                    )}
+                  </button>
+                );
+              })}
+            </nav>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 shrink-0">
             <ThemeToggle />
-            <button
-              id="btn-slack-invite"
-              onClick={onOpenSlackModal}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[var(--nxt-line)] text-[var(--nxt-ink-soft)] text-xs font-semibold bg-[var(--nxt-surface)] hover:bg-[var(--nxt-bg-soft)] transition-colors shadow-sm"
-            >
-              <MessageSquare className="w-3.5 h-3.5 text-[#E01E5A]" />
-              <span className="hidden sm:inline">Join Founder Slack</span>
-              <span className="sm:hidden">Slack</span>
-            </button>
 
             {!currentUser ? (
               <motion.button
                 id="btn-navbar-login"
                 onClick={onLoginClick}
-                whileHover={{ scale: 1.03, y: -1 }}
-                whileTap={{ scale: 0.97 }}
+                whileHover={{ y: -1 }}
+                whileTap={{ scale: 0.98 }}
                 className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[var(--nxt-mint-strong)] hover:bg-[var(--nxt-mint-deep)] text-white text-xs font-semibold shadow-sm transition-colors"
               >
                 <LogIn className="w-3.5 h-3.5" />
@@ -181,28 +143,6 @@ export const Navbar: React.FC<NavbarProps> = ({
               </motion.button>
             ) : (
               <>
-                {currentUser.is_member ? (
-                  <div
-                    onClick={onOpenMembershipModal}
-                    className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--nxt-mint)]/60 border border-[var(--nxt-mint-strong)]/30 text-[var(--nxt-mint-strong)] text-xs font-semibold cursor-pointer hover:bg-[var(--nxt-mint)]"
-                    title="Active Membership. Click to view membership details"
-                  >
-                    <CheckCircle2 className="w-3.5 h-3.5 text-[var(--nxt-mint-strong)]" />
-                    <span>Member</span>
-                  </div>
-                ) : (
-                  <motion.button
-                    id="btn-get-membership"
-                    onClick={onOpenMembershipModal}
-                    whileHover={{ scale: 1.03, y: -1 }}
-                    whileTap={{ scale: 0.97 }}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-[var(--nxt-mint-strong)] hover:bg-[var(--nxt-mint-deep)] text-white text-xs font-semibold shadow-sm transition-colors"
-                  >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>Get Membership</span>
-                  </motion.button>
-                )}
-
                 <NotificationsBell currentUser={currentUser} />
 
                 <div className="relative" ref={userMenuRef}>
@@ -229,10 +169,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <AnimatePresence>
                     {showUserMenu && (
                       <motion.div
-                        initial={{ opacity: 0, y: -8, scale: 0.97 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -8, scale: 0.97 }}
-                        transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
+                        initial={{ opacity: 0, y: -6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -6 }}
+                        transition={{ duration: 0.14 }}
                         className="absolute right-0 mt-2 w-64 bg-[var(--nxt-surface)] rounded-2xl shadow-lg border border-[var(--nxt-line)] py-2 z-50"
                       >
                         <div className="px-3 py-2 border-b border-[var(--nxt-line)]">
@@ -244,6 +184,22 @@ export const Navbar: React.FC<NavbarProps> = ({
                         </div>
 
                         <div className="px-3 py-2 space-y-1">
+                          <button
+                            onClick={() => { setShowUserMenu(false); onOpenMembershipModal(); }}
+                            className="w-full text-left px-2.5 py-1.5 rounded-full text-xs text-[var(--nxt-ink-soft)] hover:bg-[var(--nxt-bg-soft)] font-medium flex items-center justify-between"
+                          >
+                            <span className="flex items-center gap-1.5">
+                              {currentUser.is_member
+                                ? <CheckCircle2 className="w-3.5 h-3.5 text-[var(--nxt-mint-strong)]" />
+                                : <Sparkles className="w-3.5 h-3.5" />}
+                              {currentUser.is_member ? 'Membership' : 'Get Membership'}
+                            </span>
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+                              currentUser.is_member ? 'bg-[var(--nxt-mint)] text-[var(--nxt-mint-strong)]' : 'bg-[var(--nxt-bg-soft)] text-[var(--nxt-ink-soft)]'
+                            }`}>
+                              {currentUser.is_member ? 'Active' : 'Inactive'}
+                            </span>
+                          </button>
                           <button
                             onClick={() => { setShowUserMenu(false); onOpenEditProfile(); }}
                             className="w-full text-left px-2.5 py-1.5 rounded-full text-xs text-[var(--nxt-ink-soft)] hover:bg-[var(--nxt-bg-soft)] font-medium flex items-center gap-1.5"
