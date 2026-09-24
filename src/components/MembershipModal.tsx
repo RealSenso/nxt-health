@@ -77,7 +77,7 @@ export const MembershipModal: React.FC<MembershipModalProps> = ({
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-[var(--nxt-ink)]">Apply for Non-Dilutive Clinical Problem Grants</p>
-                  <p className="text-[11px] text-[var(--nxt-ink-soft)]">Directly pitch solutions to funded clinical unmet needs ($100k-$500k allocations).</p>
+                  <p className="text-xs text-[var(--nxt-ink-soft)]">Directly pitch solutions to funded clinical unmet needs ($100k-$500k allocations).</p>
                 </div>
               </div>
 
@@ -87,7 +87,7 @@ export const MembershipModal: React.FC<MembershipModalProps> = ({
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-[var(--nxt-ink)]">21 Medical Category Execution Roadmaps</p>
-                  <p className="text-[11px] text-[var(--nxt-ink-soft)]">Custom tailored step-by-step milestones (Market Research → Prototype → Validation → Regulatory FDA/CE → GTM).</p>
+                  <p className="text-xs text-[var(--nxt-ink-soft)]">Custom tailored step-by-step milestones (Market Research → Prototype → Validation → Regulatory FDA/CE → GTM).</p>
                 </div>
               </div>
 
@@ -97,7 +97,7 @@ export const MembershipModal: React.FC<MembershipModalProps> = ({
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-[var(--nxt-ink)]">Direct Hospital Validation Network</p>
-                  <p className="text-[11px] text-[var(--nxt-ink-soft)]">Connect with Johns Hopkins, Mayo Clinic, and Cleveland Clinic pilot programs & trialists.</p>
+                  <p className="text-xs text-[var(--nxt-ink-soft)]">Connect with Johns Hopkins, Mayo Clinic, and Cleveland Clinic pilot programs & trialists.</p>
                 </div>
               </div>
 
@@ -107,7 +107,7 @@ export const MembershipModal: React.FC<MembershipModalProps> = ({
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-[var(--nxt-ink)]">Private Founder & Expert Slack Channel</p>
-                  <p className="text-[11px] text-[var(--nxt-ink-soft)]">Immediate access to MedTech peer founders, regulatory experts, and surgical consultants.</p>
+                  <p className="text-xs text-[var(--nxt-ink-soft)]">Immediate access to MedTech peer founders, regulatory experts, and surgical consultants.</p>
                 </div>
               </div>
             </div>

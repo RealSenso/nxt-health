@@ -16,6 +16,8 @@ import { EditProfileModal } from './components/EditProfileModal';
 import { FounderDashboard } from './components/FounderDashboard';
 import { ResourcesPage } from './components/ResourcesPage';
 import { AppNotification } from './types';
+import { SegmentedTabs } from './components/ui/PageHeader';
+import { ListTodo, BookMarked, Stethoscope } from 'lucide-react';
 
 export default function App() {
   const [tick, setTick] = useState(0);
@@ -60,6 +62,14 @@ export default function App() {
   const [toasts, setToasts] = useState<AppNotification[]>([]);
   const seenNotificationIds = useRef<Set<string> | null>(null);
   const currentUserId = currentUser?.id ?? null;
+  useEffect(() => {
+    if (currentUserId) store.touchActivity(currentUserId);
+  }, [currentUserId]);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0 });
+  }, [currentTab]);
+
   useEffect(() => {
     if (!currentUserId) {
       seenNotificationIds.current = null;
@@ -149,7 +159,16 @@ export default function App() {
         </AnimatePresence>
       </div>
 
-      <main className="flex-1 w-full px-3 sm:px-5 lg:px-8 py-6 sm:py-8">
+      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 pb-28 md:pb-10">
+        {(currentTab === 'tasks' || currentTab === 'resources') && (
+          <div className="mb-5">
+            <SegmentedTabs
+              tabs={[{ id: 'tasks', label: 'Roadmaps', icon: ListTodo }, { id: 'resources', label: 'Resources', icon: BookMarked }]}
+              active={currentTab}
+              onChange={(tab) => { if (tab === 'resources') setResourceStepId(undefined); setCurrentTab(tab as 'tasks' | 'resources'); }}
+            />
+          </div>
+        )}
         <AnimatePresence mode="wait">
           <motion.div
             key={currentTab}
@@ -172,6 +191,7 @@ export default function App() {
                 }}
                 onOpenTeamModal={() => setIsTeamModalOpen(true)}
                 onOpenSlackModal={() => setIsSlackModalOpen(true)}
+                onOpenEditProfile={() => setIsEditProfileModalOpen(true)}
               />
             )}
 
@@ -223,37 +243,28 @@ export default function App() {
         </AnimatePresence>
       </main>
 
-      <footer className="bg-[var(--nxt-ink-fixed)] py-8 mt-16 text-xs text-white/60">
-        <div className="w-full px-3 sm:px-5 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div>
-            <p className="font-display font-bold text-white text-sm tracking-tight">{PLATFORM_NAME}</p>
-            <p className="text-[11px] text-white/50 mt-0.5">
-              End-to-End Medical Entrepreneur Acceleration Platform
-            </p>
+      <footer className="hidden md:block border-t border-[var(--nxt-line)] bg-[var(--nxt-surface)]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <span className="w-9 h-9 rounded-xl bg-[var(--nxt-mint-strong)] text-white flex items-center justify-center">
+              <Stethoscope className="w-4 h-4" />
+            </span>
+            <div>
+              <p className="font-display font-bold text-[var(--nxt-ink)] text-sm">{PLATFORM_NAME}</p>
+              <p className="text-xs text-[var(--nxt-ink-soft)]">From clinical problem to hospital pilot.</p>
+            </div>
           </div>
-
-          <div className="flex items-center gap-4 text-xs">
-            <button
-              onClick={() => setIsSlackModalOpen(true)}
-              className="hover:text-white transition-colors"
-            >
-              Join Founder Slack
+          <div className="flex items-center gap-5 text-sm text-[var(--nxt-ink-soft)]">
+            <button onClick={() => setIsSlackModalOpen(true)} className="hover:text-[var(--nxt-ink)] transition-colors">
+              Founder Slack
             </button>
             {currentUser ? (
-              <>
-                <button
-                  onClick={() => setIsMembershipModalOpen(true)}
-                  className="hover:text-white transition-colors"
-                >
-                  Membership Status: {currentUser.is_member ? 'Active' : 'Inactive'}
-                </button>
-              </>
+              <button onClick={() => setIsMembershipModalOpen(true)} className="hover:text-[var(--nxt-ink)] transition-colors">
+                Membership: <span className="font-semibold text-[var(--nxt-ink)]">{currentUser.is_member ? 'Active' : 'Inactive'}</span>
+              </button>
             ) : (
-              <button
-                onClick={() => setPublicView('login')}
-                className="text-[var(--nxt-mint)] hover:opacity-80 font-semibold transition-opacity"
-              >
-                Log In / Register
+              <button onClick={() => setPublicView('login')} className="font-semibold text-[var(--nxt-mint-strong)] hover:underline">
+                Log in / Register
               </button>
             )}
           </div>

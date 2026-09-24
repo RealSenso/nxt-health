@@ -2,13 +2,15 @@ import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import {
   DollarSign, CheckCircle, AlertCircle, ArrowRight, ArrowLeft, Search,
-  Sparkles, Stethoscope, Lock, Building2, Plus, ShieldCheck, Users, Zap, Clock, Bookmark,
-  Calendar, ExternalLink, Hospital, Video, UserRound
+  Sparkles, Stethoscope, Lock, Building2, Plus, ShieldCheck, Users, Clock, Bookmark,
+  Calendar, ExternalLink, Hospital, Video, UserRound, FileSearch
 } from 'lucide-react';
 import { ProblemStatement, User, FundingApplication, Resource } from '../types';
 import { store } from '../services/store';
 import { Reveal, RevealGroup, RevealItem, PillButton } from './ui/Reveal';
 import { FundingApplicationModal } from './FundingApplicationModal';
+import { PageHeader } from './ui/PageHeader';
+import { departmentIcon } from '../data/icons';
 
 interface ProblemStatementsListProps {
   currentUser: User | null;
@@ -113,10 +115,10 @@ export const ProblemStatementsList: React.FC<ProblemStatementsListProps> = ({
           <span>Back to Problem Statements</span>
         </button>
 
-        <Reveal className="nxt-grid-lines nxt-dot-grid bg-[var(--nxt-bg-soft)] border border-[var(--nxt-line)] rounded-3xl p-6 sm:p-10 text-[var(--nxt-ink)] shadow-sm relative overflow-hidden">
+        <Reveal className="nxt-hero-glow border border-[var(--nxt-line)] rounded-3xl p-6 sm:p-10 text-[var(--nxt-ink)] shadow-sm relative overflow-hidden">
           <div className="relative z-10 max-w-3xl">
             <div className="flex items-center gap-2 mb-4 flex-wrap">
-              <span className="text-[11px] font-semibold text-[var(--nxt-mint-deep)] bg-[var(--nxt-mint)] px-2.5 py-0.5 rounded-full">
+              <span className="text-xs font-semibold text-[var(--nxt-mint-deep)] bg-[var(--nxt-mint)] px-2.5 py-0.5 rounded-full">
                 {problem.department}
               </span>
               {problem.funded ? (
@@ -242,7 +244,7 @@ export const ProblemStatementsList: React.FC<ProblemStatementsListProps> = ({
                         <p className="text-xs font-bold text-[var(--nxt-ink)]">{resource.title}</p>
                         <p className="text-xs text-[var(--nxt-ink-soft)] mt-1 leading-relaxed">{resource.description}</p>
                         {(resource.hospital_name || resource.host_or_speaker) && (
-                          <p className="text-[11px] text-[var(--nxt-ink-soft)] mt-1.5">
+                          <p className="text-xs text-[var(--nxt-ink-soft)] mt-1.5">
                             {resource.hospital_name || resource.host_or_speaker}
                           </p>
                         )}
@@ -251,7 +253,7 @@ export const ProblemStatementsList: React.FC<ProblemStatementsListProps> = ({
                             href={resource.link}
                             target="_blank"
                             rel="noreferrer"
-                            className="inline-flex items-center gap-1 mt-2 text-[11px] font-semibold text-[var(--nxt-blue-strong)] hover:underline"
+                            className="inline-flex items-center gap-1 mt-2 text-xs font-semibold text-[var(--nxt-blue-strong)] hover:underline"
                           >
                             <span>Open Link</span>
                             <ExternalLink className="w-3 h-3" />
@@ -281,103 +283,51 @@ export const ProblemStatementsList: React.FC<ProblemStatementsListProps> = ({
 
   return (
     <div className="space-y-6">
-      <Reveal className="nxt-grid-lines nxt-dot-grid bg-[var(--nxt-bg-soft)] border border-[var(--nxt-line)] rounded-3xl pt-6 sm:pt-10 text-[var(--nxt-ink)] shadow-sm relative overflow-hidden">
-        <div className="relative z-10 max-w-3xl px-6 sm:px-10">
-          <Reveal delay={0.05} className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--nxt-mint)] text-[var(--nxt-mint-deep)] border border-[var(--nxt-mint-strong)]/20 text-xs font-semibold mb-4">
-            <Stethoscope className="w-3.5 h-3.5" />
-            <span>Clinical Unmet Needs & Translational Pipeline</span>
-          </Reveal>
-          <Reveal delay={0.1} as="h1" className="font-hero text-4xl sm:text-6xl leading-[0.95] text-[var(--nxt-ink)] mb-4">
-            Medicine has a lot of problems.
-          </Reveal>
-          <Reveal delay={0.15} as="p" className="text-sm sm:text-base text-[var(--nxt-ink-soft)] leading-relaxed mb-5 max-w-xl">
-            Verified clinical pain points authored by clinical department heads, hospital surgeons, and academic research chairs.
-            Apply for dedicated grant funding or launch your healthcare startup along structured milestones.
-          </Reveal>
-
-          <Reveal delay={0.2} className="flex flex-wrap items-center gap-3">
+      <PageHeader
+        icon={FileSearch}
+        eyebrow="Clinical unmet needs"
+        title="Problems hospitals want solved"
+        subtitle="Verified pain points written by department heads, surgeons, and research chairs. Save the ones that fit you, apply for grant funding, or start a roadmap."
+        illustration="problems"
+        actions={
+          <>
             {!currentUser ? (
-              <PillButton
-                tone="mint"
-                onClick={onOpenLogin}
-                className="px-4 py-2.5 text-xs sm:text-sm shadow-lg shadow-[var(--nxt-mint-strong)]/20"
-                id="btn-banner-login"
-              >
-                <Sparkles className="w-4 h-4" />
-                <span>Log In / Register to Apply for Grants</span>
+              <PillButton tone="mint" onClick={onOpenLogin} className="px-5 py-2.5 text-sm" id="btn-banner-login">
+                <Sparkles className="w-4 h-4" /> Log in to apply for grants
               </PillButton>
             ) : !currentUser.is_member ? (
-              <PillButton
-                tone="mint"
-                onClick={onOpenMembershipModal}
-                className="px-4 py-2.5 text-xs sm:text-sm shadow-lg shadow-[var(--nxt-mint-strong)]/20"
-                id="btn-banner-join"
-              >
-                <Sparkles className="w-4 h-4" />
-                <span>Join as Member to Apply for Grants</span>
+              <PillButton tone="mint" onClick={onOpenMembershipModal} className="px-5 py-2.5 text-sm" id="btn-banner-join">
+                <Sparkles className="w-4 h-4" /> Become a member to apply
               </PillButton>
             ) : (
-              <PillButton
-                tone="blue"
-                onClick={() => onNavigateToRoadmap()}
-                className="px-4 py-2.5 text-xs sm:text-sm shadow-lg shadow-[var(--nxt-blue-strong)]/20"
-                id="btn-banner-roadmap"
-              >
-                <span>Explore Task Roadmaps</span>
-                <ArrowRight className="w-4 h-4" />
+              <PillButton tone="mint" onClick={() => onNavigateToRoadmap()} className="px-5 py-2.5 text-sm" id="btn-banner-roadmap">
+                Go to my roadmaps <ArrowRight className="w-4 h-4" />
               </PillButton>
             )}
-
             {currentUser?.role === 'admin' && (
-              <button
-                onClick={onOpenAdminPanel}
-                className="px-3 py-2 bg-[var(--nxt-surface)] hover:bg-[var(--nxt-bg)] text-[var(--nxt-ink)] text-xs font-medium rounded-full border border-[var(--nxt-line)] transition-colors flex items-center gap-1.5"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Add Problem (Admin)</span>
-              </button>
+              <PillButton tone="ghost" onClick={onOpenAdminPanel} className="px-4 py-2.5 text-sm">
+                <Plus className="w-4 h-4" /> Add problem
+              </PillButton>
             )}
-          </Reveal>
-        </div>
-
-        <div className="absolute right-0 top-0 bottom-0 w-1/3 opacity-[0.15] pointer-events-none flex items-center justify-center">
-          <Building2 className="w-80 h-80 text-[var(--nxt-blue-strong)] -mr-16" />
-        </div>
-
-        <div className="relative z-10 mt-8 border-t border-[var(--nxt-line)] overflow-hidden py-3">
-          <div className="nxt-marquee-track">
-            {Array.from({ length: 2 }).map((_, i) => (
-              <div key={i} className="flex items-center shrink-0">
-                {['Clinical Unmet Needs', 'Grant-Ready Pipelines', 'Founder-Built Devices', 'Hospital-Validated'].map((word) => (
-                  <span
-                    key={word}
-                    className="font-hero text-xl sm:text-2xl text-[var(--nxt-ink)]/10 px-6 whitespace-nowrap"
-                  >
-                    {word} <span className="text-[var(--nxt-blue-strong)]">•</span>
-                  </span>
-                ))}
-              </div>
-            ))}
-          </div>
-        </div>
-      </Reveal>
-
-      <Reveal className="bg-[var(--nxt-surface)] border border-[var(--nxt-line)] rounded-2xl px-6 sm:px-10 py-5 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-0 sm:divide-x sm:divide-[var(--nxt-line)] text-[var(--nxt-ink)] shadow-sm">
-        {[
-          { icon: ShieldCheck, label: `${problems.length}+ Verified Problem Statements`, tone: 'mint' },
-          { icon: Users, label: `${fundedCount} Funded By Grant Committees`, tone: 'blue' },
-          { icon: Zap, label: `${unfundedCount} Open & Awaiting Founders`, tone: 'mint' },
-        ].map(({ icon: Icon, label, tone }, i) => (
-          <div key={label} className={`flex items-center gap-3 ${i > 0 ? 'sm:pl-6' : ''}`}>
-            <div className={`w-9 h-9 rounded-full border flex items-center justify-center shrink-0 ${
-              tone === 'blue' ? 'border-[var(--nxt-blue-strong)]/30 bg-[var(--nxt-blue)]' : 'border-[var(--nxt-mint-strong)]/30 bg-[var(--nxt-mint)]'
-            }`}>
-              <Icon className={`w-4 h-4 ${tone === 'blue' ? 'text-[var(--nxt-blue-strong)]' : 'text-[var(--nxt-mint-strong)]'}`} />
+          </>
+        }
+      >
+        <div className="grid grid-cols-3 gap-4">
+          {[
+            { icon: ShieldCheck, value: problems.length, label: 'verified problems' },
+            { icon: CheckCircle, value: fundedCount, label: 'with grant funding' },
+            { icon: Users, value: unfundedCount, label: 'open for founders' },
+          ].map(({ icon: Icon, value, label }) => (
+            <div key={label} className="flex items-center gap-3">
+              <Icon className="hidden sm:block w-5 h-5 text-[var(--nxt-mint-strong)] shrink-0" />
+              <p className="text-sm text-[var(--nxt-ink-soft)] leading-tight">
+                <span className="block font-display text-xl font-bold text-[var(--nxt-ink)]">{value}</span>
+                {label}
+              </p>
             </div>
-            <span className="text-xs sm:text-sm font-semibold tracking-tight">{label}</span>
-          </div>
-        ))}
-      </Reveal>
+          ))}
+        </div>
+      </PageHeader>
 
       {!isMember && (
         <Reveal className="bg-[var(--nxt-peach)] border border-[var(--nxt-peach-deep)]/30 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -409,7 +359,7 @@ export const ProblemStatementsList: React.FC<ProblemStatementsListProps> = ({
 
       <Reveal className="bg-[var(--nxt-bg-soft)] border border-[var(--nxt-line)] rounded-2xl p-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
-          <span className="hidden sm:inline text-[10px] font-bold uppercase tracking-widest text-[var(--nxt-ink-soft)] mr-1">Filter</span>
+          <span className="hidden sm:inline text-[11px] font-bold uppercase tracking-widest text-[var(--nxt-ink-soft)] mr-1">Filter</span>
           <button
             id="filter-all"
             onClick={() => setFilter('all')}
@@ -472,7 +422,7 @@ export const ProblemStatementsList: React.FC<ProblemStatementsListProps> = ({
         </div>
       </Reveal>
 
-      <RevealGroup className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6 bg-[var(--nxt-bg-soft)] rounded-3xl p-4 sm:p-6" stagger={0.06}>
+      <RevealGroup className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5" stagger={0.06}>
         {filteredProblems.map((problem, i) => (
           <RevealItem key={problem.id}>
             <motion.div
@@ -483,12 +433,17 @@ export const ProblemStatementsList: React.FC<ProblemStatementsListProps> = ({
             >
               <div
                 onClick={() => setSelectedProblem(problem)}
-                className="bg-[var(--nxt-surface)] rounded-2xl pt-6 pb-7 px-5 sm:px-6 flex flex-col justify-between h-full border border-[var(--nxt-line)] shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                className="bg-[var(--nxt-surface)] rounded-3xl p-6 flex flex-col justify-between h-full border border-[var(--nxt-line)] shadow-sm hover:shadow-md transition-shadow cursor-pointer"
               >
                 <div>
-                  <div className="flex items-start justify-between gap-2 mb-3">
-                    <span className="text-[11px] font-semibold text-[var(--nxt-mint-deep)] bg-[var(--nxt-mint)] px-2.5 py-0.5 rounded-full">
-                      {problem.department}
+                  <div className="flex items-start justify-between gap-2 mb-4">
+                    <span className="flex items-center gap-2.5 min-w-0">
+                      {(() => { const DeptIcon = departmentIcon(problem.department); return (
+                        <span className="w-10 h-10 rounded-2xl bg-[var(--nxt-mint)] text-[var(--nxt-mint-strong)] flex items-center justify-center shrink-0">
+                          <DeptIcon className="w-5 h-5" />
+                        </span>
+                      ); })()}
+                      <span className="text-xs font-semibold text-[var(--nxt-ink-soft)] leading-tight">{problem.department}</span>
                     </span>
 
                     <div className="flex items-center gap-1.5">
@@ -518,11 +473,11 @@ export const ProblemStatementsList: React.FC<ProblemStatementsListProps> = ({
                     </div>
                   </div>
 
-                  <h3 className="font-display text-base font-bold text-[var(--nxt-ink)] leading-snug mb-2 tracking-tight">
+                  <h3 className="font-display text-lg font-bold text-[var(--nxt-ink)] leading-snug mb-2 tracking-tight">
                     {problem.title}
                   </h3>
 
-                  <p className="text-xs text-[var(--nxt-ink-soft)] leading-relaxed line-clamp-4 mb-4">
+                  <p className="text-sm text-[var(--nxt-ink-soft)] leading-relaxed line-clamp-3 mb-4">
                     {problem.description}
                   </p>
                 </div>

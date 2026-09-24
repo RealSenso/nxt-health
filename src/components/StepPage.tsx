@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {
   Check, CheckCircle, Hospital, Sparkles, ArrowRight, ArrowLeft, Paperclip, Upload, Download,
   AlertCircle, Clock, MessageSquareWarning, X, Plus, Trash2, Target, AlertTriangle, Users,
-  NotebookPen, ListChecks, Flag, Lightbulb
+  NotebookPen, ListChecks, Flag, Lightbulb, Star
 } from 'lucide-react';
 import { Step, User, Category, SubmissionFile, StepWorkspace, StepWorkStatus } from '../types';
 import { store } from '../services/store';
@@ -129,12 +129,12 @@ export const StepPage: React.FC<StepPageProps> = ({
                 Step {step.order} of {categorySteps.length} · {category.name}
               </span>
               {step.stage_tag && (
-                <span className="text-[10px] font-semibold bg-[var(--nxt-bg-soft)] text-[var(--nxt-ink-soft)] px-2 py-0.5 rounded-full">
+                <span className="text-[11px] font-semibold bg-[var(--nxt-bg-soft)] text-[var(--nxt-ink-soft)] px-2 py-0.5 rounded-full">
                   {step.stage_tag}
                 </span>
               )}
               {hasHospital && (
-                <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-[var(--nxt-lavender)] text-[var(--nxt-lavender-strong)] px-2 py-0.5 rounded-full">
+                <span className="inline-flex items-center gap-1 text-[11px] font-bold bg-[var(--nxt-lavender)] text-[var(--nxt-lavender-strong)] px-2 py-0.5 rounded-full">
                   <Hospital className="w-3 h-3" /> Hospital Validation Hub
                 </span>
               )}
@@ -182,7 +182,7 @@ export const StepPage: React.FC<StepPageProps> = ({
             <span className="text-sm font-bold text-[var(--nxt-ink)]">
               {daysActive === null ? '—' : `${daysActive} day${daysActive === 1 ? '' : 's'}`}
             </span>
-            <span className="block text-[10px] text-[var(--nxt-ink-soft)]">Typical: {guide.typicalDuration}</span>
+            <span className="block text-[11px] text-[var(--nxt-ink-soft)]">Typical: {guide.typicalDuration}</span>
           </Stat>
           <Stat label="Target date">
             <input
@@ -192,7 +192,7 @@ export const StepPage: React.FC<StepPageProps> = ({
               className="w-full text-xs bg-transparent text-[var(--nxt-ink)] focus:outline-hidden"
             />
             {daysToTarget !== null && !isCompleted && (
-              <span className={`block text-[10px] font-semibold ${daysToTarget < 0 ? 'text-[var(--nxt-peach-deep)]' : 'text-[var(--nxt-ink-soft)]'}`}>
+              <span className={`block text-[11px] font-semibold ${daysToTarget < 0 ? 'text-[var(--nxt-peach-deep)]' : 'text-[var(--nxt-ink-soft)]'}`}>
                 {daysToTarget < 0 ? `${-daysToTarget} days overdue` : `${daysToTarget} days left`}
               </span>
             )}
@@ -201,7 +201,7 @@ export const StepPage: React.FC<StepPageProps> = ({
 
         {displayStatus === 'blocked' && (
           <div className="mt-4 bg-[var(--nxt-peach)] border border-[var(--nxt-peach-deep)]/20 rounded-2xl p-3">
-            <label className="text-[11px] font-bold text-[var(--nxt-peach-deep)] uppercase tracking-wide flex items-center gap-1.5 mb-1.5">
+            <label className="text-xs font-bold text-[var(--nxt-peach-deep)] uppercase tracking-wide flex items-center gap-1.5 mb-1.5">
               <AlertTriangle className="w-3.5 h-3.5" /> What's blocking you?
             </label>
             <input
@@ -292,7 +292,7 @@ export const StepPage: React.FC<StepPageProps> = ({
                   <li key={entry.id} className="relative pl-4 group">
                     <span className="absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full bg-[var(--nxt-mint-strong)]" />
                     <div className="flex items-center justify-between gap-2">
-                      <p className="text-[11px] text-[var(--nxt-ink-soft)]">
+                      <p className="text-xs text-[var(--nxt-ink-soft)]">
                         <span className="font-semibold text-[var(--nxt-ink)]">{entry.author_name}</span> ·{' '}
                         {new Date(entry.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                       </p>
@@ -312,11 +312,13 @@ export const StepPage: React.FC<StepPageProps> = ({
           </Section>
 
           <EvidencePanel step={step} category={category} currentUser={currentUser} problemId={problemId} />
+
+          {isCompleted && <StepRatingPanel stepId={step.id} userId={currentUser.id} />}
         </div>
 
         <aside className="space-y-6">
           <Section icon={Flag} title="Exit criteria">
-            <p className="text-[11px] text-[var(--nxt-ink-soft)] mb-2">You're ready to move on when:</p>
+            <p className="text-xs text-[var(--nxt-ink-soft)] mb-2">You're ready to move on when:</p>
             <BulletList items={guide.exitCriteria} />
           </Section>
 
@@ -327,7 +329,7 @@ export const StepPage: React.FC<StepPageProps> = ({
           <Section icon={Users} title="Who to talk to">
             <div className="flex flex-wrap gap-1.5">
               {guide.whoToTalkTo.map(w => (
-                <span key={w} className="text-[11px] font-medium bg-[var(--nxt-bg-soft)] text-[var(--nxt-ink-soft)] border border-[var(--nxt-line)] px-2.5 py-1 rounded-full">
+                <span key={w} className="text-xs font-medium bg-[var(--nxt-bg-soft)] text-[var(--nxt-ink-soft)] border border-[var(--nxt-line)] px-2.5 py-1 rounded-full">
                   {w}
                 </span>
               ))}
@@ -342,7 +344,7 @@ export const StepPage: React.FC<StepPageProps> = ({
                 {stepResources.slice(0, 4).map(r => (
                   <li key={r.id} className="text-xs">
                     <p className="font-semibold text-[var(--nxt-ink)] leading-snug">{r.title}</p>
-                    <p className="text-[10px] text-[var(--nxt-ink-soft)] capitalize">
+                    <p className="text-[11px] text-[var(--nxt-ink-soft)] capitalize">
                       {r.type.replace('_', ' ')}{recommended.some(x => x.id === r.id) ? ' · Recommended for you' : ''}
                     </p>
                   </li>
@@ -369,9 +371,64 @@ export const StepPage: React.FC<StepPageProps> = ({
   );
 };
 
+const StepRatingPanel: React.FC<{ stepId: string; userId: string }> = ({ stepId, userId }) => {
+  const existing = store.getUserStepRating(userId, stepId);
+  const [score, setScore] = useState<number | null>(existing?.score ?? null);
+  const [comment, setComment] = useState(existing?.comment || '');
+  const [saved, setSaved] = useState(!!existing);
+
+  const handleSave = () => {
+    if (score === null) return;
+    store.rateStep(userId, stepId, score, comment.trim() || undefined);
+    setSaved(true);
+  };
+
+  return (
+    <Section icon={Star} title="Rate this step">
+      <p className="text-sm text-[var(--nxt-ink-soft)] mb-3">
+        How likely are you to recommend this step's guidance to another founder? <span className="whitespace-nowrap">(0 = not at all, 10 = definitely)</span>
+      </p>
+      <div className="grid grid-cols-11 gap-1">
+        {Array.from({ length: 11 }, (_, n) => (
+          <button
+            key={n}
+            onClick={() => { setScore(n); setSaved(false); }}
+            className={`h-10 rounded-xl text-sm font-bold transition-colors ${
+              score === n
+                ? 'bg-[var(--nxt-mint-strong)] text-white'
+                : 'bg-[var(--nxt-bg-soft)] text-[var(--nxt-ink-soft)] hover:bg-[var(--nxt-mint)] hover:text-[var(--nxt-mint-deep)]'
+            }`}
+          >
+            {n}
+          </button>
+        ))}
+      </div>
+      {score !== null && (
+        <div className="mt-3 flex flex-col sm:flex-row gap-2">
+          <input
+            type="text"
+            value={comment}
+            onChange={(e) => { setComment(e.target.value); setSaved(false); }}
+            placeholder="What would have made this step easier? (optional)"
+            className="flex-1 text-sm bg-[var(--nxt-bg-soft)] border border-[var(--nxt-line)] rounded-full px-4 py-2.5 text-[var(--nxt-ink)] focus:outline-hidden focus:ring-2 focus:ring-[var(--nxt-mint-strong)]"
+          />
+          <button
+            id="btn-save-step-rating"
+            onClick={handleSave}
+            disabled={saved}
+            className="px-5 py-2.5 rounded-full bg-[var(--nxt-mint-strong)] hover:bg-[var(--nxt-mint-deep)] disabled:opacity-60 text-white text-sm font-semibold flex items-center justify-center gap-1.5 transition-colors"
+          >
+            {saved ? <><Check className="w-4 h-4" /> Thanks!</> : 'Send feedback'}
+          </button>
+        </div>
+      )}
+    </Section>
+  );
+};
+
 const Stat: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
   <div className="bg-[var(--nxt-bg-soft)] border border-[var(--nxt-line)] rounded-2xl p-3 min-w-0">
-    <p className="text-[10px] font-bold uppercase tracking-wide text-[var(--nxt-ink-soft)] mb-1.5">{label}</p>
+    <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--nxt-ink-soft)] mb-1.5">{label}</p>
     {children}
   </div>
 );
@@ -384,7 +441,7 @@ const Section: React.FC<{ icon: React.ElementType; title: string; aside?: string
       <h2 className="text-xs font-bold text-[var(--nxt-ink)] uppercase tracking-wider flex items-center gap-1.5">
         <Icon className="w-3.5 h-3.5 text-[var(--nxt-mint-strong)]" /> {title}
       </h2>
-      {aside && <span className="text-[11px] font-semibold text-[var(--nxt-ink-soft)]">{aside}</span>}
+      {aside && <span className="text-xs font-semibold text-[var(--nxt-ink-soft)]">{aside}</span>}
     </div>
     {children}
   </Reveal>
@@ -408,7 +465,7 @@ const StepNavButton: React.FC<{ direction: 'prev' | 'next'; step: Step; onClick:
       direction === 'next' ? 'text-right ml-auto' : 'text-left'
     }`}
   >
-    <p className={`text-[10px] font-bold uppercase tracking-wide text-[var(--nxt-ink-soft)] flex items-center gap-1 ${direction === 'next' ? 'justify-end' : ''}`}>
+    <p className={`text-[11px] font-bold uppercase tracking-wide text-[var(--nxt-ink-soft)] flex items-center gap-1 ${direction === 'next' ? 'justify-end' : ''}`}>
       {direction === 'prev' && <ArrowLeft className="w-3 h-3" />}
       {direction === 'prev' ? 'Previous step' : 'Next step'}
       {direction === 'next' && <ArrowRight className="w-3 h-3" />}
@@ -486,7 +543,7 @@ const EvidencePanel: React.FC<{ step: Step; category: Category; currentUser: Use
                   {sub.submitted_by_name}{' '}
                   <span className="text-[var(--nxt-ink-soft)] font-normal">· {new Date(sub.submitted_at).toLocaleDateString('en-US')}</span>
                 </p>
-                <span className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                <span className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold ${
                   sub.status === 'Approved' ? 'bg-[var(--nxt-mint)] text-[var(--nxt-mint-strong)]' : 'bg-[var(--nxt-peach)] text-[var(--nxt-peach-deep)]'
                 }`}>
                   {sub.status === 'Submitted' && <Clock className="w-2.5 h-2.5" />}
@@ -503,7 +560,7 @@ const EvidencePanel: React.FC<{ step: Step; category: Category; currentUser: Use
                       key={i}
                       href={f.dataUrl}
                       download={f.name}
-                      className="inline-flex items-center gap-1 px-2 py-1 bg-[var(--nxt-surface)] border border-[var(--nxt-line)] rounded-lg text-[10px] font-semibold text-[var(--nxt-ink)] hover:border-[var(--nxt-mint-strong)]/40 transition-colors"
+                      className="inline-flex items-center gap-1 px-2 py-1 bg-[var(--nxt-surface)] border border-[var(--nxt-line)] rounded-lg text-[11px] font-semibold text-[var(--nxt-ink)] hover:border-[var(--nxt-mint-strong)]/40 transition-colors"
                     >
                       <Download className="w-2.5 h-2.5" />
                       <span className="truncate max-w-[120px]">{f.name}</span>
@@ -512,7 +569,7 @@ const EvidencePanel: React.FC<{ step: Step; category: Category; currentUser: Use
                 </div>
               )}
               {sub.admin_feedback && sub.status !== 'Submitted' && (
-                <p className={`text-[11px] rounded-lg px-2 py-1 mt-1 ${
+                <p className={`text-xs rounded-lg px-2 py-1 mt-1 ${
                   sub.status === 'Approved' ? 'bg-[var(--nxt-mint)]/40 text-[var(--nxt-mint-deep)]' : 'bg-[var(--nxt-peach)]/50 text-[var(--nxt-peach-deep)]'
                 }`}>
                   "{sub.admin_feedback}"
@@ -534,7 +591,7 @@ const EvidencePanel: React.FC<{ step: Step; category: Category; currentUser: Use
         {pendingFiles.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {pendingFiles.map((f, i) => (
-              <span key={i} className="inline-flex items-center gap-1.5 px-2 py-1 bg-[var(--nxt-mint)]/40 text-[var(--nxt-mint-deep)] rounded-lg text-[10px] font-semibold">
+              <span key={i} className="inline-flex items-center gap-1.5 px-2 py-1 bg-[var(--nxt-mint)]/40 text-[var(--nxt-mint-deep)] rounded-lg text-[11px] font-semibold">
                 {f.name}
                 <button onClick={() => setPendingFiles(prev => prev.filter((_, j) => j !== i))} className="hover:text-[var(--nxt-peach-deep)]">
                   <X className="w-2.5 h-2.5" />
@@ -544,7 +601,7 @@ const EvidencePanel: React.FC<{ step: Step; category: Category; currentUser: Use
           </div>
         )}
         {fileError && (
-          <p className="text-[11px] text-[var(--nxt-peach-deep)] font-semibold flex items-center gap-1">
+          <p className="text-xs text-[var(--nxt-peach-deep)] font-semibold flex items-center gap-1">
             <AlertCircle className="w-3 h-3" /> {fileError}
           </p>
         )}
@@ -562,7 +619,7 @@ const EvidencePanel: React.FC<{ step: Step; category: Category; currentUser: Use
             <Paperclip className="w-3.5 h-3.5" /> Submit for Review
           </button>
           {justSubmitted && (
-            <span className="text-[11px] text-[var(--nxt-mint-strong)] font-semibold flex items-center gap-1">
+            <span className="text-xs text-[var(--nxt-mint-strong)] font-semibold flex items-center gap-1">
               <Check className="w-3 h-3" /> Submitted!
             </span>
           )}

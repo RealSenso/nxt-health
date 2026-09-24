@@ -1,5 +1,15 @@
-@import url('https://fonts.googleapis.com/css2?family=Anton&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sora:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sora:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
+
+/* Readability-first type scale for a 25–45 professional audience: every step is ~1px larger than Tailwind's default */
+@theme {
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: 1.25rem;
+  --text-sm: 0.9375rem;
+  --text-sm--line-height: 1.5rem;
+  --text-base: 1.0625rem;
+  --text-base--line-height: 1.65rem;
+}
 
 :root {
   /* NxT Health — clinical teal, 60/30/10 */
@@ -35,7 +45,6 @@
   --nxt-ink-fixed: #12201D;
 
   --nxt-font-display: 'Sora', 'Plus Jakarta Sans', system-ui, sans-serif;
-  --nxt-font-hero: 'Anton', 'Sora', system-ui, sans-serif;
   --nxt-font-body: 'Plus Jakarta Sans', system-ui, sans-serif;
 
   --nxt-ease: cubic-bezier(0.22, 1, 0.36, 1);
@@ -110,6 +119,7 @@ html {
 }
 
 body {
+  -webkit-font-smoothing: antialiased;
   background: var(--nxt-bg);
   color: var(--nxt-ink);
   font-family: var(--nxt-font-body);
@@ -120,11 +130,29 @@ body {
   font-family: var(--nxt-font-display);
 }
 
-.font-hero {
-  font-family: var(--nxt-font-hero);
-  font-weight: 400;
-  text-transform: uppercase;
-  letter-spacing: -0.01em;
+.nxt-hero-glow {
+  background:
+    radial-gradient(60% 80% at 85% 20%, color-mix(in srgb, var(--nxt-mint-strong) 18%, transparent), transparent 70%),
+    radial-gradient(50% 70% at 10% 90%, color-mix(in srgb, var(--nxt-blue-strong) 14%, transparent), transparent 70%),
+    var(--nxt-surface);
+}
+
+@keyframes nxt-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.nxt-float { animation: nxt-float 6s ease-in-out infinite; }
+.nxt-float-delay { animation: nxt-float 7s ease-in-out 1.2s infinite; }
+
+@keyframes nxt-draw {
+  from { stroke-dashoffset: 400; }
+  to { stroke-dashoffset: 0; }
+}
+.nxt-draw { stroke-dasharray: 400; animation: nxt-draw 2.4s ease-out forwards; }
+
+@media (prefers-reduced-motion: reduce) {
+  .nxt-float, .nxt-float-delay, .nxt-draw, .nxt-marquee-track { animation: none; }
+  .nxt-draw { stroke-dasharray: none; }
 }
 
 ::selection {

@@ -41,7 +41,7 @@ export const NotificationsBell: React.FC<NotificationsBellProps> = ({ currentUse
       >
         <Bell className="w-4 h-4" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-[var(--nxt-peach-deep)] text-white text-[9px] font-bold flex items-center justify-center">
+          <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-[var(--nxt-peach-deep)] text-white text-[10px] font-bold flex items-center justify-center">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
@@ -59,13 +59,13 @@ export const NotificationsBell: React.FC<NotificationsBellProps> = ({ currentUse
               className="absolute right-0 mt-2 w-80 max-h-[70vh] overflow-y-auto bg-[var(--nxt-surface)] rounded-2xl shadow-lg border border-[var(--nxt-line)] py-2 z-50"
             >
               <div className="flex items-center justify-between px-3 pt-1 pb-2">
-                <p className="text-[11px] font-bold uppercase tracking-widest text-[var(--nxt-ink-soft)]">
+                <p className="text-xs font-bold uppercase tracking-widest text-[var(--nxt-ink-soft)]">
                   Notifications
                 </p>
                 {unreadCount > 0 && (
                   <button
                     onClick={() => store.markAllNotificationsRead(currentUser.id)}
-                    className="text-[11px] font-semibold text-[var(--nxt-mint-strong)] hover:text-[var(--nxt-mint-deep)] flex items-center gap-1"
+                    className="text-xs font-semibold text-[var(--nxt-mint-strong)] hover:text-[var(--nxt-mint-deep)] flex items-center gap-1"
                   >
                     <CheckCheck className="w-3 h-3" />
                     <span>Mark all read</span>
@@ -100,8 +100,8 @@ export const NotificationsBell: React.FC<NotificationsBellProps> = ({ currentUse
                           </p>
                           {!n.read && <span className="w-1.5 h-1.5 rounded-full bg-[var(--nxt-mint-strong)] shrink-0" />}
                         </div>
-                        <p className="text-[11px] text-[var(--nxt-ink-soft)] mt-0.5 line-clamp-2">{n.message}</p>
-                        <p className="text-[10px] text-[var(--nxt-ink-soft)] mt-1">{timeAgo(n.created_at)}</p>
+                        <p className="text-xs text-[var(--nxt-ink-soft)] mt-0.5 line-clamp-2">{n.message}</p>
+                        <p className="text-[11px] text-[var(--nxt-ink-soft)] mt-1">{timeAgo(n.created_at)}</p>
                       </div>
                     </button>
                   );

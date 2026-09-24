@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { Resource, ResourceType, User } from '../types';
 import { store } from '../services/store';
+import { PageHeader } from './ui/PageHeader';
 import { Reveal, RevealGroup, RevealItem, PillButton } from './ui/Reveal';
 
 interface ResourcesPageProps {
@@ -88,12 +89,12 @@ export const ResourcesPage: React.FC<ResourcesPageProps> = ({
 
         <Reveal className="bg-[var(--nxt-surface)] border border-[var(--nxt-line)] rounded-2xl p-6 sm:p-8 shadow-sm">
           <div className="flex items-center gap-2 mb-4 flex-wrap">
-            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[var(--nxt-blue-strong)] bg-[var(--nxt-blue)] px-2.5 py-0.5 rounded-full">
+            <span className="inline-flex items-center gap-1 text-xs font-bold text-[var(--nxt-blue-strong)] bg-[var(--nxt-blue)] px-2.5 py-0.5 rounded-full">
               <Icon className="w-3 h-3" />
               {TYPE_LABEL[selectedResource.type]}
             </span>
             {category && (
-              <span className="text-[11px] font-semibold text-[var(--nxt-mint-deep)] bg-[var(--nxt-mint)] px-2.5 py-0.5 rounded-full">
+              <span className="text-xs font-semibold text-[var(--nxt-mint-deep)] bg-[var(--nxt-mint)] px-2.5 py-0.5 rounded-full">
                 {category.name}
               </span>
             )}
@@ -169,17 +170,13 @@ export const ResourcesPage: React.FC<ResourcesPageProps> = ({
 
   return (
     <div className="space-y-6">
-      <Reveal className="bg-[var(--nxt-surface)] rounded-2xl border border-[var(--nxt-line)] p-6 shadow-sm">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="p-1.5 rounded-lg bg-[var(--nxt-blue)] text-[var(--nxt-blue-strong)]">
-            <BookMarked className="w-5 h-5" />
-          </span>
-          <h1 className="font-display text-xl sm:text-2xl font-bold text-[var(--nxt-ink)]">Resources</h1>
-        </div>
-        <p className="text-xs sm:text-sm text-[var(--nxt-ink-soft)]">
-          Sessions, webinars, and hospital connections curated for each roadmap step.
-        </p>
-      </Reveal>
+      <PageHeader
+        icon={BookMarked}
+        eyebrow="Resources"
+        title="Experts, sessions and hospital partners"
+        subtitle="Sessions, webinars, and hospital connections curated for each roadmap step."
+        illustration="resources"
+      />
 
       {!isMember && (
         <Reveal className="bg-[var(--nxt-peach)] border border-[var(--nxt-peach-deep)]/20 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -244,7 +241,7 @@ export const ResourcesPage: React.FC<ResourcesPageProps> = ({
                   className="w-full text-left bg-[var(--nxt-bg-soft)] border border-dashed border-[var(--nxt-line)] rounded-2xl p-5 h-full flex flex-col justify-between opacity-70 hover:opacity-100 transition-opacity"
                 >
                   <div>
-                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[var(--nxt-ink-soft)] bg-[var(--nxt-line)] px-2 py-0.5 rounded-full">
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[var(--nxt-ink-soft)] bg-[var(--nxt-line)] px-2 py-0.5 rounded-full">
                       <Icon className="w-3 h-3" />
                       {TYPE_LABEL[resource.type]}
                     </span>
@@ -264,17 +261,17 @@ export const ResourcesPage: React.FC<ResourcesPageProps> = ({
             <RevealItem key={resource.id}>
               <motion.button
                 whileHover={{ y: -3 }}
-                onClick={() => setSelectedResource(resource)}
+                onClick={() => { if (currentUser) store.logResourceView(currentUser.id, resource.id); setSelectedResource(resource); }}
                 className="w-full text-left bg-[var(--nxt-surface)] border border-[var(--nxt-line)] rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-[var(--nxt-blue-strong)]/30 transition-shadow h-full flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-2">
-                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[var(--nxt-blue-strong)] bg-[var(--nxt-blue)] px-2 py-0.5 rounded-full">
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[var(--nxt-blue-strong)] bg-[var(--nxt-blue)] px-2 py-0.5 rounded-full">
                       <Icon className="w-3 h-3" />
                       {TYPE_LABEL[resource.type]}
                     </span>
                     {category && (
-                      <span className="text-[10px] font-semibold text-[var(--nxt-mint-deep)] bg-[var(--nxt-mint)] px-2 py-0.5 rounded-full truncate max-w-[100px]">
+                      <span className="text-[11px] font-semibold text-[var(--nxt-mint-deep)] bg-[var(--nxt-mint)] px-2 py-0.5 rounded-full truncate max-w-[100px]">
                         {category.name}
                       </span>
                     )}

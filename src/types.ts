@@ -1,6 +1,18 @@
 export type UserRole = 'admin' | 'member';
 export type Gender = 'female' | 'male' | 'other' | 'prefer_not_to_say';
 
+export type FounderBackground = 'clinical' | 'engineering' | 'science' | 'business' | 'other';
+export type Commitment = 'full_time' | 'part_time';
+export type StartupStage = 'idea' | 'pre_seed' | 'seed' | 'series_a_plus';
+export type AcquisitionSource = 'referral' | 'linkedin' | 'university' | 'event' | 'search' | 'hospital_partner' | 'other';
+
+export interface FounderOutcomes {
+  pilots_signed: number;
+  regulatory_filings: number;
+  funding_raised_since_joining: number;
+  updated_at: string;
+}
+
 export interface User {
   id: string;
   email: string;
@@ -11,6 +23,31 @@ export interface User {
   team_id?: string;
   location?: string;
   gender?: Gender;
+  created_at?: string;
+  membership_started_at?: string;
+  last_active_at?: string;
+  background?: FounderBackground;
+  first_time_founder?: boolean;
+  commitment?: Commitment;
+  startup_stage?: StartupStage;
+  funding_raised_total?: number;
+  has_revenue?: boolean;
+  acquisition_source?: AcquisitionSource;
+  outcomes?: FounderOutcomes;
+}
+
+export interface ResourceView {
+  user_id: string;
+  resource_id: string;
+  viewed_at: string;
+}
+
+export interface StepRating {
+  user_id: string;
+  step_id: string;
+  score: number;
+  comment?: string;
+  created_at: string;
 }
 
 export interface Team {

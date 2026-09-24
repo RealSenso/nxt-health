@@ -114,7 +114,7 @@ export const FundingApplicationModal: React.FC<FundingApplicationModalProps> = (
             </button>
 
             <div className="mb-5 pr-8">
-              <span className="text-[11px] font-semibold text-[var(--nxt-mint-deep)] bg-[var(--nxt-mint)] px-2.5 py-0.5 rounded-full">
+              <span className="text-xs font-semibold text-[var(--nxt-mint-deep)] bg-[var(--nxt-mint)] px-2.5 py-0.5 rounded-full">
                 {problem.department}
               </span>
               <h3 className="font-display text-lg sm:text-xl font-bold text-[var(--nxt-ink)] leading-snug mt-2">

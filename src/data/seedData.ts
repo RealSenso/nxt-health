@@ -1,6 +1,7 @@
 import { User, ProblemStatement, FundingApplication, Category, Step, Resource, UserProgress } from '../types';
+import { USER_EXTRAS, EXTRA_SEED_USERS, SEED_JOURNEY_PROGRESS, EXTRA_SEED_APPLICATIONS, daysAgo } from './seedAnalytics';
 
-export const SEED_USERS: User[] = [
+const BASE_SEED_USERS: User[] = [
   {
     id: 'user-admin-1',
     email: 'admin@medplatform.org',
@@ -81,6 +82,11 @@ export const SEED_USERS: User[] = [
     location: 'Boston, MA',
     gender: 'female',
   },
+];
+
+export const SEED_USERS: User[] = [
+  ...BASE_SEED_USERS.map(u => ({ ...u, ...USER_EXTRAS[u.id] })),
+  ...EXTRA_SEED_USERS,
 ];
 
 export const SEED_PROBLEM_STATEMENTS: ProblemStatement[] = [
@@ -429,30 +435,9 @@ export const SEED_APPLICATIONS: FundingApplication[] = [
     supporting_notes: 'Prototype CAD complete; seeking funding for IRB-approved 40-patient ICU observational validation study with partner hospital.',
     status: 'Pending',
     admin_feedback: 'Application under initial clinical review by Dr. Lin. Fast-track committee scheduled for Thursday.',
-    submitted_at: '2025-03-14T10:20:00Z',
-  }
+    submitted_at: daysAgo(55),
+  },
+  ...EXTRA_SEED_APPLICATIONS,
 ];
 
-export const SEED_PROGRESS: UserProgress[] = [
-  {
-    user_id: 'user-member-1',
-    category_id: 'cat-1',
-    step_id: 'step-dev-1',
-    completed: true,
-    updated_at: '2025-03-01T12:00:00Z'
-  },
-  {
-    user_id: 'user-member-1',
-    category_id: 'cat-1',
-    step_id: 'step-dev-2',
-    completed: true,
-    updated_at: '2025-03-10T14:30:00Z'
-  },
-  {
-    user_id: 'user-member-1',
-    category_id: 'cat-1',
-    step_id: 'step-dev-3',
-    completed: false,
-    updated_at: '2025-03-14T15:00:00Z'
-  }
-];
+export const SEED_PROGRESS: UserProgress[] = SEED_JOURNEY_PROGRESS;

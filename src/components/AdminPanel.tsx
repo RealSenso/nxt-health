@@ -10,8 +10,10 @@ import {
   ProblemStatement, FundingApplication, Category, Step, Resource,
   ApplicationStatus, ResourceType, User, SubmissionStatus
 } from '../types';
+import { PageHeader, SegmentedTabs } from './ui/PageHeader';
 import { store } from '../services/store';
-import { SimpleBarChart, SimpleLineChart } from './ui/Charts';
+import { SimpleBarChart, SimpleLineChart, HBarList } from './ui/Charts';
+import { BusinessAnalytics } from './admin/BusinessAnalytics';
 
 interface AdminPanelProps {
   currentUser: User;
@@ -222,28 +224,23 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
 
   return (
     <div className="space-y-6">
-      <div className="bg-[var(--nxt-ink-fixed)] rounded-2xl p-6 text-white shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="p-1 rounded bg-[var(--nxt-lavender-strong)]/20 text-[var(--nxt-lavender)] border border-[var(--nxt-lavender-strong)]/30">
-              <Shield className="w-5 h-5 text-[var(--nxt-lavender-deep)]" />
-            </span>
-            <h1 className="font-display text-xl sm:text-2xl font-bold">Admin Management Console</h1>
-          </div>
-          <p className="text-xs sm:text-sm text-white/70">
-            Manage clinical problem statements, review grant applications, and configure categories, steps, and hospital resources.
-          </p>
-        </div>
-        <button
-          id="btn-admin-reset-demo-data"
-          onClick={handleResetDemoData}
-          className="shrink-0 px-3.5 py-2 bg-white/10 hover:bg-white/20 text-white rounded-full text-xs font-semibold flex items-center gap-1.5 border border-white/15 transition-colors"
-          title="Reset all demo data back to the original seed state"
-        >
-          <RefreshCw className="w-3.5 h-3.5" />
-          <span>Reset Demo Data</span>
-        </button>
-      </div>
+      <PageHeader
+        icon={Shield}
+        eyebrow="Admin"
+        title="Admin console"
+        subtitle="Manage problem statements, review grant applications and evidence, configure roadmaps and resources, and track how founders are doing."
+        illustration="analytics"
+        actions={
+          <button
+            id="btn-admin-reset-demo-data"
+            onClick={handleResetDemoData}
+            className="px-4 py-2.5 border border-[var(--nxt-line)] bg-[var(--nxt-surface)] hover:bg-[var(--nxt-bg-soft)] text-[var(--nxt-ink-soft)] rounded-full text-sm font-semibold flex items-center gap-1.5 transition-colors"
+            title="Reset all demo data back to the original seed state"
+          >
+            <RefreshCw className="w-4 h-4" /> Reset demo data
+          </button>
+        }
+      />
 
       {resetSuccess && (
         <div className="p-3 bg-[var(--nxt-mint)]/40 border border-[var(--nxt-mint-strong)]/20 text-[var(--nxt-mint-strong)] text-xs font-semibold rounded-xl flex items-center gap-2">
@@ -284,7 +281,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
                 transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
                 className="absolute left-0 mt-2 w-80 bg-[var(--nxt-surface)] rounded-2xl shadow-lg border border-[var(--nxt-line)] py-2 z-50"
               >
-                <p className="px-3 pt-1 pb-2 text-[11px] font-bold uppercase tracking-widest text-[var(--nxt-ink-soft)]">
+                <p className="px-3 pt-1 pb-2 text-xs font-bold uppercase tracking-widest text-[var(--nxt-ink-soft)]">
                   Editing
                 </p>
                 {ADMIN_SECTIONS.map(section => {
@@ -367,7 +364,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
 
                     <div className="flex items-center gap-3">
                       <div className="text-right">
-                        <p className="text-[10px] text-[var(--nxt-ink-soft)] font-semibold uppercase">Requested</p>
+                        <p className="text-[11px] text-[var(--nxt-ink-soft)] font-semibold uppercase">Requested</p>
                         <p className="text-sm font-extrabold text-[var(--nxt-mint-strong)]">
                           ${app.amount_requested.toLocaleString('en-US')}
                         </p>
@@ -382,7 +379,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
                   </div>
 
                   <div>
-                    <p className="text-[10px] font-bold text-[var(--nxt-ink-soft)] uppercase tracking-wider mb-1">
+                    <p className="text-[11px] font-bold text-[var(--nxt-ink-soft)] uppercase tracking-wider mb-1">
                       Proposed Solution & Technical Pitch
                     </p>
                     <p className="text-xs text-[var(--nxt-ink-soft)] bg-[var(--nxt-bg-soft)] p-3 rounded-lg border border-[var(--nxt-line)] leading-relaxed">
@@ -392,7 +389,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
 
                   {app.supporting_notes && (
                     <div>
-                      <p className="text-[10px] font-bold text-[var(--nxt-ink-soft)] uppercase tracking-wider mb-1">
+                      <p className="text-[11px] font-bold text-[var(--nxt-ink-soft)] uppercase tracking-wider mb-1">
                         Supporting Notes & Clinical Readiness
                       </p>
                       <p className="text-xs text-[var(--nxt-ink-soft)]">{app.supporting_notes}</p>
@@ -434,7 +431,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
                   ) : (
                     <div className="pt-2 border-t border-[var(--nxt-line)] flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                       <div className="flex-1">
-                        <p className="text-[10px] font-bold text-[var(--nxt-ink-soft)] uppercase tracking-wider mb-1">
+                        <p className="text-[11px] font-bold text-[var(--nxt-ink-soft)] uppercase tracking-wider mb-1">
                           Reviewer Feedback
                         </p>
                         <p className={`text-xs rounded-lg px-2.5 py-1.5 border ${
@@ -445,7 +442,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
                           {app.admin_feedback || 'No feedback left.'}
                         </p>
                         {app.reviewed_at && (
-                          <p className="text-[10px] text-[var(--nxt-ink-soft)] mt-1">
+                          <p className="text-[11px] text-[var(--nxt-ink-soft)] mt-1">
                             Reviewed {new Date(app.reviewed_at).toLocaleDateString('en-US')}
                           </p>
                         )}
@@ -492,7 +489,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-semibold text-[var(--nxt-ink-soft)] mb-1">Title</label>
+                  <label className="block text-xs font-semibold text-[var(--nxt-ink-soft)] mb-1">Title</label>
                   <input
                     type="text"
                     required
@@ -504,7 +501,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-semibold text-[var(--nxt-ink-soft)] mb-1">Clinical Department</label>
+                  <label className="block text-xs font-semibold text-[var(--nxt-ink-soft)] mb-1">Clinical Department</label>
                   <input
                     type="text"
                     value={editingProblem.department || ''}
@@ -516,7 +513,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-[var(--nxt-ink-soft)] mb-1">Clinical Description</label>
+                <label className="block text-xs font-semibold text-[var(--nxt-ink-soft)] mb-1">Clinical Description</label>
                 <textarea
                   rows={3}
                   required
@@ -542,7 +539,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-semibold text-[var(--nxt-ink-soft)] mb-1">Funding Pool Label</label>
+                  <label className="block text-xs font-semibold text-[var(--nxt-ink-soft)] mb-1">Funding Pool Label</label>
                   <input
                     type="text"
                     value={editingProblem.funding_amount || ''}
@@ -577,15 +574,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
                 <div key={p.id} className="p-4 flex items-center justify-between gap-4 hover:bg-[var(--nxt-bg-soft)] transition-colors">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-[var(--nxt-mint)]/40 text-[var(--nxt-mint-strong)]">
+                      <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-[var(--nxt-mint)]/40 text-[var(--nxt-mint-strong)]">
                         {p.department}
                       </span>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                      <span className={`text-[11px] font-bold px-2 py-0.5 rounded ${
                         p.funded ? 'bg-[var(--nxt-mint)] text-[var(--nxt-mint-strong)]' : 'bg-[var(--nxt-bg-soft)] text-[var(--nxt-ink-soft)]'
                       }`}>
                         {p.funded ? `Funded • ${p.funding_amount}` : 'Unfunded'}
                       </span>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-[var(--nxt-blue)] text-[var(--nxt-blue-strong)] flex items-center gap-1">
+                      <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-[var(--nxt-blue)] text-[var(--nxt-blue-strong)] flex items-center gap-1">
                         <Users className="w-3 h-3" />
                         {founderCountForProblem(p.id)} working on this
                       </span>
@@ -641,7 +638,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="sm:col-span-2">
-                  <label className="block text-[11px] font-semibold text-[var(--nxt-ink-soft)] mb-1">Category Name</label>
+                  <label className="block text-xs font-semibold text-[var(--nxt-ink-soft)] mb-1">Category Name</label>
                   <input
                     type="text"
                     required
@@ -652,7 +649,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-semibold text-[var(--nxt-ink-soft)] mb-1">Display Order</label>
+                  <label className="block text-xs font-semibold text-[var(--nxt-ink-soft)] mb-1">Display Order</label>
                   <input
                     type="number"
                     value={editingCategory.order || 1}
@@ -663,7 +660,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-[var(--nxt-ink-soft)] mb-1">Description / Sub-domains</label>
+                <label className="block text-xs font-semibold text-[var(--nxt-ink-soft)] mb-1">Description / Sub-domains</label>
                 <input
                   type="text"
                   value={editingCategory.description || ''}
@@ -701,11 +698,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
                     <td className="py-2.5 px-4 font-bold text-[var(--nxt-ink-soft)]">{c.order}</td>
                     <td className="py-2.5 px-4 font-bold text-[var(--nxt-ink)]">
                       {c.name}
-                      <p className="sm:hidden text-[10px] text-[var(--nxt-ink-soft)] font-normal">{c.description}</p>
+                      <p className="sm:hidden text-[11px] text-[var(--nxt-ink-soft)] font-normal">{c.description}</p>
                     </td>
                     <td className="py-2.5 px-4 text-[var(--nxt-ink-soft)] hidden sm:table-cell">{c.description}</td>
                     <td className="py-2.5 px-4">
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-[var(--nxt-blue)] text-[var(--nxt-blue-strong)] whitespace-nowrap">
+                      <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-[var(--nxt-blue)] text-[var(--nxt-blue-strong)] whitespace-nowrap">
                         {founderCountForCategory(c.id)} founders
                       </span>
                     </td>
@@ -780,7 +777,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="sm:col-span-2">
-                  <label className="block text-[11px] font-semibold text-[var(--nxt-ink-soft)] mb-1">Step Name</label>
+                  <label className="block text-xs font-semibold text-[var(--nxt-ink-soft)] mb-1">Step Name</label>
                   <input
                     type="text"
                     required
@@ -791,7 +788,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-semibold text-[var(--nxt-ink-soft)] mb-1">Step Order (1, 2, 3...)</label>
+                  <label className="block text-xs font-semibold text-[var(--nxt-ink-soft)] mb-1">Step Order (1, 2, 3...)</label>
                   <input
                     type="number"
                     value={editingStep.order || 1}
@@ -803,7 +800,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-semibold text-[var(--nxt-ink-soft)] mb-1">Stage Tag</label>
+                  <label className="block text-xs font-semibold text-[var(--nxt-ink-soft)] mb-1">Stage Tag</label>
                   <input
                     type="text"
                     value={editingStep.stage_tag || ''}
@@ -815,7 +812,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-[var(--nxt-ink-soft)] mb-1">Step Description & Objectives</label>
+                <label className="block text-xs font-semibold text-[var(--nxt-ink-soft)] mb-1">Step Description & Objectives</label>
                 <textarea
                   rows={2}
                   value={editingStep.description || ''}
@@ -857,15 +854,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-bold text-[var(--nxt-ink)]">{step.name}</span>
                           {step.stage_tag && (
-                            <span className="text-[10px] bg-[var(--nxt-bg-soft)] text-[var(--nxt-ink-soft)] px-1.5 py-0.2 rounded font-semibold">
+                            <span className="text-[11px] bg-[var(--nxt-bg-soft)] text-[var(--nxt-ink-soft)] px-1.5 py-0.2 rounded font-semibold">
                               {step.stage_tag}
                             </span>
                           )}
-                          <span className="text-[10px] bg-[var(--nxt-mint)]/40 text-[var(--nxt-mint-strong)] px-1.5 py-0.2 rounded font-semibold">
+                          <span className="text-[11px] bg-[var(--nxt-mint)]/40 text-[var(--nxt-mint-strong)] px-1.5 py-0.2 rounded font-semibold">
                             {resources.length} Resources
                           </span>
                         </div>
-                        <p className="text-[11px] text-[var(--nxt-ink-soft)] line-clamp-1">{step.description}</p>
+                        <p className="text-xs text-[var(--nxt-ink-soft)] line-clamp-1">{step.description}</p>
                       </div>
                     </div>
 
@@ -875,7 +872,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
                           setSelectedStepIdForResources(step.id);
                           setAdminTab('resources');
                         }}
-                        className="px-2 py-1 text-[11px] font-semibold text-[var(--nxt-mint-strong)] hover:bg-[var(--nxt-mint)]/40 rounded"
+                        className="px-2 py-1 text-xs font-semibold text-[var(--nxt-mint-strong)] hover:bg-[var(--nxt-mint)]/40 rounded"
                         title="Manage Resources"
                       >
                         Resources →
@@ -981,7 +978,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
                   {editingResource.id ? 'Edit Resource' : 'Add New Resource'}
                 </h4>
                 <div className="flex items-center gap-1">
-                  <label className="text-[11px] font-bold text-[var(--nxt-ink-soft)]">Resource Type:</label>
+                  <label className="text-xs font-bold text-[var(--nxt-ink-soft)]">Resource Type:</label>
                   <select
                     value={editingResource.type || 'session'}
                     onChange={(e) => setEditingResource({ ...editingResource, type: e.target.value as ResourceType })}
@@ -996,7 +993,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-[var(--nxt-ink-soft)] mb-1">Title</label>
+                <label className="block text-xs font-semibold text-[var(--nxt-ink-soft)] mb-1">Title</label>
                 <input
                   type="text"
                   required
@@ -1008,7 +1005,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-[var(--nxt-ink-soft)] mb-1">Description</label>
+                <label className="block text-xs font-semibold text-[var(--nxt-ink-soft)] mb-1">Description</label>
                 <textarea
                   rows={2}
                   value={editingResource.description || ''}
@@ -1027,7 +1024,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-[10px] font-semibold text-[var(--nxt-ink-soft)]">Hospital / Health System Name</label>
+                      <label className="block text-[11px] font-semibold text-[var(--nxt-ink-soft)]">Hospital / Health System Name</label>
                       <input
                         type="text"
                         value={editingResource.hospital_name || ''}
@@ -1037,7 +1034,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-semibold text-[var(--nxt-ink-soft)]">Clinical Department</label>
+                      <label className="block text-[11px] font-semibold text-[var(--nxt-ink-soft)]">Clinical Department</label>
                       <input
                         type="text"
                         value={editingResource.clinical_department || ''}
@@ -1050,7 +1047,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     <div>
-                      <label className="block text-[10px] font-semibold text-[var(--nxt-ink-soft)]">Contact / CMO Lead</label>
+                      <label className="block text-[11px] font-semibold text-[var(--nxt-ink-soft)]">Contact / CMO Lead</label>
                       <input
                         type="text"
                         value={editingResource.contact_person || ''}
@@ -1060,7 +1057,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-semibold text-[var(--nxt-ink-soft)]">Contact Email</label>
+                      <label className="block text-[11px] font-semibold text-[var(--nxt-ink-soft)]">Contact Email</label>
                       <input
                         type="email"
                         value={editingResource.contact_email || ''}
@@ -1070,7 +1067,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-semibold text-[var(--nxt-ink-soft)]">Pilot Window Status</label>
+                      <label className="block text-[11px] font-semibold text-[var(--nxt-ink-soft)]">Pilot Window Status</label>
                       <input
                         type="text"
                         value={editingResource.pilot_status || ''}
@@ -1084,7 +1081,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-[11px] font-semibold text-[var(--nxt-ink-soft)] mb-1">Date / Schedule</label>
+                    <label className="block text-xs font-semibold text-[var(--nxt-ink-soft)] mb-1">Date / Schedule</label>
                     <input
                       type="text"
                       value={editingResource.date || ''}
@@ -1094,7 +1091,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-semibold text-[var(--nxt-ink-soft)] mb-1">Speaker / Advisor</label>
+                    <label className="block text-xs font-semibold text-[var(--nxt-ink-soft)] mb-1">Speaker / Advisor</label>
                     <input
                       type="text"
                       value={editingResource.host_or_speaker || ''}
@@ -1104,7 +1101,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-semibold text-[var(--nxt-ink-soft)] mb-1">Meeting / Resource URL</label>
+                    <label className="block text-xs font-semibold text-[var(--nxt-ink-soft)] mb-1">Meeting / Resource URL</label>
                     <input
                       type="url"
                       value={editingResource.link || ''}
@@ -1134,7 +1131,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
                 {editingResource.assigned_user_id !== undefined && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pl-6">
                     <div>
-                      <label className="block text-[10px] font-semibold text-[var(--nxt-ink-soft)] mb-1">User ID</label>
+                      <label className="block text-[11px] font-semibold text-[var(--nxt-ink-soft)] mb-1">User ID</label>
                       <input
                         type="text"
                         required
@@ -1149,7 +1146,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
                       </datalist>
                     </div>
                     <div>
-                      <label className="block text-[10px] font-semibold text-[var(--nxt-ink-soft)] mb-1">Only for this project (optional)</label>
+                      <label className="block text-[11px] font-semibold text-[var(--nxt-ink-soft)] mb-1">Only for this project (optional)</label>
                       <select
                         value={editingResource.assigned_problem_id || ''}
                         onChange={(e) => setEditingResource({ ...editingResource, assigned_problem_id: e.target.value || undefined })}
@@ -1159,7 +1156,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
                         {problems.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
                       </select>
                     </div>
-                    <p className="text-[10px] text-[var(--nxt-ink-soft)] sm:col-span-2">
+                    <p className="text-[11px] text-[var(--nxt-ink-soft)] sm:col-span-2">
                       Look up a user's ID under Users &amp; Access — copy it from there and paste it here.
                     </p>
                   </div>
@@ -1179,7 +1176,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
 
           <div className="space-y-5">
             <div className="space-y-2">
-              <p className="text-[11px] font-bold text-[var(--nxt-ink-soft)] uppercase tracking-wider px-1">
+              <p className="text-xs font-bold text-[var(--nxt-ink-soft)] uppercase tracking-wider px-1">
                 Common Resources ({commonStepResources.length})
               </p>
               {commonStepResources.length === 0 ? (
@@ -1194,7 +1191,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
             </div>
 
             <div className="space-y-2">
-              <p className="text-[11px] font-bold text-[var(--nxt-mint-deep)] uppercase tracking-wider px-1">
+              <p className="text-xs font-bold text-[var(--nxt-mint-deep)] uppercase tracking-wider px-1">
                 Recommended For You ({recommendedStepResources.length})
               </p>
               {recommendedStepResources.length === 0 ? (
@@ -1237,12 +1234,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <span className="text-xs sm:text-sm font-bold text-[var(--nxt-ink)]">{u.name}</span>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                      <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
                         u.role === 'admin' ? 'bg-[var(--nxt-lavender)] text-[var(--nxt-lavender-strong)]' : 'bg-[var(--nxt-bg-soft)] text-[var(--nxt-ink-soft)]'
                       }`}>
                         {u.role === 'admin' ? 'ADMIN' : 'MEMBER'}
                       </span>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                      <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
                         u.is_member ? 'bg-[var(--nxt-mint)] text-[var(--nxt-mint-strong)]' : 'bg-[var(--nxt-peach)] text-[var(--nxt-peach-deep)]'
                       }`}>
                         {u.is_member ? 'PAYING MEMBER' : 'UNPAID'}
@@ -1251,7 +1248,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
                     <p className="text-xs text-[var(--nxt-ink-soft)]">{u.email}</p>
                     <button
                       onClick={() => handleCopyUserId(u.id)}
-                      className="mt-1 inline-flex items-center gap-1 text-[10px] font-mono text-[var(--nxt-ink-soft)] hover:text-[var(--nxt-mint-strong)] bg-[var(--nxt-bg-soft)] hover:bg-[var(--nxt-mint)]/30 px-2 py-0.5 rounded transition-colors"
+                      className="mt-1 inline-flex items-center gap-1 text-[11px] font-mono text-[var(--nxt-ink-soft)] hover:text-[var(--nxt-mint-strong)] bg-[var(--nxt-bg-soft)] hover:bg-[var(--nxt-mint)]/30 px-2 py-0.5 rounded transition-colors"
                       title="Copy user ID"
                     >
                       <Copy className="w-3 h-3" />
@@ -1351,21 +1348,21 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
 
                     {sub.note && (
                       <div>
-                        <p className="text-[10px] font-bold text-[var(--nxt-ink-soft)] uppercase tracking-wider mb-1">Founder Note</p>
+                        <p className="text-[11px] font-bold text-[var(--nxt-ink-soft)] uppercase tracking-wider mb-1">Founder Note</p>
                         <p className="text-xs text-[var(--nxt-ink-soft)] bg-[var(--nxt-bg-soft)] p-3 rounded-lg border border-[var(--nxt-line)] leading-relaxed">{sub.note}</p>
                       </div>
                     )}
 
                     {sub.files.length > 0 && (
                       <div>
-                        <p className="text-[10px] font-bold text-[var(--nxt-ink-soft)] uppercase tracking-wider mb-1">Attached Evidence ({sub.files.length})</p>
+                        <p className="text-[11px] font-bold text-[var(--nxt-ink-soft)] uppercase tracking-wider mb-1">Attached Evidence ({sub.files.length})</p>
                         <div className="flex flex-wrap gap-2">
                           {sub.files.map((f, i) => (
                             <a
                               key={i}
                               href={f.dataUrl}
                               download={f.name}
-                              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-[var(--nxt-bg-soft)] border border-[var(--nxt-line)] rounded-lg text-[11px] font-semibold text-[var(--nxt-ink)] hover:border-[var(--nxt-mint-strong)]/40 transition-colors"
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-[var(--nxt-bg-soft)] border border-[var(--nxt-line)] rounded-lg text-xs font-semibold text-[var(--nxt-ink)] hover:border-[var(--nxt-mint-strong)]/40 transition-colors"
                             >
                               <Download className="w-3 h-3" />
                               <span className="truncate max-w-[160px]">{f.name}</span>
@@ -1413,7 +1410,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
                     ) : (
                       <div className="pt-2 border-t border-[var(--nxt-line)] flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                         <div className="flex-1">
-                          <p className="text-[10px] font-bold text-[var(--nxt-ink-soft)] uppercase tracking-wider mb-1">Reviewer Feedback</p>
+                          <p className="text-[11px] font-bold text-[var(--nxt-ink-soft)] uppercase tracking-wider mb-1">Reviewer Feedback</p>
                           <p className={`text-xs rounded-lg px-2.5 py-1.5 border ${
                             sub.status === 'Approved'
                               ? 'bg-[var(--nxt-mint)]/30 border-[var(--nxt-mint-strong)]/20 text-[var(--nxt-mint-deep)]'
@@ -1438,9 +1435,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
         </div>
       )}
 
-      {adminTab === 'analytics' && (
-        <AdminAnalytics />
-      )}
+      {adminTab === 'analytics' && <AnalyticsTab />}
     </div>
   );
 };
@@ -1460,7 +1455,7 @@ const AdminResourceRow: React.FC<{
   >
     <div className="min-w-0">
       <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-        <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+        <span className={`text-[11px] font-bold px-2 py-0.5 rounded ${
           r.type === 'hospital_connection' ? 'bg-[var(--nxt-lavender)] text-[var(--nxt-lavender-strong)]' : 'bg-[var(--nxt-bg-soft)] text-[var(--nxt-ink-soft)]'
         }`}>
           {r.type.replace('_', ' ').toUpperCase()}
@@ -1469,13 +1464,13 @@ const AdminResourceRow: React.FC<{
           <span className="text-xs font-bold text-[var(--nxt-ink)]">{r.hospital_name}</span>
         )}
         {targetLabel && (
-          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-[var(--nxt-mint-strong)] text-white">
+          <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-[var(--nxt-mint-strong)] text-white">
             For: {targetLabel}
           </span>
         )}
       </div>
       <p className="text-xs font-bold text-[var(--nxt-ink)]">{r.title}</p>
-      <p className="text-[11px] text-[var(--nxt-ink-soft)] line-clamp-1">{r.description}</p>
+      <p className="text-xs text-[var(--nxt-ink-soft)] line-clamp-1">{r.description}</p>
     </div>
 
     <div className="flex items-center gap-1 shrink-0">
@@ -1488,6 +1483,26 @@ const AdminResourceRow: React.FC<{
     </div>
   </div>
 );
+
+const AnalyticsTab: React.FC = () => {
+  const [view, setView] = useState<'business' | 'platform'>('business');
+  return (
+    <div className="space-y-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h2 className="font-display text-xl font-bold text-[var(--nxt-ink)]">Analytics</h2>
+          <p className="text-sm text-[var(--nxt-ink-soft)]">Business health of the program, and day-to-day platform activity.</p>
+        </div>
+        <SegmentedTabs
+          tabs={[{ id: 'business', label: 'Business insights', icon: TrendingUp }, { id: 'platform', label: 'Platform overview', icon: BarChart3 }]}
+          active={view}
+          onChange={(id) => setView(id as 'business' | 'platform')}
+        />
+      </div>
+      {view === 'business' ? <BusinessAnalytics /> : <AdminAnalytics />}
+    </div>
+  );
+};
 
 const AdminAnalytics: React.FC = () => {
   const problems = store.getProblems();
@@ -1553,7 +1568,6 @@ const AdminAnalytics: React.FC = () => {
     });
   })();
 
-  const BAR_COLORS = ['var(--nxt-mint-strong)', 'var(--nxt-blue-strong)', 'var(--nxt-lavender-strong)', 'var(--nxt-peach-deep)', 'var(--nxt-sky-deep)', 'var(--nxt-mint-deep)'];
   const founders = store.getUsers().filter(u => u.role === 'member');
 
   const locationCounts = founders.reduce((acc, u) => {
@@ -1563,7 +1577,7 @@ const AdminAnalytics: React.FC = () => {
   }, {} as Record<string, number>);
   const locationChartData = Object.entries(locationCounts)
     .sort((a, b) => b[1] - a[1])
-    .map(([label, value], i) => ({ label, value, color: BAR_COLORS[i % BAR_COLORS.length] }));
+    .map(([label, value]) => ({ label, value }));
 
   const GENDER_LABEL: Record<string, string> = {
     female: 'Female', male: 'Male', other: 'Other', prefer_not_to_say: 'Prefer not to say', unspecified: 'Not specified',
@@ -1575,7 +1589,7 @@ const AdminAnalytics: React.FC = () => {
   }, {} as Record<string, number>);
   const genderChartData = Object.entries(genderCounts)
     .sort((a, b) => b[1] - a[1])
-    .map(([key, value], i) => ({ label: GENDER_LABEL[key] || key, value, color: BAR_COLORS[i % BAR_COLORS.length] }));
+    .map(([key, value]) => ({ label: GENDER_LABEL[key] || key, value }));
 
   const founderStageStats = Array.from(engagedScopes).map(scope => {
     const scopeProgress = allProgress.filter(p => p.user_id === scope);
@@ -1649,7 +1663,7 @@ const AdminAnalytics: React.FC = () => {
               <tile.icon className="w-4 h-4" />
             </div>
             <p className="text-lg font-extrabold text-[var(--nxt-ink)]">{tile.value}</p>
-            <p className="text-[11px] text-[var(--nxt-ink-soft)] font-semibold">{tile.label}</p>
+            <p className="text-xs text-[var(--nxt-ink-soft)] font-semibold">{tile.label}</p>
           </div>
         ))}
       </div>
@@ -1687,12 +1701,12 @@ const AdminAnalytics: React.FC = () => {
         </div>
         {stalledProblems.length > 0 && (
           <div className="mt-4 pt-3 border-t border-[var(--nxt-line)]">
-            <p className="text-[11px] font-bold text-[var(--nxt-peach-deep)] uppercase tracking-wider mb-1.5">
+            <p className="text-xs font-bold text-[var(--nxt-peach-deep)] uppercase tracking-wider mb-1.5">
               Funded but Stalled — No Applications Yet ({stalledProblems.length})
             </p>
             <div className="flex flex-wrap gap-1.5">
               {stalledProblems.map(s => (
-                <span key={s.problem.id} className="text-[11px] font-semibold bg-[var(--nxt-peach)] text-[var(--nxt-peach-deep)] px-2 py-0.5 rounded-full">
+                <span key={s.problem.id} className="text-xs font-semibold bg-[var(--nxt-peach)] text-[var(--nxt-peach-deep)] px-2 py-0.5 rounded-full">
                   {s.problem.title}
                 </span>
               ))}
@@ -1734,11 +1748,11 @@ const AdminAnalytics: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="bg-[var(--nxt-surface)] rounded-xl border border-[var(--nxt-line)] p-5 shadow-sm">
           <h4 className="text-xs font-bold text-[var(--nxt-ink)] uppercase tracking-wider mb-4">Founders by Location</h4>
-          <SimpleBarChart data={locationChartData} />
+          <HBarList data={locationChartData} />
         </div>
         <div className="bg-[var(--nxt-surface)] rounded-xl border border-[var(--nxt-line)] p-5 shadow-sm">
           <h4 className="text-xs font-bold text-[var(--nxt-ink)] uppercase tracking-wider mb-4">Founders by Gender</h4>
-          <SimpleBarChart data={genderChartData} />
+          <HBarList data={genderChartData} />
         </div>
       </div>
 
@@ -1750,7 +1764,7 @@ const AdminAnalytics: React.FC = () => {
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
-                <tr className="text-left text-[var(--nxt-ink-soft)] uppercase tracking-wider text-[10px]">
+                <tr className="text-left text-[var(--nxt-ink-soft)] uppercase tracking-wider text-[11px]">
                   <th className="pb-2 pr-3 font-bold">Founder</th>
                   <th className="pb-2 pr-3 font-bold">Working On</th>
                   <th className="pb-2 pr-3 font-bold">Current Stage</th>

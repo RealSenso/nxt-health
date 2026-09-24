@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import {
-  DollarSign, Clock, CheckCircle2, XCircle, ArrowRight,
+  Clock, CheckCircle2, XCircle, ArrowRight,
   FileText, PenLine, Trash2
 } from 'lucide-react';
 import { User, FundingApplication } from '../types';
 import { store } from '../services/store';
-import { Reveal, RevealGroup, RevealItem, PillButton } from './ui/Reveal';
+import { RevealGroup, RevealItem, PillButton } from './ui/Reveal';
 import { FundingApplicationModal } from './FundingApplicationModal';
+import { PageHeader } from './ui/PageHeader';
+import { BadgeDollarSign } from 'lucide-react';
 
 interface FundsPageProps {
   currentUser: User;
@@ -66,40 +68,23 @@ export const FundsPage: React.FC<FundsPageProps> = ({
 
   return (
     <div className="space-y-6">
-      <Reveal className="bg-[var(--nxt-surface)] rounded-2xl border border-[var(--nxt-line)] p-6 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="p-1.5 rounded-lg bg-[var(--nxt-mint)] text-[var(--nxt-mint-strong)]">
-              <DollarSign className="w-5 h-5" />
-            </span>
-            <h1 className="font-display text-xl sm:text-2xl font-bold text-[var(--nxt-ink)]">
-              Your Funding & Grant Applications
-            </h1>
-          </div>
-          <p className="text-xs sm:text-sm text-[var(--nxt-ink-soft)]">
-            Track application status here. To apply, hit "Apply for Funding" on any problem statement's card.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2 shrink-0">
-          <button
-            id="btn-browse-problems"
-            onClick={onNavigateToProblems}
-            className="px-4 py-2.5 bg-[var(--nxt-mint-strong)] hover:bg-[var(--nxt-mint-deep)] text-white rounded-full text-xs sm:text-sm font-semibold shadow-sm transition-colors flex items-center gap-2"
-          >
-            <span>Browse Problem Statements</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
-          <button
-            id="btn-proceed-roadmap"
-            onClick={() => onNavigateToRoadmap()}
-            className="px-4 py-2.5 bg-[var(--nxt-blue-strong)] hover:bg-[var(--nxt-blue-deep)] text-white rounded-full text-xs sm:text-sm font-semibold shadow-sm transition-colors flex items-center gap-2"
-          >
-            <span>Task Roadmap</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
-        </div>
-      </Reveal>
+      <PageHeader
+        icon={BadgeDollarSign}
+        eyebrow="Funding"
+        title="Your grant applications"
+        subtitle="Track every application from draft to decision. To apply, open a funded problem statement and choose Apply for funding."
+        illustration="funds"
+        actions={
+          <>
+            <PillButton tone="mint" id="btn-browse-problems" onClick={onNavigateToProblems} className="px-5 py-2.5 text-sm">
+              Browse funded problems <ArrowRight className="w-4 h-4" />
+            </PillButton>
+            <PillButton tone="ghost" id="btn-proceed-roadmap" onClick={() => onNavigateToRoadmap()} className="px-4 py-2.5 text-sm">
+              My roadmaps
+            </PillButton>
+          </>
+        }
+      />
 
       {userApplications.length === 0 ? (
         <div className="bg-[var(--nxt-surface)] rounded-2xl border border-dashed border-[var(--nxt-line)] p-10 text-center">
@@ -143,7 +128,7 @@ export const FundsPage: React.FC<FundsPageProps> = ({
 
                   <div className="flex items-center gap-3">
                     <div className="text-right">
-                      <p className="text-[11px] text-[var(--nxt-ink-soft)] font-medium">Requested</p>
+                      <p className="text-xs text-[var(--nxt-ink-soft)] font-medium">Requested</p>
                       <p className="text-sm font-extrabold text-[var(--nxt-mint-strong)]">
                         ${app.amount_requested.toLocaleString('en-US')}
                       </p>
@@ -154,7 +139,7 @@ export const FundsPage: React.FC<FundsPageProps> = ({
 
                 {app.pitch && (
                   <div className="mb-3">
-                    <p className="text-[11px] font-bold text-[var(--nxt-ink-soft)] uppercase tracking-wider mb-1">
+                    <p className="text-xs font-bold text-[var(--nxt-ink-soft)] uppercase tracking-wider mb-1">
                       Pitch & Technical Solution
                     </p>
                     <p className="text-xs text-[var(--nxt-ink-soft)] leading-relaxed bg-[var(--nxt-bg-soft)] p-3 rounded-xl border border-[var(--nxt-line)]">
@@ -171,7 +156,7 @@ export const FundsPage: React.FC<FundsPageProps> = ({
                 )}
 
                 <div className="mt-4 pt-3 border-t border-[var(--nxt-line)] flex items-center justify-between gap-2">
-                  <span className="text-[11px] text-[var(--nxt-ink-soft)]">
+                  <span className="text-xs text-[var(--nxt-ink-soft)]">
                     Applicant: {app.applicant_name} ({app.applicant_email})
                   </span>
 

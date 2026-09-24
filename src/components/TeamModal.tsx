@@ -88,7 +88,7 @@ export const TeamModal: React.FC<TeamModalProps> = ({ isOpen, onClose, currentUs
 
           {members.length > 0 && (
             <div className="mb-5">
-              <p className="text-[11px] font-bold text-[var(--nxt-ink-soft)] uppercase tracking-wider mb-2">
+              <p className="text-xs font-bold text-[var(--nxt-ink-soft)] uppercase tracking-wider mb-2">
                 Team Members ({members.length})
               </p>
               <div className="space-y-1.5">
@@ -106,7 +106,7 @@ export const TeamModal: React.FC<TeamModalProps> = ({ isOpen, onClose, currentUs
                           {m.name}
                           {m.id === team?.owner_id && <Crown className="w-3 h-3 text-[var(--nxt-peach-deep)]" />}
                         </p>
-                        <p className="text-[10px] text-[var(--nxt-ink-soft)] truncate">{m.email}</p>
+                        <p className="text-[11px] text-[var(--nxt-ink-soft)] truncate">{m.email}</p>
                       </div>
                     </div>
                     {isOwner && m.id !== currentUser.id && (
@@ -147,7 +147,7 @@ export const TeamModal: React.FC<TeamModalProps> = ({ isOpen, onClose, currentUs
                 Invite
               </button>
             </div>
-            <p className="text-[10px] text-[var(--nxt-ink-soft)] mt-1.5">
+            <p className="text-[11px] text-[var(--nxt-ink-soft)] mt-1.5">
               They need an existing NxT Health account — no real email is sent.
             </p>
           </form>

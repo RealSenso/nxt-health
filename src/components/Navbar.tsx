@@ -74,6 +74,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const ThemeIcon = THEME_ICONS[theme];
 
   const roadmapActive = currentTab === 'tasks' || currentTab === 'resources';
+  const mobileModes = [PROBLEMS_MODE, ROADMAP_SUBMODES[0], FUNDS_MODE, ...(currentUser && store.isAdmin(currentUser) ? [ADMIN_MODE] : [])];
 
   const handleSelectMode = (mode: Mode) => {
     if (mode.locked && !mode.preview) {
@@ -90,18 +91,19 @@ export const Navbar: React.FC<NavbarProps> = ({
   };
 
   const roleTone = !currentUser
-    ? { accent: 'bg-[var(--nxt-blue-strong)]', logoBg: 'bg-[var(--nxt-ink-fixed)]', logoText: 'text-[var(--nxt-blue)]' }
+    ? { accent: 'bg-[var(--nxt-blue-strong)]', logoBg: 'bg-[var(--nxt-mint-strong)]', logoText: 'text-white' }
     : store.isAdmin(currentUser)
     ? { accent: 'bg-[var(--nxt-lavender-strong)]', logoBg: 'bg-[var(--nxt-lavender-strong)]', logoText: 'text-white' }
     : currentUser.is_member
-    ? { accent: 'bg-[var(--nxt-mint-strong)]', logoBg: 'bg-[var(--nxt-ink-fixed)]', logoText: 'text-[var(--nxt-mint)]' }
-    : { accent: 'bg-[var(--nxt-peach-deep)]', logoBg: 'bg-[var(--nxt-ink-fixed)]', logoText: 'text-[var(--nxt-peach)]' };
+    ? { accent: 'bg-[var(--nxt-mint-strong)]', logoBg: 'bg-[var(--nxt-mint-strong)]', logoText: 'text-white' }
+    : { accent: 'bg-[var(--nxt-peach-deep)]', logoBg: 'bg-[var(--nxt-mint-strong)]', logoText: 'text-white' };
 
   return (
+    <>
     <header className="sticky top-0 z-40 bg-[var(--nxt-bg)]/90 backdrop-blur-md border-b border-[var(--nxt-line)]">
       <div className={`h-0.5 w-full ${roleTone.accent} transition-colors`} />
 
-      <div className="w-full px-3 sm:px-5 lg:px-8">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 gap-4">
           <div className="flex items-center gap-6 min-w-0">
             <button
@@ -117,7 +119,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               </span>
             </button>
 
-            <nav className="flex items-center gap-1 min-w-0">
+            <nav className="hidden md:flex items-center gap-1 min-w-0">
               {[PROBLEMS_MODE].map(mode => {
                 const isActive = currentTab === mode.id;
                 return (
@@ -126,7 +128,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     id={`nav-tab-${mode.id}`}
                     onClick={() => handleSelectMode(mode)}
                     title={mode.label}
-                    className={`relative shrink-0 flex items-center gap-1.5 px-2.5 lg:px-3 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-colors ${
+                    className={`relative shrink-0 flex items-center gap-1.5 px-3 lg:px-3.5 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-colors ${
                       isActive
                         ? 'bg-[var(--nxt-mint)] text-[var(--nxt-mint-deep)]'
                         : 'text-[var(--nxt-ink-soft)] hover:text-[var(--nxt-ink)] hover:bg-[var(--nxt-bg-soft)]'
@@ -143,7 +145,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   id="nav-tab-roadmaps"
                   onClick={() => setShowRoadmapMenu(v => !v)}
                   title="Roadmaps"
-                  className={`relative shrink-0 flex items-center gap-1.5 px-2.5 lg:px-3 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-colors ${
+                  className={`relative shrink-0 flex items-center gap-1.5 px-3 lg:px-3.5 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-colors ${
                     roadmapActive
                       ? 'bg-[var(--nxt-mint)] text-[var(--nxt-mint-deep)]'
                       : 'text-[var(--nxt-ink-soft)] hover:text-[var(--nxt-ink)] hover:bg-[var(--nxt-bg-soft)]'
@@ -161,7 +163,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -6 }}
                       transition={{ duration: 0.14 }}
-                      className="absolute left-0 mt-2 w-48 bg-[var(--nxt-surface)] rounded-2xl shadow-lg border border-[var(--nxt-line)] py-1.5 z-50"
+                      className="absolute left-0 mt-2 w-56 bg-[var(--nxt-surface)] rounded-2xl shadow-lg border border-[var(--nxt-line)] py-1.5 z-50"
                     >
                       {ROADMAP_SUBMODES.map(mode => {
                         const isLocked = mode.locked && !mode.preview && !(currentUser && currentUser.is_member);
@@ -172,7 +174,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                             key={mode.id}
                             id={`nav-tab-${mode.id}`}
                             onClick={() => handleSelectRoadmapSubmode(mode)}
-                            className={`w-full text-left px-3 py-2 text-xs font-semibold flex items-center gap-2 ${
+                            className={`w-full text-left px-3.5 py-2.5 text-sm font-semibold flex items-center gap-2.5 ${
                               isActive ? 'text-[var(--nxt-mint-deep)]' : 'text-[var(--nxt-ink-soft)] hover:text-[var(--nxt-ink)] hover:bg-[var(--nxt-bg-soft)]'
                             }`}
                           >
@@ -180,7 +182,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                             <span className="flex-1">{mode.label}</span>
                             {isLocked && <Lock className="w-3 h-3 opacity-60" />}
                             {isPreviewOnly && !isLocked && (
-                              <span className="text-[9px] font-bold uppercase tracking-wide text-[var(--nxt-peach-deep)]">Preview</span>
+                              <span className="text-[10px] font-bold uppercase tracking-wide text-[var(--nxt-peach-deep)]">Preview</span>
                             )}
                           </button>
                         );
@@ -199,7 +201,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     id={`nav-tab-${mode.id}`}
                     onClick={() => handleSelectMode(mode)}
                     title={mode.label}
-                    className={`relative shrink-0 flex items-center gap-1.5 px-2.5 lg:px-3 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-colors ${
+                    className={`relative shrink-0 flex items-center gap-1.5 px-3 lg:px-3.5 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-colors ${
                       isActive
                         ? 'bg-[var(--nxt-mint)] text-[var(--nxt-mint-deep)]'
                         : 'text-[var(--nxt-ink-soft)] hover:text-[var(--nxt-ink)] hover:bg-[var(--nxt-bg-soft)]'
@@ -217,7 +219,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   id={`nav-tab-${ADMIN_MODE.id}`}
                   onClick={() => handleSelectMode(ADMIN_MODE)}
                   title={ADMIN_MODE.label}
-                  className={`relative shrink-0 flex items-center gap-1.5 px-2.5 lg:px-3 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-colors ${
+                  className={`relative shrink-0 flex items-center gap-1.5 px-3 lg:px-3.5 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-colors ${
                     currentTab === ADMIN_MODE.id
                       ? 'bg-[var(--nxt-mint)] text-[var(--nxt-mint-deep)]'
                       : 'text-[var(--nxt-ink-soft)] hover:text-[var(--nxt-ink)] hover:bg-[var(--nxt-bg-soft)]'
@@ -263,7 +265,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       <div className="text-xs font-semibold text-[var(--nxt-ink)] leading-tight truncate max-w-[110px]">
                         {currentUser.name.split(' ')[0]}
                       </div>
-                      <div className="text-[10px] text-[var(--nxt-ink-soft)] leading-tight">
+                      <div className="text-[11px] text-[var(--nxt-ink-soft)] leading-tight">
                         {currentUser.role === 'admin' ? 'Admin' : currentUser.is_member ? 'Member' : 'Guest'}
                       </div>
                     </div>
@@ -276,12 +278,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -6 }}
                         transition={{ duration: 0.14 }}
-                        className="absolute right-0 mt-2 w-64 bg-[var(--nxt-surface)] rounded-2xl shadow-lg border border-[var(--nxt-line)] py-2 z-50"
+                        className="absolute right-0 mt-2 w-72 bg-[var(--nxt-surface)] rounded-2xl shadow-lg border border-[var(--nxt-line)] py-2 z-50"
                       >
                         <div className="px-3 py-2 border-b border-[var(--nxt-line)]">
                           <p className="text-xs font-bold text-[var(--nxt-ink)]">{currentUser.name}</p>
                           <p className="text-xs text-[var(--nxt-ink-soft)] truncate">{currentUser.email}</p>
-                          <span className="inline-block mt-1 text-[10px] px-2 py-0.5 rounded-full font-semibold bg-[var(--nxt-bg-soft)] text-[var(--nxt-ink-soft)]">
+                          <span className="inline-block mt-1 text-[11px] px-2 py-0.5 rounded-full font-semibold bg-[var(--nxt-bg-soft)] text-[var(--nxt-ink-soft)]">
                             Role: {currentUser.role.toUpperCase()} • {currentUser.is_member ? 'PAYING MEMBER' : 'UNPAID'}
                           </span>
                         </div>
@@ -289,14 +291,14 @@ export const Navbar: React.FC<NavbarProps> = ({
                         <div className="px-3 py-2 space-y-1">
                           <button
                             onClick={() => { setShowUserMenu(false); setCurrentTab('dashboard'); }}
-                            className="w-full text-left px-2.5 py-1.5 rounded-full text-xs text-[var(--nxt-ink-soft)] hover:bg-[var(--nxt-bg-soft)] font-medium flex items-center gap-1.5"
+                            className="w-full text-left px-3 py-2 rounded-xl text-sm text-[var(--nxt-ink-soft)] hover:bg-[var(--nxt-bg-soft)] font-medium flex items-center gap-1.5"
                           >
                             <LayoutDashboard className="w-3.5 h-3.5" />
                             Dashboard
                           </button>
                           <button
                             onClick={() => { setShowUserMenu(false); onOpenMembershipModal(); }}
-                            className="w-full text-left px-2.5 py-1.5 rounded-full text-xs text-[var(--nxt-ink-soft)] hover:bg-[var(--nxt-bg-soft)] font-medium flex items-center justify-between"
+                            className="w-full text-left px-3 py-2 rounded-xl text-sm text-[var(--nxt-ink-soft)] hover:bg-[var(--nxt-bg-soft)] font-medium flex items-center justify-between"
                           >
                             <span className="flex items-center gap-1.5">
                               {currentUser.is_member
@@ -304,7 +306,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                                 : <Sparkles className="w-3.5 h-3.5" />}
                               {currentUser.is_member ? 'Membership' : 'Get Membership'}
                             </span>
-                            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+                            <span className={`text-[11px] px-1.5 py-0.5 rounded-full font-bold ${
                               currentUser.is_member ? 'bg-[var(--nxt-mint)] text-[var(--nxt-mint-strong)]' : 'bg-[var(--nxt-bg-soft)] text-[var(--nxt-ink-soft)]'
                             }`}>
                               {currentUser.is_member ? 'Active' : 'Inactive'}
@@ -312,21 +314,21 @@ export const Navbar: React.FC<NavbarProps> = ({
                           </button>
                           <button
                             onClick={() => { setShowUserMenu(false); onOpenEditProfile(); }}
-                            className="w-full text-left px-2.5 py-1.5 rounded-full text-xs text-[var(--nxt-ink-soft)] hover:bg-[var(--nxt-bg-soft)] font-medium flex items-center gap-1.5"
+                            className="w-full text-left px-3 py-2 rounded-xl text-sm text-[var(--nxt-ink-soft)] hover:bg-[var(--nxt-bg-soft)] font-medium flex items-center gap-1.5"
                           >
                             <UserCog className="w-3.5 h-3.5" />
                             Edit Profile
                           </button>
                           <button
                             onClick={() => { setShowUserMenu(false); onOpenTeamModal(); }}
-                            className="w-full text-left px-2.5 py-1.5 rounded-full text-xs text-[var(--nxt-ink-soft)] hover:bg-[var(--nxt-bg-soft)] font-medium flex items-center justify-between"
+                            className="w-full text-left px-3 py-2 rounded-xl text-sm text-[var(--nxt-ink-soft)] hover:bg-[var(--nxt-bg-soft)] font-medium flex items-center justify-between"
                           >
                             <span className="flex items-center gap-1.5">
                               <Users2 className="w-3.5 h-3.5" />
                               My Team
                             </span>
                             {store.getMyTeam(currentUser) && (
-                              <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold bg-[var(--nxt-mint)] text-[var(--nxt-mint-strong)]">
+                              <span className="text-[11px] px-1.5 py-0.5 rounded-full font-bold bg-[var(--nxt-mint)] text-[var(--nxt-mint-strong)]">
                                 {store.getMyTeam(currentUser)!.member_ids.length}
                               </span>
                             )}
@@ -334,16 +336,16 @@ export const Navbar: React.FC<NavbarProps> = ({
                         </div>
 
                         <div className="px-3 py-2 border-t border-[var(--nxt-line)]">
-                          <p className="px-2.5 pb-1 text-[10px] font-bold uppercase tracking-wide text-[var(--nxt-ink-soft)]">Settings</p>
+                          <p className="px-2.5 pb-1 text-[11px] font-bold uppercase tracking-wide text-[var(--nxt-ink-soft)]">Settings</p>
                           <button
                             onClick={handleToggleTheme}
-                            className="w-full text-left px-2.5 py-1.5 rounded-full text-xs text-[var(--nxt-ink-soft)] hover:bg-[var(--nxt-bg-soft)] font-medium flex items-center justify-between"
+                            className="w-full text-left px-3 py-2 rounded-xl text-sm text-[var(--nxt-ink-soft)] hover:bg-[var(--nxt-bg-soft)] font-medium flex items-center justify-between"
                           >
                             <span className="flex items-center gap-1.5">
                               <ThemeIcon className="w-3.5 h-3.5" />
                               Theme
                             </span>
-                            <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold bg-[var(--nxt-bg-soft)] text-[var(--nxt-ink-soft)]">
+                            <span className="text-[11px] px-1.5 py-0.5 rounded-full font-bold bg-[var(--nxt-bg-soft)] text-[var(--nxt-ink-soft)]">
                               {THEME_LABELS[theme]}
                             </span>
                           </button>
@@ -352,7 +354,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                         <div className="px-3 pt-2 border-t border-[var(--nxt-line)]">
                           <button
                             onClick={onLogout}
-                            className="w-full text-left px-2.5 py-1.5 rounded-full text-xs text-[var(--nxt-peach-deep)] hover:bg-[var(--nxt-peach)] font-semibold flex items-center gap-1.5"
+                            className="w-full text-left px-3 py-2 rounded-xl text-sm text-[var(--nxt-peach-deep)] hover:bg-[var(--nxt-peach)] font-semibold flex items-center gap-1.5"
                           >
                             <LogOut className="w-3.5 h-3.5" />
                             <span>Log Out</span>
@@ -368,6 +370,30 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
       </div>
     </header>
+    <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-[var(--nxt-surface)]/95 backdrop-blur-md border-t border-[var(--nxt-line)] pb-[env(safe-area-inset-bottom)]">
+        <div className={`grid ${mobileModes.length === 4 ? 'grid-cols-4' : 'grid-cols-3'}`}>
+          {mobileModes.map(mode => {
+            const isActive = currentTab === mode.id || (mode.id === 'tasks' && currentTab === 'resources');
+            const isLocked = mode.locked && !mode.preview && !(currentUser && currentUser.is_member);
+            return (
+              <button
+                key={mode.id}
+                onClick={() => handleSelectMode(mode)}
+                className={`flex flex-col items-center justify-center gap-1 py-2.5 text-[11px] font-semibold transition-colors ${
+                  isActive ? 'text-[var(--nxt-mint-strong)]' : 'text-[var(--nxt-ink-soft)]'
+                }`}
+              >
+                <span className={`relative w-12 h-7 rounded-full flex items-center justify-center transition-colors ${isActive ? 'bg-[var(--nxt-mint)]' : ''}`}>
+                  <mode.icon className="w-5 h-5" />
+                  {isLocked && <Lock className="w-3 h-3 absolute -top-0.5 right-1.5" />}
+                </span>
+                {mode.id === 'problems' ? 'Problems' : mode.id === 'funds' ? 'Funds' : mode.id === 'admin' ? 'Admin' : mode.label}
+              </button>
+            );
+          })}
+        </div>
+    </nav>
+    </>
   );
 };
 

@@ -1,12 +1,18 @@
 import {
   User, UserRole, ProblemStatement, FundingApplication, Category, Step, Resource, UserProgress, ApplicationStatus,
   Team, AppNotification, NotificationType, StepSubmission, SubmissionStatus, SubmissionFile, Gender,
-  StepWorkspace
+  StepWorkspace, ResourceView, StepRating, FounderBackground, Commitment, StartupStage, AcquisitionSource,
+  FounderOutcomes
 } from '../types';
 import {
   SEED_USERS, SEED_PROBLEM_STATEMENTS, SEED_CATEGORIES,
   SEED_STEPS, SEED_RESOURCES, SEED_APPLICATIONS, SEED_PROGRESS
 } from '../data/seedData';
+import {
+  JOURNEYS, SEED_JOURNEY_WORKING_PROBLEMS, SEED_JOURNEY_CATEGORY_LOCKS, SEED_RESOURCE_VIEWS, SEED_STEP_RATINGS,
+  SEED_SUBMISSIONS, daysAgo,
+} from '../data/seedAnalytics';
+import { getStepGuide } from '../data/stepGuides';
 
 const STORAGE_KEYS = {
   CURRENT_USER_ID: 'medplatform_current_user_id_v1',
@@ -26,6 +32,28 @@ const STORAGE_KEYS = {
   TEAMS: 'medplatform_teams_v1',
   STEP_SUBMISSIONS: 'medplatform_step_submissions_v1',
   STEP_WORKSPACES: 'medplatform_step_workspaces_v1',
+  CATEGORY_LOCKS: 'medplatform_category_locks_v1',
+  RESOURCE_VIEWS: 'medplatform_resource_views_v1',
+  STEP_RATINGS: 'medplatform_step_ratings_v1',
+  SEED_VERSION: 'medplatform_seed_version',
+};
+
+const SEED_VERSION = 4;
+
+export type ProfileUpdates = {
+  name?: string;
+  email?: string;
+  password?: string;
+  location?: string;
+  gender?: Gender;
+  background?: FounderBackground;
+  first_time_founder?: boolean;
+  commitment?: Commitment;
+  startup_stage?: StartupStage;
+  funding_raised_total?: number;
+  has_revenue?: boolean;
+  acquisition_source?: AcquisitionSource;
+  outcomes?: Omit<FounderOutcomes, 'updated_at'>;
 };
 
 export const PLATFORM_NAME = 'NxT Health';
@@ -70,7 +98,8 @@ class LocalDataStore {
 
   public initIfEmpty(forceReset = false): void {
     const isFirstInit = !localStorage.getItem(STORAGE_KEYS.USERS);
-    if (forceReset || isFirstInit) {
+    const isOutdatedSeed = this.getItem<number>(STORAGE_KEYS.SEED_VERSION, 0) < SEED_VERSION;
+    if (forceReset || isFirstInit || isOutdatedSeed) {
       this.setItem(STORAGE_KEYS.SLACK_URL, DEFAULT_SLACK_URL);
       this.setItem(STORAGE_KEYS.USERS, SEED_USERS);
       this.setItem(STORAGE_KEYS.PROBLEMS, SEED_PROBLEM_STATEMENTS);
@@ -79,18 +108,43 @@ class LocalDataStore {
       this.setItem(STORAGE_KEYS.RESOURCES, SEED_RESOURCES);
       this.setItem(STORAGE_KEYS.APPLICATIONS, SEED_APPLICATIONS);
       this.setItem(STORAGE_KEYS.PROGRESS, SEED_PROGRESS);
-      this.setItem(STORAGE_KEYS.WORKING_PROBLEMS, {});
+      this.setItem(STORAGE_KEYS.WORKING_PROBLEMS, SEED_JOURNEY_WORKING_PROBLEMS);
       this.setItem(STORAGE_KEYS.SAVED_PROBLEMS, {});
       this.setItem(STORAGE_KEYS.PROJECT_NOTES, {});
       this.setItem(STORAGE_KEYS.NOTIFICATIONS, []);
       this.setItem(STORAGE_KEYS.TEAMS, []);
-      this.setItem(STORAGE_KEYS.STEP_SUBMISSIONS, []);
-      this.setItem(STORAGE_KEYS.STEP_WORKSPACES, {});
+      this.setItem(STORAGE_KEYS.STEP_SUBMISSIONS, SEED_SUBMISSIONS);
+      this.setItem(STORAGE_KEYS.STEP_WORKSPACES, this.buildSeedWorkspaces());
+      this.setItem(STORAGE_KEYS.CATEGORY_LOCKS, SEED_JOURNEY_CATEGORY_LOCKS);
+      this.setItem(STORAGE_KEYS.RESOURCE_VIEWS, SEED_RESOURCE_VIEWS);
+      this.setItem(STORAGE_KEYS.STEP_RATINGS, SEED_STEP_RATINGS);
+      this.setItem(STORAGE_KEYS.SEED_VERSION, SEED_VERSION);
       if (isFirstInit) {
         this.setItem(STORAGE_KEYS.CURRENT_USER_ID, SEED_USERS[1].id);
       }
       this.notify();
     }
+  }
+
+  private buildSeedWorkspaces(): Record<string, StepWorkspace> {
+    const stepsById = new Map(SEED_STEPS.map(st => [st.id, st]));
+    const workspaces: Record<string, StepWorkspace> = {};
+    for (const journey of JOURNEYS) {
+      for (const js of journey.steps) {
+        const guide = getStepGuide(stepsById.get(js.step)?.stage_tag);
+        workspaces[this.stepWorkspaceKey(journey.user, journey.problem, js.step)] = {
+          status: js.status,
+          started_at: daysAgo(js.startedDaysAgo),
+          ...(js.blocker ? { blocker: js.blocker } : {}),
+          checklist: guide.deliverables.map((label, i) => ({ id: `g-${i}`, label, done: i < js.doneTasks, custom: false })),
+          log: (js.log || []).map((text, i) => ({
+            id: `l-seed-${journey.user}-${js.step}-${i}`, text, author_name: journey.authorName, created_at: daysAgo(js.startedDaysAgo - 5),
+          })),
+          updated_at: daysAgo(js.completedDaysAgo ?? js.lastTouchedDaysAgo ?? 1),
+        };
+      }
+    }
+    return workspaces;
   }
 
   public getSlackUrl(): string {
@@ -206,6 +260,13 @@ class LocalDataStore {
       notes[toKey] = { ...notes[fromKey], ...(notes[toKey] || {}) };
       delete notes[fromKey];
       this.setItem(STORAGE_KEYS.PROJECT_NOTES, notes);
+    }
+
+    const locks = this.getItem<Record<string, Record<string, string>>>(STORAGE_KEYS.CATEGORY_LOCKS, {});
+    if (locks[fromKey]) {
+      locks[toKey] = { ...locks[fromKey], ...(locks[toKey] || {}) };
+      delete locks[fromKey];
+      this.setItem(STORAGE_KEYS.CATEGORY_LOCKS, locks);
     }
 
     const workspaces = this.getItem<Record<string, StepWorkspace>>(STORAGE_KEYS.STEP_WORKSPACES, {});
@@ -345,7 +406,7 @@ class LocalDataStore {
     name: string,
     email: string,
     password: string,
-    extra?: { location?: string; gender?: Gender }
+    extra?: { location?: string; gender?: Gender; acquisition_source?: AcquisitionSource; background?: FounderBackground }
   ): { user?: User; error?: string } {
     const trimmedEmail = email.trim().toLowerCase();
     if (!name.trim() || !trimmedEmail || !password) {
@@ -364,6 +425,10 @@ class LocalDataStore {
       password,
       ...(extra?.location ? { location: extra.location.trim() } : {}),
       ...(extra?.gender ? { gender: extra.gender } : {}),
+      ...(extra?.acquisition_source ? { acquisition_source: extra.acquisition_source } : {}),
+      ...(extra?.background ? { background: extra.background } : {}),
+      created_at: new Date().toISOString(),
+      last_active_at: new Date().toISOString(),
     };
     users.push(newUser);
     this.setItem(STORAGE_KEYS.USERS, users);
@@ -381,6 +446,7 @@ class LocalDataStore {
     }
     this.setItem(STORAGE_KEYS.CURRENT_USER_ID, user.id);
     this.setItem(STORAGE_KEYS.AUTH_SESSION, user.id);
+    this.touchActivity(user.id);
     this.notify();
     return { user };
   }
@@ -394,7 +460,12 @@ class LocalDataStore {
     const current = this.getCurrentUser();
     const users = this.getUsers().map(u => {
       if (u.id === current.id) {
-        return { ...u, is_member: isMember !== undefined ? isMember : !u.is_member };
+        const nextIsMember = isMember !== undefined ? isMember : !u.is_member;
+        return {
+          ...u,
+          is_member: nextIsMember,
+          ...(nextIsMember && !u.membership_started_at ? { membership_started_at: new Date().toISOString() } : {}),
+        };
       }
       return u;
     });
@@ -404,7 +475,7 @@ class LocalDataStore {
 
   public updateProfile(
     userId: string,
-    updates: { name?: string; email?: string; password?: string; location?: string; gender?: Gender }
+    updates: ProfileUpdates
   ): { error?: string } {
     const trimmedName = updates.name?.trim();
     const trimmedEmail = updates.email?.trim().toLowerCase();
@@ -434,6 +505,14 @@ class LocalDataStore {
         ...(updates.password ? { password: updates.password } : {}),
         ...(updates.location !== undefined ? { location: updates.location.trim() } : {}),
         ...(updates.gender !== undefined ? { gender: updates.gender } : {}),
+        ...(updates.background !== undefined ? { background: updates.background } : {}),
+        ...(updates.first_time_founder !== undefined ? { first_time_founder: updates.first_time_founder } : {}),
+        ...(updates.commitment !== undefined ? { commitment: updates.commitment } : {}),
+        ...(updates.startup_stage !== undefined ? { startup_stage: updates.startup_stage } : {}),
+        ...(updates.funding_raised_total !== undefined ? { funding_raised_total: updates.funding_raised_total } : {}),
+        ...(updates.has_revenue !== undefined ? { has_revenue: updates.has_revenue } : {}),
+        ...(updates.acquisition_source !== undefined ? { acquisition_source: updates.acquisition_source } : {}),
+        ...(updates.outcomes !== undefined ? { outcomes: { ...updates.outcomes, updated_at: new Date().toISOString() } } : {}),
       };
     });
     this.setItem(STORAGE_KEYS.USERS, users);
@@ -831,6 +910,75 @@ class LocalDataStore {
     const all = this.getItem<Record<string, StepWorkspace>>(STORAGE_KEYS.STEP_WORKSPACES, {});
     all[this.stepWorkspaceKey(scopeKey, problemId, stepId)] = { ...workspace, updated_at: new Date().toISOString() };
     this.setItem(STORAGE_KEYS.STEP_WORKSPACES, all);
+    this.notify();
+  }
+
+  public getAllStepWorkspaces(): Record<string, StepWorkspace> {
+    return this.getItem<Record<string, StepWorkspace>>(STORAGE_KEYS.STEP_WORKSPACES, {});
+  }
+
+  public clearStepWorkspaces(scopeKey: string, problemId: string): void {
+    const all = this.getAllStepWorkspaces();
+    const prefix = `${scopeKey}::${problemId}::`;
+    for (const key of Object.keys(all)) if (key.startsWith(prefix)) delete all[key];
+    this.setItem(STORAGE_KEYS.STEP_WORKSPACES, all);
+    this.notify();
+  }
+
+  public getLockedCategoryId(scopeKey: string, problemId: string): string | null {
+    const locks = this.getItem<Record<string, Record<string, string>>>(STORAGE_KEYS.CATEGORY_LOCKS, {});
+    return locks[scopeKey]?.[problemId] || null;
+  }
+
+  public getAllCategoryLocks(): Record<string, Record<string, string>> {
+    return this.getItem<Record<string, Record<string, string>>>(STORAGE_KEYS.CATEGORY_LOCKS, {});
+  }
+
+  public lockCategory(scopeKey: string, problemId: string, categoryId: string): void {
+    const locks = this.getAllCategoryLocks();
+    locks[scopeKey] = { ...(locks[scopeKey] || {}), [problemId]: categoryId };
+    this.setItem(STORAGE_KEYS.CATEGORY_LOCKS, locks);
+    this.notify();
+  }
+
+  public unlockCategory(scopeKey: string, problemId: string): void {
+    const locks = this.getAllCategoryLocks();
+    if (!locks[scopeKey]?.[problemId]) return;
+    delete locks[scopeKey][problemId];
+    this.setItem(STORAGE_KEYS.CATEGORY_LOCKS, locks);
+    this.notify();
+  }
+
+  public touchActivity(userId: string): void {
+    const now = Date.now();
+    const users = this.getUsers();
+    const user = users.find(u => u.id === userId);
+    if (!user || (user.last_active_at && now - new Date(user.last_active_at).getTime() < 3_600_000)) return;
+    this.setItem(STORAGE_KEYS.USERS, users.map(u => (u.id === userId ? { ...u, last_active_at: new Date(now).toISOString() } : u)));
+  }
+
+  public logResourceView(userId: string, resourceId: string): void {
+    const views = this.getResourceViews();
+    views.push({ user_id: userId, resource_id: resourceId, viewed_at: new Date().toISOString() });
+    this.setItem(STORAGE_KEYS.RESOURCE_VIEWS, views);
+  }
+
+  public getResourceViews(): ResourceView[] {
+    return this.getItem<ResourceView[]>(STORAGE_KEYS.RESOURCE_VIEWS, []);
+  }
+
+  public getStepRatings(): StepRating[] {
+    return this.getItem<StepRating[]>(STORAGE_KEYS.STEP_RATINGS, []);
+  }
+
+  public getUserStepRating(userId: string, stepId: string): StepRating | null {
+    return this.getStepRatings().find(r => r.user_id === userId && r.step_id === stepId) || null;
+  }
+
+  public rateStep(userId: string, stepId: string, score: number, comment?: string): void {
+    const ratings = this.getStepRatings().filter(r => !(r.user_id === userId && r.step_id === stepId));
+    ratings.push({ user_id: userId, step_id: stepId, score, ...(comment ? { comment } : {}), created_at: new Date().toISOString() });
+    this.setItem(STORAGE_KEYS.STEP_RATINGS, ratings);
     this.notify();
   }
 

@@ -54,7 +54,7 @@ export const SlackModal: React.FC<SlackModalProps> = ({ isOpen, onClose }) => {
             </div>
 
             <div className="bg-[var(--nxt-bg-soft)] border border-[var(--nxt-line)] rounded-2xl p-3 mb-5">
-              <label className="text-[11px] font-semibold text-[var(--nxt-ink-soft)] uppercase tracking-wider block mb-1">
+              <label className="text-xs font-semibold text-[var(--nxt-ink-soft)] uppercase tracking-wider block mb-1">
                 Static Invite Link (MVP)
               </label>
               <div className="flex items-center gap-2">
@@ -74,7 +74,7 @@ export const SlackModal: React.FC<SlackModalProps> = ({ isOpen, onClose }) => {
                 </button>
               </div>
               {copied && (
-                <p className="text-[11px] text-[var(--nxt-mint-strong)] mt-1 font-medium">Copied link to clipboard!</p>
+                <p className="text-xs text-[var(--nxt-mint-strong)] mt-1 font-medium">Copied link to clipboard!</p>
               )}
             </div>
 

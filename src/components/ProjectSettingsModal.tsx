@@ -95,7 +95,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
             </p>
 
             <div className="bg-[var(--nxt-bg-soft)] border border-[var(--nxt-line)] rounded-2xl p-4 mb-5">
-              <span className="text-[11px] font-semibold text-[var(--nxt-mint-deep)] bg-[var(--nxt-mint)] px-2.5 py-0.5 rounded-full">
+              <span className="text-xs font-semibold text-[var(--nxt-mint-deep)] bg-[var(--nxt-mint)] px-2.5 py-0.5 rounded-full">
                 {problem.department}
               </span>
               <h4 className="font-display text-sm font-bold text-[var(--nxt-ink)] mt-2">
@@ -134,11 +134,11 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
 
             <div className="mb-5 pt-5 border-t border-[var(--nxt-line)]">
               <label className="block text-xs font-bold text-[var(--nxt-ink)] uppercase tracking-wider mb-2">
-                Roadmap Category
+                Product Category
               </label>
               {currentCategory ? (
                 <p className="text-xs text-[var(--nxt-ink-soft)] mb-3">
-                  Currently on <span className="font-semibold text-[var(--nxt-ink)]">{currentCategory.name}</span>
+                  Locked to <span className="font-semibold text-[var(--nxt-ink)]">{currentCategory.name}</span>
                   {currentProgressPercent > 0 && <> — <span className="font-semibold text-[var(--nxt-blue-strong)]">{currentProgressPercent}%</span> complete</>}.
                 </p>
               ) : (
@@ -151,7 +151,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
                   onClick={() => setConfirmingReselect(true)}
                   className="px-3.5 py-2 border border-[var(--nxt-line)] hover:bg-[var(--nxt-bg-soft)] text-[var(--nxt-ink-soft)] rounded-full text-xs font-semibold flex items-center gap-1.5 transition-colors"
                 >
-                  <RotateCcw className="w-3.5 h-3.5" /> Go Back &amp; Reselect Category
+                  <RotateCcw className="w-3.5 h-3.5" /> {currentCategory ? 'Reset & choose a different category' : 'Choose a category'}
                 </button>
               ) : (
                 <div className="bg-[var(--nxt-peach)] border border-[var(--nxt-peach-deep)]/30 rounded-2xl p-3.5">
@@ -159,9 +159,11 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
                     <AlertTriangle className="w-4 h-4 text-[var(--nxt-peach-deep)] shrink-0 mt-0.5" />
                     <p className="text-xs text-[var(--nxt-peach-deep)] font-medium leading-relaxed">
                       {currentCategory && currentProgressPercent > 0 ? (
-                        <>This will reset your <span className="font-bold">{currentProgressPercent}%</span> progress on <span className="font-bold">{currentCategory.name}</span> and take you back to pick a category. This can't be undone.</>
+                        <>This unlocks <span className="font-bold">{currentCategory.name}</span>, clears your <span className="font-bold">{currentProgressPercent}%</span> progress, deliverables and log for this project, and takes you back to pick a category. This can't be undone.</>
+                      ) : currentCategory ? (
+                        <>This unlocks <span className="font-bold">{currentCategory.name}</span> and takes you back to pick a category. Any deliverables and log entries for this project are cleared.</>
                       ) : (
-                        <>This will take you back to pick a different category. Going forward, reselecting a category resets any progress you've made on your current one — so pick carefully.</>
+                        <>You'll pick a category next. Once chosen, it's locked to this project until you reset it here.</>
                       )}
                     </p>
                   </div>
@@ -171,7 +173,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
                       onClick={onReselectCategory}
                       className="px-3 py-1.5 bg-[var(--nxt-peach-deep)] hover:opacity-90 text-white rounded-full text-xs font-semibold transition-opacity"
                     >
-                      {currentCategory && currentProgressPercent > 0 ? 'Reset Progress & Reselect' : 'Continue to Category Picker'}
+                      {currentCategory ? 'Unlock & reset' : 'Continue to category picker'}
                     </button>
                     <button
                       onClick={() => setConfirmingReselect(false)}

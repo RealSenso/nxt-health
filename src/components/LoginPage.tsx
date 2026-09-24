@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Stethoscope, Mail, Lock, User as UserIcon, ArrowRight, ArrowLeft, AlertCircle, MapPin } from 'lucide-react';
+import { Stethoscope, Mail, Lock, User as UserIcon, ArrowRight, ArrowLeft, AlertCircle, MapPin, CheckCircle2 } from 'lucide-react';
+import { SpotIllustration } from './ui/Illustrations';
+import { BACKGROUND_OPTIONS, SOURCE_OPTIONS } from '../data/profileOptions';
 import { store, PLATFORM_NAME } from '../services/store';
-import { Gender } from '../types';
+import { Gender, AcquisitionSource, FounderBackground } from '../types';
 import { ThemeToggle } from './ThemeToggle';
 
 const GENDER_OPTIONS: { value: Gender; label: string }[] = [
@@ -23,6 +25,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBack }) => {
   const [password, setPassword] = useState('');
   const [location, setLocation] = useState('');
   const [gender, setGender] = useState<Gender | ''>('');
+  const [source, setSource] = useState<AcquisitionSource | ''>('');
+  const [background, setBackground] = useState<FounderBackground | ''>('');
   const [error, setError] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -30,12 +34,31 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBack }) => {
     setError('');
     const result = mode === 'login'
       ? store.login(email, password)
-      : store.signup(name, email, password, { location, ...(gender ? { gender } : {}) });
+      : store.signup(name, email, password, {
+          location,
+          ...(gender ? { gender } : {}),
+          ...(source ? { acquisition_source: source } : {}),
+          ...(background ? { background } : {}),
+        });
     if (result.error) setError(result.error);
   };
 
   return (
-    <div className="min-h-screen w-full bg-[var(--nxt-bg)] flex items-center justify-center p-4 py-10">
+    <div className="min-h-screen w-full bg-[var(--nxt-bg)] lg:grid lg:grid-cols-2">
+      <aside className="hidden lg:flex nxt-hero-glow border-r border-[var(--nxt-line)] flex-col justify-center px-14 xl:px-20">
+        <SpotIllustration kind="login" className="w-64 mb-8" />
+        <h2 className="font-display text-3xl font-extrabold text-[var(--nxt-ink)] leading-tight">
+          Build the medical startup hospitals are asking for.
+        </h2>
+        <ul className="mt-8 space-y-4 text-base text-[var(--nxt-ink-soft)]">
+          {['Verified clinical problems from department heads', 'Non-dilutive grants tied to each problem', 'Step-by-step roadmaps to a hospital pilot'].map(item => (
+            <li key={item} className="flex items-start gap-3">
+              <CheckCircle2 className="w-5 h-5 text-[var(--nxt-mint-strong)] mt-0.5 shrink-0" /> {item}
+            </li>
+          ))}
+        </ul>
+      </aside>
+      <div className="flex items-center justify-center p-4 py-10">
       <div className="w-full max-w-md">
         <div className="flex items-center justify-between mb-4">
           {onBack ? (
@@ -51,7 +74,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBack }) => {
           <ThemeToggle />
         </div>
         <div className="flex items-center justify-center gap-2.5 mb-6">
-          <div className="w-11 h-11 rounded-2xl bg-[var(--nxt-ink-fixed)] text-[var(--nxt-mint)] flex items-center justify-center">
+          <div className="w-11 h-11 rounded-2xl bg-[var(--nxt-mint-strong)] text-white flex items-center justify-center">
             <Stethoscope className="w-5.5 h-5.5" />
           </div>
           <span className="font-display font-black text-xl text-[var(--nxt-ink)] tracking-tighter">{PLATFORM_NAME}</span>
@@ -112,6 +135,35 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBack }) => {
                       placeholder="Dr. Alex Mercer"
                       className="w-full pl-9 pr-3 py-2.5 text-sm bg-[var(--nxt-bg-soft)] border border-[var(--nxt-line)] rounded-2xl text-[var(--nxt-ink)] focus:ring-2 focus:ring-[var(--nxt-mint-strong)] focus:outline-hidden focus:bg-[var(--nxt-surface)] transition-colors"
                     />
+                  </div>
+                </div>
+              )}
+
+              {mode === 'signup' && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-[var(--nxt-ink-soft)] mb-1">Your background <span className="font-normal">(optional)</span></label>
+                    <select
+                      id="input-signup-background"
+                      value={background}
+                      onChange={(e) => setBackground(e.target.value as FounderBackground)}
+                      className="w-full px-3 py-2.5 text-sm bg-[var(--nxt-bg-soft)] border border-[var(--nxt-line)] rounded-2xl text-[var(--nxt-ink)] focus:ring-2 focus:ring-[var(--nxt-mint-strong)] focus:outline-hidden"
+                    >
+                      <option value="">Select…</option>
+                      {BACKGROUND_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-[var(--nxt-ink-soft)] mb-1">How did you hear about us? <span className="font-normal">(optional)</span></label>
+                    <select
+                      id="input-signup-source"
+                      value={source}
+                      onChange={(e) => setSource(e.target.value as AcquisitionSource)}
+                      className="w-full px-3 py-2.5 text-sm bg-[var(--nxt-bg-soft)] border border-[var(--nxt-line)] rounded-2xl text-[var(--nxt-ink)] focus:ring-2 focus:ring-[var(--nxt-mint-strong)] focus:outline-hidden"
+                    >
+                      <option value="">Select…</option>
+                      {SOURCE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                    </select>
                   </div>
                 </div>
               )}
@@ -199,6 +251,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBack }) => {
             </motion.form>
           </AnimatePresence>
         </div>
+      </div>
       </div>
     </div>
   );
