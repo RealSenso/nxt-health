@@ -77,7 +77,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const mobileModes = [PROBLEMS_MODE, ROADMAP_SUBMODES[0], FUNDS_MODE, ...(currentUser && store.isAdmin(currentUser) ? [ADMIN_MODE] : [])];
 
   const handleSelectMode = (mode: Mode) => {
-    if (mode.locked && !mode.preview) {
+    if (mode.locked && !mode.preview && !currentUser?.is_member) {
       if (!currentUser) onLoginClick();
       else onOpenMembershipModal();
       return;
