@@ -88,11 +88,13 @@ class LocalDataStore {
     }
   }
 
-  private setItem<T>(key: string, value: T): void {
+  private setItem<T>(key: string, value: T): boolean {
     try {
       localStorage.setItem(key, JSON.stringify(value));
+      return true;
     } catch (e) {
       console.error(`Error writing ${key} to storage:`, e);
+      return false;
     }
   }
 
@@ -990,7 +992,7 @@ class LocalDataStore {
     submitted_by_name: string;
     note: string;
     files: SubmissionFile[];
-  }): StepSubmission {
+  }): StepSubmission | null {
     const all = this.getAllStepSubmissions();
     const newSubmission: StepSubmission = {
       ...payload,
@@ -999,7 +1001,7 @@ class LocalDataStore {
       submitted_at: new Date().toISOString(),
     };
     all.unshift(newSubmission);
-    this.setItem(STORAGE_KEYS.STEP_SUBMISSIONS, all);
+    if (!this.setItem(STORAGE_KEYS.STEP_SUBMISSIONS, all)) return null;
     this.notify();
     return newSubmission;
   }

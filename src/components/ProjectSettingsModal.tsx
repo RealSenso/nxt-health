@@ -39,7 +39,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
       setSaved(false);
       setConfirmingReselect(false);
     }
-  }, [isOpen, problem, scopeKey]);
+  }, [isOpen, problem?.id, scopeKey]);
 
   if (!problem) return null;
 

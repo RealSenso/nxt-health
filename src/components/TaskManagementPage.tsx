@@ -66,7 +66,7 @@ export const TaskManagementPage: React.FC<TaskManagementPageProps> = ({
       setSelectedCategoryId(locked);
       setView(locked ? 'roadmap' : 'categories');
     }
-  }, [initialProblemId, currentUser]);
+  }, [initialProblemId, currentUser?.id]);
 
   if (!currentUser || !currentUser.is_member) {
     return (

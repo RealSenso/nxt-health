@@ -70,6 +70,7 @@ export const ResourcesPage: React.FC<ResourcesPageProps> = ({
     return true;
   });
 
+  const previewResourceIds = new Set(resources.slice(0, PREVIEW_UNLOCKED_COUNT).map(r => r.id));
   const upgradeAction = currentUser ? onOpenMembershipModal : onOpenLogin;
   const upgradeLabel = currentUser ? 'Become a Member' : 'Log In / Register';
 
@@ -231,7 +232,7 @@ export const ResourcesPage: React.FC<ResourcesPageProps> = ({
 
       <RevealGroup className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" stagger={0.03}>
         {filtered.map(({ resource, step, category }, i) => {
-          const locked = !isMember && i >= PREVIEW_UNLOCKED_COUNT;
+          const locked = !isMember && !previewResourceIds.has(resource.id);
           const Icon = TYPE_ICON[resource.type];
           if (locked) {
             return (

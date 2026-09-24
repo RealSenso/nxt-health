@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Check, CheckCircle, Hospital, Sparkles, ArrowRight, ArrowLeft, Paperclip, Upload, Download,
   AlertCircle, Clock, MessageSquareWarning, X, Plus, Trash2, Target, AlertTriangle, Users,
-  NotebookPen, ListChecks, Flag, Lightbulb, Star
+  NotebookPen, ListChecks, Flag, Lightbulb, Star, Pencil, RotateCcw
 } from 'lucide-react';
 import { Step, User, Category, SubmissionFile, StepWorkspace, StepWorkStatus } from '../types';
 import { store } from '../services/store';
@@ -58,6 +58,9 @@ export const StepPage: React.FC<StepPageProps> = ({
 }) => {
   const [newTask, setNewTask] = useState('');
   const [newLogEntry, setNewLogEntry] = useState('');
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [editingLabel, setEditingLabel] = useState('');
+  const cancelEditRef = useRef(false);
 
   const guide = getStepGuide(step.stage_tag);
   const workspace: StepWorkspace = store.getStepWorkspace(scopeKey, problemId, step.id) || {
@@ -94,6 +97,30 @@ export const StepPage: React.FC<StepPageProps> = ({
     if (!label) return;
     save({ checklist: [...workspace.checklist, { id: `c-${Date.now()}`, label, done: false, custom: true }] });
     setNewTask('');
+  };
+
+  const handleStartTaskEdit = (id: string, label: string) => {
+    cancelEditRef.current = false;
+    setEditingTaskId(id);
+    setEditingLabel(label);
+  };
+
+  const handleSaveTaskEdit = () => {
+    if (cancelEditRef.current) return;
+    cancelEditRef.current = true;
+    const label = editingLabel.trim();
+    if (editingTaskId && label) {
+      save({ checklist: workspace.checklist.map(t => (t.id === editingTaskId ? { ...t, label } : t)) });
+    }
+    setEditingTaskId(null);
+  };
+
+  const missingSuggestions = guide.deliverables
+    .map((label, i) => ({ id: `g-${i}`, label }))
+    .filter(g => !workspace.checklist.some(t => t.id === g.id));
+
+  const handleRestoreSuggestions = () => {
+    save({ checklist: [...workspace.checklist, ...missingSuggestions.map(g => ({ ...g, done: false, custom: false }))] });
   };
 
   const handleAddLog = () => {
@@ -227,26 +254,58 @@ export const StepPage: React.FC<StepPageProps> = ({
                 <li key={item.id} className="group flex items-start gap-2.5 rounded-xl px-2 py-1.5 hover:bg-[var(--nxt-bg-soft)] transition-colors">
                   <button
                     onClick={() => save({ checklist: workspace.checklist.map(t => t.id === item.id ? { ...t, done: !t.done } : t) })}
+                    title={item.done ? 'Mark not done' : 'Mark done'}
                     className={`shrink-0 mt-0.5 w-4.5 h-4.5 rounded-md border flex items-center justify-center transition-colors ${
                       item.done ? 'bg-[var(--nxt-mint-strong)] border-[var(--nxt-mint-strong)] text-white' : 'border-[var(--nxt-line)] hover:border-[var(--nxt-mint-strong)]'
                     }`}
                   >
                     {item.done && <Check className="w-3 h-3" />}
                   </button>
-                  <span className={`flex-1 text-sm ${item.done ? 'line-through text-[var(--nxt-ink-soft)]' : 'text-[var(--nxt-ink)]'}`}>
-                    {item.label}
-                  </span>
-                  {item.custom && (
-                    <button
-                      onClick={() => save({ checklist: workspace.checklist.filter(t => t.id !== item.id) })}
-                      title="Remove task"
-                      className="opacity-0 group-hover:opacity-100 text-[var(--nxt-ink-soft)] hover:text-[var(--nxt-peach-deep)] transition-opacity"
+                  {editingTaskId === item.id ? (
+                    <input
+                      autoFocus
+                      onFocus={(e) => e.target.select()}
+                      value={editingLabel}
+                      onChange={(e) => setEditingLabel(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleSaveTaskEdit();
+                        if (e.key === 'Escape') { cancelEditRef.current = true; setEditingTaskId(null); }
+                      }}
+                      onBlur={handleSaveTaskEdit}
+                      aria-label="Edit task"
+                      className="flex-1 -my-1 text-sm bg-[var(--nxt-surface)] border border-[var(--nxt-mint-strong)] rounded-lg px-2 py-1 text-[var(--nxt-ink)] focus:outline-hidden"
+                    />
+                  ) : (
+                    <span
+                      onDoubleClick={() => handleStartTaskEdit(item.id, item.label)}
+                      className={`flex-1 text-sm ${item.done ? 'line-through text-[var(--nxt-ink-soft)]' : 'text-[var(--nxt-ink)]'}`}
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                      {item.label}
+                    </span>
+                  )}
+                  {editingTaskId !== item.id && (
+                    <span className="flex items-center gap-1 md:opacity-0 md:group-hover:opacity-100 md:focus-within:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => handleStartTaskEdit(item.id, item.label)}
+                        title="Edit task"
+                        className="p-1 rounded-md text-[var(--nxt-ink-soft)] hover:text-[var(--nxt-ink)] hover:bg-[var(--nxt-surface)]"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => save({ checklist: workspace.checklist.filter(t => t.id !== item.id) })}
+                        title="Delete task"
+                        className="p-1 rounded-md text-[var(--nxt-ink-soft)] hover:text-[var(--nxt-peach-deep)] hover:bg-[var(--nxt-surface)]"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </span>
                   )}
                 </li>
               ))}
+              {workspace.checklist.length === 0 && (
+                <li className="text-sm text-[var(--nxt-ink-soft)] px-2 py-1.5">No tasks yet — add your first one below.</li>
+              )}
             </ul>
             <div className="mt-3 flex gap-2">
               <input
@@ -254,16 +313,24 @@ export const StepPage: React.FC<StepPageProps> = ({
                 value={newTask}
                 onChange={(e) => setNewTask(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAddTask()}
-                placeholder="Add your own task..."
-                className="flex-1 text-xs bg-[var(--nxt-bg-soft)] border border-[var(--nxt-line)] rounded-full px-3.5 py-2 text-[var(--nxt-ink)] focus:outline-hidden focus:ring-2 focus:ring-[var(--nxt-mint-strong)]"
+                placeholder="Add a task..."
+                className="flex-1 text-sm bg-[var(--nxt-bg-soft)] border border-[var(--nxt-line)] rounded-full px-3.5 py-2 text-[var(--nxt-ink)] focus:outline-hidden focus:ring-2 focus:ring-[var(--nxt-mint-strong)]"
               />
               <button
                 onClick={handleAddTask}
-                className="px-3.5 py-2 rounded-full bg-[var(--nxt-mint-strong)] hover:bg-[var(--nxt-mint-deep)] text-white text-xs font-semibold flex items-center gap-1 transition-colors"
+                className="px-4 py-2 rounded-full bg-[var(--nxt-mint-strong)] hover:bg-[var(--nxt-mint-deep)] text-white text-sm font-semibold flex items-center gap-1 transition-colors"
               >
                 <Plus className="w-3.5 h-3.5" /> Add
               </button>
             </div>
+            {missingSuggestions.length > 0 && (
+              <button
+                onClick={handleRestoreSuggestions}
+                className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--nxt-ink-soft)] hover:text-[var(--nxt-mint-strong)] transition-colors"
+              >
+                <RotateCcw className="w-3.5 h-3.5" /> Restore {missingSuggestions.length} suggested task{missingSuggestions.length === 1 ? '' : 's'}
+              </button>
+            )}
           </Section>
 
           <Section icon={NotebookPen} title="Progress log" aside={`${workspace.log.length} entr${workspace.log.length === 1 ? 'y' : 'ies'}`}>
@@ -511,7 +578,7 @@ const EvidencePanel: React.FC<{ step: Step; category: Category; currentUser: Use
       setFileError('Add a note or attach at least one file before submitting.');
       return;
     }
-    store.submitStepEvidence({
+    const saved = store.submitStepEvidence({
       step_id: step.id,
       category_id: category.id,
       problem_id: problemId,
@@ -520,6 +587,10 @@ const EvidencePanel: React.FC<{ step: Step; category: Category; currentUser: Use
       note: note.trim(),
       files: pendingFiles,
     });
+    if (!saved) {
+      setFileError("Couldn't save — your browser's storage is full. Remove some files or attach smaller ones.");
+      return;
+    }
     setNote('');
     setPendingFiles([]);
     setFileError('');
