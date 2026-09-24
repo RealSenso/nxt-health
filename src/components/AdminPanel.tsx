@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Shield, Plus, Trash2, Edit, Check, X, Clock, CheckCircle2,
   XCircle, ListFilter, AlertCircle, Hospital,
-  Users, FolderPlus, FileText, ChevronDown, Layers, ShieldOff, Copy,
+  Users, FolderPlus, FileText, ChevronDown, Layers,
   BarChart3, TrendingUp, Paperclip, Download, MessageSquareWarning, RefreshCw
 } from 'lucide-react';
 import {
@@ -14,24 +15,40 @@ import { PageHeader, SegmentedTabs } from './ui/PageHeader';
 import { store } from '../services/store';
 import { SimpleBarChart, SimpleLineChart, HBarList } from './ui/Charts';
 import { BusinessAnalytics } from './admin/BusinessAnalytics';
+import { AdminMembers } from './admin/AdminMembers';
+import { DiscussButton } from './ui/DiscussButton';
 
 interface AdminPanelProps {
   currentUser: User;
-  onNavigateToTab: (tab: string) => void;
 }
+
+const TAB_TO_SECTION: Record<AdminTab, string> = {
+  applications: 'funding', problems: 'problems', categories: 'categories', steps: 'steps',
+  resources: 'resources', submissions: 'evidence', users: 'members', analytics: 'analytics',
+};
+const SECTION_TO_TAB = Object.fromEntries(Object.entries(TAB_TO_SECTION).map(([tab, section]) => [section, tab])) as Record<string, AdminTab>;
 
 type AdminTab = 'applications' | 'problems' | 'categories' | 'steps' | 'resources' | 'users' | 'analytics' | 'submissions';
 
-export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateToTab }) => {
-  const [adminTab, setAdminTab] = useState<AdminTab>('applications');
+export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser }) => {
+  const navigate = useNavigate();
+  const { section } = useParams<{ section?: string }>();
+  const adminTab: AdminTab = (section && SECTION_TO_TAB[section]) || 'applications';
+  const setAdminTab = (tab: AdminTab) => navigate(`/admin/${TAB_TO_SECTION[tab]}`);
   const [showSectionMenu, setShowSectionMenu] = useState(false);
   const [resetSuccess, setResetSuccess] = useState(false);
+  const [loadingStarter, setLoadingStarter] = useState(false);
 
-  const handleResetDemoData = () => {
-    if (window.confirm('Reset all demo data back to the original seed state? This clears every application, roadmap progress, saved problem, team, and notification created in this browser. This cannot be undone.')) {
-      store.initIfEmpty(true);
+  const handleLoadStarterContent = async () => {
+    setLoadingStarter(true);
+    try {
+      await store.loadStarterContent();
       setResetSuccess(true);
       setTimeout(() => setResetSuccess(false), 3000);
+    } catch (e) {
+      window.alert(e instanceof Error ? e.message : 'Could not load starter content.');
+    } finally {
+      setLoadingStarter(false);
     }
   };
 
@@ -63,7 +80,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
   const [editingResource, setEditingResource] = useState<Partial<Resource> | null>(null);
 
   const allUsers = store.getUsers();
-  const [copiedUserId, setCopiedUserId] = useState<string | null>(null);
 
   const allSubmissions = store.getAllStepSubmissions();
   const [submissionFilter, setSubmissionFilter] = useState<'all' | SubmissionStatus>('Submitted');
@@ -80,7 +96,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
       department: editingProblem.department || 'General Clinical',
       funded: editingProblem.funded ?? false,
       funding_amount: editingProblem.funding_amount || (editingProblem.funded ? '$100,000 Grant Pool' : 'Unfunded'),
-      created_by_admin: currentUser.id,
     });
     setEditingProblem(null);
   };
@@ -161,23 +176,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
       contact_person: editingResource.contact_person || '',
       contact_email: editingResource.contact_email || '',
       pilot_status: editingResource.pilot_status || '',
+      starts_at: editingResource.starts_at || '',
+      capacity: editingResource.capacity || null,
+      slots: editingResource.type === 'session' ? (editingResource.slots || []) : [],
+      slot_minutes: editingResource.slot_minutes || 30,
       assigned_user_id: editingResource.assigned_user_id || undefined,
       assigned_problem_id: editingResource.assigned_user_id ? (editingResource.assigned_problem_id || undefined) : undefined,
     });
     setEditingResource(null);
-  };
-
-  const handleSetUserRole = (user: User, role: 'admin' | 'member') => {
-    if (user.id === currentUser.id && role === 'member') {
-      if (!window.confirm("Revoke your own admin access? You'll immediately lose access to this Admin Panel.")) return;
-    }
-    store.setUserRole(user.id, role);
-  };
-
-  const handleCopyUserId = (userId: string) => {
-    navigator.clipboard?.writeText(userId).catch(() => {});
-    setCopiedUserId(userId);
-    setTimeout(() => setCopiedUserId(null), 1200);
   };
 
   const handleDeleteResource = (id: string) => {
@@ -218,7 +224,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
     { id: 'steps', label: 'Category Steps & Roadmaps', icon: Layers },
     { id: 'resources', label: 'Step Resources & Hospital Hub', icon: Hospital },
     { id: 'submissions', label: `Step Submissions (${allSubmissions.filter(s => s.status === 'Submitted').length} Pending)`, icon: Paperclip },
-    { id: 'users', label: `Users & Access (${allUsers.length})`, icon: Users },
+    { id: 'users', label: `Members (${allUsers.filter(u => u.membership_status === 'requested').length} requests)`, icon: Users },
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
   ];
 
@@ -230,22 +236,28 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
         title="Admin console"
         subtitle="Manage problem statements, review grant applications and evidence, configure roadmaps and resources, and track how founders are doing."
         illustration="analytics"
-        actions={
+        actions={store.isContentEmpty() ? (
           <button
-            id="btn-admin-reset-demo-data"
-            onClick={handleResetDemoData}
-            className="px-4 py-2.5 border border-[var(--nxt-line)] bg-[var(--nxt-surface)] hover:bg-[var(--nxt-bg-soft)] text-[var(--nxt-ink-soft)] rounded-full text-sm font-semibold flex items-center gap-1.5 transition-colors"
-            title="Reset all demo data back to the original seed state"
+            id="btn-admin-load-starter"
+            onClick={handleLoadStarterContent}
+            disabled={loadingStarter}
+            className="px-4 py-2.5 bg-[var(--nxt-mint-strong)] hover:bg-[var(--nxt-mint-deep)] disabled:opacity-60 text-white rounded-full text-sm font-semibold flex items-center gap-1.5 transition-colors"
           >
-            <RefreshCw className="w-4 h-4" /> Reset demo data
+            <RefreshCw className={`w-4 h-4 ${loadingStarter ? 'animate-spin' : ''}`} /> {loadingStarter ? 'Loading…' : 'Load starter content'}
           </button>
-        }
+        ) : undefined}
       />
+
+      {store.isContentEmpty() && !resetSuccess && (
+        <div className="p-4 bg-[var(--nxt-blue)] border border-[var(--nxt-blue-strong)]/20 text-[var(--nxt-blue-deep)] text-sm rounded-2xl">
+          The database has no categories or problem statements yet. Click <strong>Load starter content</strong> to add the 21 categories, roadmap steps, resources and sample problem statements — you can edit or delete any of them afterwards.
+        </div>
+      )}
 
       {resetSuccess && (
         <div className="p-3 bg-[var(--nxt-mint)]/40 border border-[var(--nxt-mint-strong)]/20 text-[var(--nxt-mint-strong)] text-xs font-semibold rounded-xl flex items-center gap-2">
           <CheckCircle2 className="w-4 h-4 text-[var(--nxt-mint-strong)]" />
-          <span>Demo data reset — every application, roadmap, and saved problem is back to the original seed state.</span>
+          <span>Starter content loaded.</span>
         </div>
       )}
 
@@ -352,6 +364,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
                         <span className="text-xs font-bold text-[var(--nxt-mint-strong)] bg-[var(--nxt-mint)]/40 px-2 py-0.5 rounded">
                           {app.startup_name}
                         </span>
+                        <DiscussButton type="application" id={app.id} label="Message founder" />
                         <span className="text-xs text-[var(--nxt-ink-soft)]">•</span>
                         <span className="text-xs text-[var(--nxt-ink-soft)]">
                           Lead: {app.applicant_name} ({app.applicant_email})
@@ -1113,6 +1126,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
                 </div>
               )}
 
+              {editingResource.type !== 'hospital_connection' && (
+                <EventFields resource={editingResource} onChange={setEditingResource} />
+              )}
+
               <div className="bg-[var(--nxt-surface)] p-3 rounded-xl border border-[var(--nxt-line)] space-y-2">
                 <label className="flex items-center gap-2 text-xs font-bold text-[var(--nxt-ink)]">
                   <input
@@ -1218,72 +1235,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
         </div>
       )}
 
-      {adminTab === 'users' && (
-        <div className="space-y-4">
-          <div className="bg-[var(--nxt-surface)] p-4 rounded-xl border border-[var(--nxt-line)] shadow-sm">
-            <h3 className="font-display text-sm font-bold text-[var(--nxt-ink)]">Users & Access</h3>
-            <p className="text-xs text-[var(--nxt-ink-soft)]">
-              Grant or revoke admin access, and copy a user's ID to target them with a personal resource recommendation.
-            </p>
-          </div>
-
-          <div className="bg-[var(--nxt-surface)] rounded-xl border border-[var(--nxt-line)] overflow-hidden shadow-sm">
-            <div className="divide-y divide-slate-100">
-              {allUsers.map(u => (
-                <div key={u.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-[var(--nxt-bg-soft)] transition-colors">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <span className="text-xs sm:text-sm font-bold text-[var(--nxt-ink)]">{u.name}</span>
-                      <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
-                        u.role === 'admin' ? 'bg-[var(--nxt-lavender)] text-[var(--nxt-lavender-strong)]' : 'bg-[var(--nxt-bg-soft)] text-[var(--nxt-ink-soft)]'
-                      }`}>
-                        {u.role === 'admin' ? 'ADMIN' : 'MEMBER'}
-                      </span>
-                      <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
-                        u.is_member ? 'bg-[var(--nxt-mint)] text-[var(--nxt-mint-strong)]' : 'bg-[var(--nxt-peach)] text-[var(--nxt-peach-deep)]'
-                      }`}>
-                        {u.is_member ? 'PAYING MEMBER' : 'UNPAID'}
-                      </span>
-                    </div>
-                    <p className="text-xs text-[var(--nxt-ink-soft)]">{u.email}</p>
-                    <button
-                      onClick={() => handleCopyUserId(u.id)}
-                      className="mt-1 inline-flex items-center gap-1 text-[11px] font-mono text-[var(--nxt-ink-soft)] hover:text-[var(--nxt-mint-strong)] bg-[var(--nxt-bg-soft)] hover:bg-[var(--nxt-mint)]/30 px-2 py-0.5 rounded transition-colors"
-                      title="Copy user ID"
-                    >
-                      <Copy className="w-3 h-3" />
-                      <span>{u.id}</span>
-                      {copiedUserId === u.id && <span className="text-[var(--nxt-mint-strong)] font-semibold">Copied!</span>}
-                    </button>
-                  </div>
-
-                  <div className="shrink-0">
-                    {u.role === 'admin' ? (
-                      <button
-                        id={`btn-revoke-admin-${u.id}`}
-                        onClick={() => handleSetUserRole(u, 'member')}
-                        className="px-3 py-1.5 border border-[var(--nxt-peach-deep)]/30 hover:bg-[var(--nxt-peach)] text-[var(--nxt-peach-deep)] rounded-full text-xs font-semibold flex items-center gap-1.5 transition-colors"
-                      >
-                        <ShieldOff className="w-3.5 h-3.5" />
-                        <span>Revoke Admin</span>
-                      </button>
-                    ) : (
-                      <button
-                        id={`btn-grant-admin-${u.id}`}
-                        onClick={() => handleSetUserRole(u, 'admin')}
-                        className="px-3 py-1.5 bg-[var(--nxt-lavender-strong)] hover:bg-[var(--nxt-lavender-deep)] text-white rounded-full text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-colors"
-                      >
-                        <Shield className="w-3.5 h-3.5" />
-                        <span>Grant Admin</span>
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+      {adminTab === 'users' && <AdminMembers currentUser={currentUser} />}
 
       {adminTab === 'submissions' && (
         <div className="space-y-4">
@@ -1358,19 +1310,20 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onNavigateT
                         <p className="text-[11px] font-bold text-[var(--nxt-ink-soft)] uppercase tracking-wider mb-1">Attached Evidence ({sub.files.length})</p>
                         <div className="flex flex-wrap gap-2">
                           {sub.files.map((f, i) => (
-                            <a
+                            <button
                               key={i}
-                              href={f.dataUrl}
-                              download={f.name}
+                              onClick={() => store.downloadSubmissionFile(f.file_id, f.name)}
                               className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-[var(--nxt-bg-soft)] border border-[var(--nxt-line)] rounded-lg text-xs font-semibold text-[var(--nxt-ink)] hover:border-[var(--nxt-mint-strong)]/40 transition-colors"
                             >
                               <Download className="w-3 h-3" />
                               <span className="truncate max-w-[160px]">{f.name}</span>
-                            </a>
+                            </button>
                           ))}
                         </div>
                       </div>
                     )}
+
+                    <DiscussButton type="submission" id={sub.id} label="Message founder" />
 
                     {sub.status === 'Submitted' ? (
                       <div className="pt-2 border-t border-[var(--nxt-line)] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -1785,6 +1738,71 @@ const AdminAnalytics: React.FC = () => {
           </div>
         )}
       </div>
+    </div>
+  );
+};
+
+const toLocalInput = (iso?: string) => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? '' : new Date(d.getTime() - d.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
+};
+const fromLocalInput = (value: string) => (value ? new Date(value).toISOString() : '');
+
+const EventFields: React.FC<{ resource: Partial<Resource>; onChange: (r: Partial<Resource>) => void }> = ({ resource, onChange }) => {
+  const [newSlot, setNewSlot] = useState('');
+  const slots = [...(resource.slots || [])].sort();
+  const inputClass = 'w-full text-xs bg-[var(--nxt-surface)] border border-[var(--nxt-line)] rounded-lg p-2';
+  return (
+    <div className="bg-[var(--nxt-surface)] p-3 rounded-xl border border-[var(--nxt-line)] space-y-3">
+      <p className="text-xs font-bold text-[var(--nxt-ink)]">Sign-ups</p>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div>
+          <label className="block text-xs font-semibold text-[var(--nxt-ink-soft)] mb-1">Starts at (for RSVP & calendar)</label>
+          <input type="datetime-local" value={toLocalInput(resource.starts_at)} onChange={(e) => onChange({ ...resource, starts_at: fromLocalInput(e.target.value) })} className={inputClass} />
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-[var(--nxt-ink-soft)] mb-1">Capacity (blank = unlimited)</label>
+          <input type="number" min={1} value={resource.capacity ?? ''} onChange={(e) => onChange({ ...resource, capacity: e.target.value ? Math.max(1, Number(e.target.value)) : null })} className={inputClass} />
+        </div>
+        {resource.type === 'session' && (
+          <div>
+            <label className="block text-xs font-semibold text-[var(--nxt-ink-soft)] mb-1">Slot length (minutes)</label>
+            <input type="number" min={5} max={480} value={resource.slot_minutes ?? 30} onChange={(e) => onChange({ ...resource, slot_minutes: Math.max(5, Number(e.target.value) || 30) })} className={inputClass} />
+          </div>
+        )}
+      </div>
+      {resource.type === 'session' && (
+        <div>
+          <label className="block text-xs font-semibold text-[var(--nxt-ink-soft)] mb-1">Bookable 1-on-1 slots (founders book one each)</label>
+          <div className="flex gap-2">
+            <input type="datetime-local" value={newSlot} onChange={(e) => setNewSlot(e.target.value)} className={inputClass} />
+            <button
+              type="button"
+              disabled={!newSlot}
+              onClick={() => {
+                const iso = fromLocalInput(newSlot);
+                if (!slots.includes(iso)) onChange({ ...resource, slots: [...slots, iso] });
+                setNewSlot('');
+              }}
+              className="px-3 rounded-lg bg-[var(--nxt-mint-strong)] text-white text-xs font-semibold disabled:opacity-50"
+            >
+              Add slot
+            </button>
+          </div>
+          {slots.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {slots.map(slot => (
+                <span key={slot} className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-lg bg-[var(--nxt-bg-soft)] text-[var(--nxt-ink)]">
+                  {new Date(slot).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                  <button type="button" onClick={() => onChange({ ...resource, slots: slots.filter(s => s !== slot) })} className="text-[var(--nxt-ink-soft)] hover:text-[var(--nxt-peach-deep)]" aria-label="Remove slot">×</button>
+                </span>
+              ))}
+            </div>
+          )}
+          <p className="text-[11px] text-[var(--nxt-ink-soft)] mt-1">Leave empty to use simple RSVP instead of slot booking.</p>
+        </div>
+      )}
     </div>
   );
 };

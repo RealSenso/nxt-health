@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'motion/react';
 import {
   DollarSign, CheckCircle, AlertCircle, ArrowRight, ArrowLeft, Search,
@@ -32,10 +33,13 @@ export const ProblemStatementsList: React.FC<ProblemStatementsListProps> = ({
   const [filter, setFilter] = useState<'all' | 'funded' | 'unfunded' | 'saved'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [applyModalProblem, setApplyModalProblem] = useState<ProblemStatement | null>(null);
-  const [selectedProblem, setSelectedProblem] = useState<ProblemStatement | null>(null);
+  const navigate = useNavigate();
+  const { problemId } = useParams<{ problemId?: string }>();
 
   const isMember = !!currentUser?.is_member;
   const problems = store.getProblems();
+  const selectedProblem = problemId ? problems.find(p => p.id === problemId) || null : null;
+  const setSelectedProblem = (problem: ProblemStatement | null) => navigate(problem ? `/problems/${problem.id}` : '/problems');
   const userApplications = currentUser ? store.getScopedApplications(currentUser) : [];
   const savedProblemIds = currentUser ? store.getSavedProblemIds(currentUser.id) : [];
 
@@ -352,7 +356,7 @@ export const ProblemStatementsList: React.FC<ProblemStatementsListProps> = ({
             onClick={currentUser ? onOpenMembershipModal : onOpenLogin}
             className="shrink-0 px-3.5 py-1.5 text-xs"
           >
-            {currentUser ? 'Unlock Membership ($49/mo)' : 'Log In / Register'}
+            {currentUser ? (currentUser.membership_status === 'requested' ? 'Membership requested' : 'Request membership') : 'Log In / Register'}
           </PillButton>
         </Reveal>
       )}

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Bell, Check, CheckCheck, DollarSign, FileCheck, Users } from 'lucide-react';
+import { Bell, CheckCheck, DollarSign, FileCheck, Users, MessageSquare, CalendarCheck, BadgeCheck, GraduationCap } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { AppNotification, User } from '../types';
 import { store } from '../services/store';
 
@@ -12,6 +13,10 @@ const ICONS: Record<AppNotification['type'], React.ElementType> = {
   application_status: DollarSign,
   submission_review: FileCheck,
   team_invite: Users,
+  membership: BadgeCheck,
+  message: MessageSquare,
+  mentorship: GraduationCap,
+  event: CalendarCheck,
 };
 
 function timeAgo(iso: string): string {
@@ -27,6 +32,7 @@ function timeAgo(iso: string): string {
 
 export const NotificationsBell: React.FC<NotificationsBellProps> = ({ currentUser }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const navigate = useNavigate();
 
   const notifications = store.getNotifications(currentUser.id);
   const unreadCount = notifications.filter(n => !n.read).length;
@@ -75,7 +81,7 @@ export const NotificationsBell: React.FC<NotificationsBellProps> = ({ currentUse
 
               {notifications.length === 0 ? (
                 <p className="text-xs text-[var(--nxt-ink-soft)] px-3 py-6 text-center">
-                  Nothing yet — you'll see application decisions and reviewer feedback here.
+                  Nothing yet — application decisions, messages, invites and reviewer feedback will show up here.
                 </p>
               ) : (
                 notifications.map(n => {
@@ -83,7 +89,10 @@ export const NotificationsBell: React.FC<NotificationsBellProps> = ({ currentUse
                   return (
                     <button
                       key={n.id}
-                      onClick={() => !n.read && store.markNotificationRead(n.id)}
+                      onClick={() => {
+                        if (!n.read) store.markNotificationRead(n.id);
+                        if (n.link) { setIsOpen(false); navigate(n.link); }
+                      }}
                       className={`w-full text-left flex items-start gap-2.5 px-3 py-2.5 transition-colors ${
                         n.read ? 'hover:bg-[var(--nxt-bg-soft)]' : 'bg-[var(--nxt-mint)]/20 hover:bg-[var(--nxt-mint)]/30'
                       }`}

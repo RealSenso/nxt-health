@@ -1,4 +1,5 @@
 export type UserRole = 'admin' | 'member';
+export type MembershipStatus = 'none' | 'requested' | 'active' | 'declined';
 export type Gender = 'female' | 'male' | 'other' | 'prefer_not_to_say';
 
 export type FounderBackground = 'clinical' | 'engineering' | 'science' | 'business' | 'other';
@@ -18,9 +19,14 @@ export interface User {
   email: string;
   name: string;
   role: UserRole;
+  /** Derived on the client: active membership or admin. */
   is_member: boolean;
-  password?: string;
-  team_id?: string;
+  membership_status: MembershipStatus;
+  membership_requested_at?: string;
+  is_mentor?: boolean;
+  email_verified?: boolean;
+  saved_problem_ids?: string[];
+  team_id?: string | null;
   location?: string;
   gender?: Gender;
   created_at?: string;
@@ -56,6 +62,20 @@ export interface Team {
   owner_id: string;
   member_ids: string[];
   created_at: string;
+  tagline?: string;
+  website?: string;
+  is_public?: boolean;
+}
+
+export interface TeamInvite {
+  id: string;
+  team_id: string;
+  team_name: string;
+  from_uid: string;
+  from_name: string;
+  to_email: string;
+  status: 'pending' | 'accepted' | 'declined' | 'cancelled';
+  created_at: string;
 }
 
 export interface ProblemStatement {
@@ -86,6 +106,7 @@ export interface FundingApplication {
   admin_feedback?: string;
   submitted_at: string;
   reviewed_at?: string;
+  scope_key?: string;
 }
 
 export interface Category {
@@ -102,6 +123,7 @@ export interface Step {
   description: string;
   order: number;
   stage_tag?: string;
+  locked?: boolean;
 }
 
 export type ResourceType = 'session' | 'webinar' | 'seminar' | 'hospital_connection';
@@ -122,6 +144,30 @@ export interface Resource {
   pilot_status?: string;
   assigned_user_id?: string;
   assigned_problem_id?: string;
+  /** Machine-readable start time for RSVP deadlines and calendar invites; `date` stays a display label. */
+  starts_at?: string;
+  capacity?: number | null;
+  rsvp_count?: number;
+  slots?: string[];
+  slot_minutes?: number;
+  /** Set when a non-member receives only a preview of this item. */
+  locked?: boolean;
+}
+
+export interface Rsvp {
+  id: string;
+  resource_id: string;
+  user_id: string;
+  user_name: string;
+  created_at: string;
+}
+
+export interface Booking {
+  id?: string;
+  resource_id: string;
+  slot: string;
+  user_id?: string;
+  user_name?: string;
 }
 
 export interface UserProgress {
@@ -132,7 +178,8 @@ export interface UserProgress {
   updated_at: string;
 }
 
-export type NotificationType = 'application_status' | 'submission_review' | 'team_invite';
+export type NotificationType =
+  | 'application_status' | 'submission_review' | 'team_invite' | 'membership' | 'message' | 'mentorship' | 'event';
 
 export interface AppNotification {
   id: string;
@@ -140,6 +187,7 @@ export interface AppNotification {
   type: NotificationType;
   title: string;
   message: string;
+  link?: string;
   read: boolean;
   created_at: string;
 }
@@ -173,10 +221,10 @@ export interface StepWorkspace {
 }
 
 export interface SubmissionFile {
+  file_id: string;
   name: string;
   size: number;
   type: string;
-  dataUrl: string;
 }
 
 export interface StepSubmission {
@@ -185,6 +233,7 @@ export interface StepSubmission {
   category_id: string;
   problem_id: string;
   user_id: string;
+  scope_key?: string;
   submitted_by_name: string;
   note: string;
   files: SubmissionFile[];
@@ -192,4 +241,94 @@ export interface StepSubmission {
   admin_feedback?: string;
   submitted_at: string;
   reviewed_at?: string;
+}
+
+export interface Thread {
+  id: string;
+  subject: string;
+  context: { type: 'application' | 'submission' | 'mentorship'; id: string };
+  scope_key?: string;
+  participant_uids: string[];
+  admin_visible: boolean;
+  last_message_at: string;
+  last_message_preview: string;
+  unread?: boolean;
+  created_at: string;
+}
+
+export interface Message {
+  id: string;
+  thread_id: string;
+  author_uid: string;
+  author_name: string;
+  author_is_admin: boolean;
+  body: string;
+  created_at: string;
+}
+
+export interface MentorProfile {
+  id: string;
+  name: string;
+  headline?: string;
+  bio?: string;
+  expertise_stages?: string[];
+  category_ids?: string[];
+  background?: FounderBackground;
+  user_background?: FounderBackground;
+  availability?: string;
+  capacity?: number;
+  accepting?: boolean;
+  active_mentees: number;
+  has_profile: boolean;
+}
+
+export type MentorRequestStatus = 'pending' | 'accepted' | 'declined' | 'ended';
+
+export interface MentorRequest {
+  id: string;
+  mentor_uid: string;
+  mentor_name: string;
+  founder_uid: string;
+  founder_name: string;
+  message: string;
+  status: MentorRequestStatus;
+  thread_id?: string;
+  created_at: string;
+}
+
+export interface PublicProfileSettings {
+  is_public: boolean;
+  headline?: string;
+  bio?: string;
+  website?: string;
+  linkedin?: string;
+  show_location?: boolean;
+  show_background?: boolean;
+  show_startup_stage?: boolean;
+  show_team?: boolean;
+}
+
+export interface PublicFounder {
+  id: string;
+  name: string;
+  is_public: boolean;
+  headline: string;
+  bio: string;
+  website: string;
+  linkedin: string;
+  location: string;
+  background: string;
+  startup_stage: string;
+  is_mentor: boolean;
+  team: { id: string; name: string } | null;
+}
+
+export interface PublicTeam {
+  id: string;
+  name: string;
+  tagline: string;
+  website: string;
+  is_public: boolean;
+  member_count: number;
+  members: { id: string; name: string; headline: string; has_public_profile: boolean }[];
 }

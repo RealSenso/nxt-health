@@ -26,7 +26,10 @@ const app = createApp({
   verifyToken: firebaseVerifier({ projectId }),
   allowedOrigins: ['http://localhost:3000', 'http://127.0.0.1:3000'],
 });
-app.listen(8080, () => console.log('Local API on http://localhost:8080 (MongoDB in-memory, data kept in server/.dev-data)'));
+app.listen(8080, () => {
+  console.log('Local API on http://localhost:8080 (MongoDB in-memory, data kept in server/.dev-data)');
+  console.log(`Local MongoDB URI (for make-admin): ${mongo.getUri()}`);
+});
 
 const shutdown = async () => { await mongo.stop({ doCleanup: false }); process.exit(0); };
 process.on('SIGINT', shutdown);

@@ -1,49 +1,21 @@
 import {
-  User, UserRole, ProblemStatement, FundingApplication, Category, Step, Resource, UserProgress, ApplicationStatus,
-  Team, AppNotification, NotificationType, StepSubmission, SubmissionStatus, SubmissionFile, Gender,
-  StepWorkspace, ResourceView, StepRating, FounderBackground, Commitment, StartupStage, AcquisitionSource,
-  FounderOutcomes
+  createUserWithEmailAndPassword, onAuthStateChanged, sendEmailVerification, sendPasswordResetEmail,
+  signInWithEmailAndPassword, signOut, updateProfile as updateFirebaseProfile, type User as FirebaseUser,
+} from 'firebase/auth';
+import {
+  AcquisitionSource, AppNotification, ApplicationStatus, Booking, Category, Commitment, FounderBackground,
+  FounderOutcomes, FundingApplication, Gender, MembershipStatus, MentorProfile, MentorRequest, Message,
+  ProblemStatement, PublicFounder, PublicProfileSettings, PublicTeam, Resource, ResourceView, Rsvp,
+  StartupStage, Step, StepRating, StepSubmission, StepWorkspace, SubmissionStatus, Team, TeamInvite,
+  Thread, User, UserProgress, UserRole,
 } from '../types';
-import {
-  SEED_USERS, SEED_PROBLEM_STATEMENTS, SEED_CATEGORIES,
-  SEED_STEPS, SEED_RESOURCES, SEED_APPLICATIONS, SEED_PROGRESS
-} from '../data/seedData';
-import {
-  JOURNEYS, SEED_JOURNEY_WORKING_PROBLEMS, SEED_JOURNEY_CATEGORY_LOCKS, SEED_RESOURCE_VIEWS, SEED_STEP_RATINGS,
-  SEED_SUBMISSIONS, daysAgo,
-} from '../data/seedAnalytics';
-import { getStepGuide } from '../data/stepGuides';
+import { api, ApiError } from './api';
+import { auth } from './firebase';
 
-const STORAGE_KEYS = {
-  CURRENT_USER_ID: 'medplatform_current_user_id_v1',
-  USERS: 'medplatform_users_v2',
-  PROBLEMS: 'medplatform_problems_v1',
-  APPLICATIONS: 'medplatform_applications_v1',
-  CATEGORIES: 'medplatform_categories_v1',
-  STEPS: 'medplatform_steps_v1',
-  RESOURCES: 'medplatform_resources_v1',
-  PROGRESS: 'medplatform_progress_v1',
-  SLACK_URL: 'medplatform_slack_url_v1',
-  WORKING_PROBLEMS: 'medplatform_working_problems_v1',
-  SAVED_PROBLEMS: 'medplatform_saved_problems_v1',
-  PROJECT_NOTES: 'medplatform_project_notes_v1',
-  AUTH_SESSION: 'medplatform_auth_session_v1',
-  NOTIFICATIONS: 'medplatform_notifications_v1',
-  TEAMS: 'medplatform_teams_v1',
-  STEP_SUBMISSIONS: 'medplatform_step_submissions_v1',
-  STEP_WORKSPACES: 'medplatform_step_workspaces_v1',
-  CATEGORY_LOCKS: 'medplatform_category_locks_v1',
-  RESOURCE_VIEWS: 'medplatform_resource_views_v1',
-  STEP_RATINGS: 'medplatform_step_ratings_v1',
-  SEED_VERSION: 'medplatform_seed_version',
-};
-
-const SEED_VERSION = 4;
+export const PLATFORM_NAME = 'NxT Health';
 
 export type ProfileUpdates = {
   name?: string;
-  email?: string;
-  password?: string;
   location?: string;
   gender?: Gender;
   background?: FounderBackground;
@@ -56,172 +28,276 @@ export type ProfileUpdates = {
   outcomes?: Omit<FounderOutcomes, 'updated_at'>;
 };
 
-export const PLATFORM_NAME = 'NxT Health';
+type RawUser = Omit<User, 'is_member'>;
 
-const DEFAULT_SLACK_URL = 'https://join.slack.com/t/medtech-founders-hub/shared_invite/zt-placeholder-medtech-mvp';
+interface ScopeData {
+  key: string;
+  working_problem_ids: string[];
+  category_locks: Record<string, string>;
+  project_notes: Record<string, string>;
+}
 
-class LocalDataStore {
-  private listeners: Set<() => void> = new Set();
+interface BootstrapData {
+  content: {
+    problems: ProblemStatement[];
+    categories: Category[];
+    steps: Step[];
+    resources: Resource[];
+    slack_url: string;
+    booked_slots: Record<string, string[]>;
+  };
+  me: RawUser | null;
+  needs_profile: boolean;
+  team?: Team | null;
+  team_members?: { id: string; name: string; email: string }[];
+  invites?: { incoming: TeamInvite[]; outgoing: TeamInvite[] };
+  scope?: ScopeData;
+  progress?: UserProgress[];
+  workspaces?: Record<string, StepWorkspace>;
+  applications?: FundingApplication[];
+  submissions?: StepSubmission[];
+  notifications?: AppNotification[];
+  threads?: Thread[];
+  my_rsvps?: string[];
+  my_bookings?: Booking[];
+  my_ratings?: StepRating[];
+  public_profile?: (PublicProfileSettings & { id: string }) | null;
+  mentors?: MentorProfile[];
+  mentor_requests?: MentorRequest[];
+  admin?: {
+    users: RawUser[];
+    teams: Team[];
+    scopes: (Omit<ScopeData, 'key'> & { id: string })[];
+    resource_views: ResourceView[];
+    step_ratings: StepRating[];
+    rsvps: Rsvp[];
+    bookings: Booking[];
+  };
+}
+
+const EMPTY: BootstrapData = {
+  content: { problems: [], categories: [], steps: [], resources: [], slack_url: 'https://join.slack.com/', booked_slots: {} },
+  me: null,
+  needs_profile: false,
+};
+
+const withMembership = (u: RawUser): User => ({ ...u, is_member: u.role === 'admin' || u.membership_status === 'active' });
+
+class ApiStore {
+  private listeners = new Set<() => void>();
+  private errorListeners = new Set<(message: string) => void>();
+  private data: BootstrapData = EMPTY;
+  private firebaseUser: FirebaseUser | null = null;
+  private refreshTimer: ReturnType<typeof setTimeout> | null = null;
+  private inFlight: Promise<void> | null = null;
+  private signingUp = false;
+  public ready = false;
+  public loadError: string | null = null;
 
   constructor() {
-    this.initIfEmpty();
+    onAuthStateChanged(auth, async (user) => {
+      this.firebaseUser = user;
+      await this.refresh();
+      this.ready = true;
+      this.notify();
+    });
+    setInterval(() => { if (document.visibilityState === 'visible') void this.refresh(); }, 30_000);
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') void this.refresh(); });
   }
+
+  // ---------- plumbing ----------
 
   public subscribe(listener: () => void): () => void {
     this.listeners.add(listener);
-    return () => {
-      this.listeners.delete(listener);
-    };
+    return () => { this.listeners.delete(listener); };
+  }
+
+  public onError(listener: (message: string) => void): () => void {
+    this.errorListeners.add(listener);
+    return () => { this.errorListeners.delete(listener); };
   }
 
   private notify(): void {
     this.listeners.forEach(cb => cb());
   }
 
-  private getItem<T>(key: string, defaultValue: T): T {
-    try {
-      const data = localStorage.getItem(key);
-      return data ? JSON.parse(data) : defaultValue;
-    } catch (e) {
-      console.error(`Error reading ${key} from storage:`, e);
-      return defaultValue;
-    }
+  private reportError(e: unknown): void {
+    const message = e instanceof Error ? e.message : 'Something went wrong.';
+    this.errorListeners.forEach(cb => cb(message));
   }
 
-  private setItem<T>(key: string, value: T): boolean {
-    try {
-      localStorage.setItem(key, JSON.stringify(value));
-      return true;
-    } catch (e) {
-      console.error(`Error writing ${key} to storage:`, e);
-      return false;
-    }
-  }
-
-  public initIfEmpty(forceReset = false): void {
-    const isFirstInit = !localStorage.getItem(STORAGE_KEYS.USERS);
-    const isOutdatedSeed = this.getItem<number>(STORAGE_KEYS.SEED_VERSION, 0) < SEED_VERSION;
-    if (forceReset || isFirstInit || isOutdatedSeed) {
-      this.setItem(STORAGE_KEYS.SLACK_URL, DEFAULT_SLACK_URL);
-      this.setItem(STORAGE_KEYS.USERS, SEED_USERS);
-      this.setItem(STORAGE_KEYS.PROBLEMS, SEED_PROBLEM_STATEMENTS);
-      this.setItem(STORAGE_KEYS.CATEGORIES, SEED_CATEGORIES);
-      this.setItem(STORAGE_KEYS.STEPS, SEED_STEPS);
-      this.setItem(STORAGE_KEYS.RESOURCES, SEED_RESOURCES);
-      this.setItem(STORAGE_KEYS.APPLICATIONS, SEED_APPLICATIONS);
-      this.setItem(STORAGE_KEYS.PROGRESS, SEED_PROGRESS);
-      this.setItem(STORAGE_KEYS.WORKING_PROBLEMS, SEED_JOURNEY_WORKING_PROBLEMS);
-      this.setItem(STORAGE_KEYS.SAVED_PROBLEMS, {});
-      this.setItem(STORAGE_KEYS.PROJECT_NOTES, {});
-      this.setItem(STORAGE_KEYS.NOTIFICATIONS, []);
-      this.setItem(STORAGE_KEYS.TEAMS, []);
-      this.setItem(STORAGE_KEYS.STEP_SUBMISSIONS, SEED_SUBMISSIONS);
-      this.setItem(STORAGE_KEYS.STEP_WORKSPACES, this.buildSeedWorkspaces());
-      this.setItem(STORAGE_KEYS.CATEGORY_LOCKS, SEED_JOURNEY_CATEGORY_LOCKS);
-      this.setItem(STORAGE_KEYS.RESOURCE_VIEWS, SEED_RESOURCE_VIEWS);
-      this.setItem(STORAGE_KEYS.STEP_RATINGS, SEED_STEP_RATINGS);
-      this.setItem(STORAGE_KEYS.SEED_VERSION, SEED_VERSION);
-      if (isFirstInit) {
-        this.setItem(STORAGE_KEYS.CURRENT_USER_ID, SEED_USERS[1].id);
+  public async refresh(): Promise<void> {
+    if (this.inFlight) return this.inFlight;
+    this.inFlight = (async () => {
+      try {
+        let data = await api.get<BootstrapData>('/bootstrap');
+        if (data.needs_profile && this.firebaseUser && !this.signingUp) {
+          const fallbackName = this.firebaseUser.displayName || this.firebaseUser.email?.split('@')[0] || 'Founder';
+          await api.post('/users/me', { name: fallbackName });
+          data = await api.get<BootstrapData>('/bootstrap');
+        }
+        this.data = data;
+        this.loadError = null;
+      } catch (e) {
+        this.loadError = e instanceof ApiError ? e.message : 'Could not load data.';
+      } finally {
+        this.inFlight = null;
+        this.notify();
       }
-      this.notify();
-    }
+    })();
+    return this.inFlight;
   }
 
-  private buildSeedWorkspaces(): Record<string, StepWorkspace> {
-    const stepsById = new Map(SEED_STEPS.map(st => [st.id, st]));
-    const workspaces: Record<string, StepWorkspace> = {};
-    for (const journey of JOURNEYS) {
-      for (const js of journey.steps) {
-        const guide = getStepGuide(stepsById.get(js.step)?.stage_tag);
-        workspaces[this.stepWorkspaceKey(journey.user, journey.problem, js.step)] = {
-          status: js.status,
-          started_at: daysAgo(js.startedDaysAgo),
-          ...(js.blocker ? { blocker: js.blocker } : {}),
-          checklist: guide.deliverables.map((label, i) => ({ id: `g-${i}`, label, done: i < js.doneTasks, custom: false })),
-          log: (js.log || []).map((text, i) => ({
-            id: `l-seed-${journey.user}-${js.step}-${i}`, text, author_name: journey.authorName, created_at: daysAgo(js.startedDaysAgo - 5),
-          })),
-          updated_at: daysAgo(js.completedDaysAgo ?? js.lastTouchedDaysAgo ?? 1),
-        };
-      }
-    }
-    return workspaces;
+  private scheduleRefresh(): void {
+    if (this.refreshTimer) clearTimeout(this.refreshTimer);
+    this.refreshTimer = setTimeout(() => { void this.refresh(); }, 350);
   }
 
-  public getSlackUrl(): string {
-    return this.getItem(STORAGE_KEYS.SLACK_URL, DEFAULT_SLACK_URL);
-  }
-
-  public setSlackUrl(url: string): void {
-    this.setItem(STORAGE_KEYS.SLACK_URL, url);
+  /** Optimistic write: update the cache now, send to the API, then reconcile. Errors surface as toasts. */
+  private mutate(apply: (d: BootstrapData) => void, request: () => Promise<unknown>): Promise<void> {
+    apply(this.data);
     this.notify();
+    return request()
+      .then(() => this.scheduleRefresh())
+      .catch((e) => { this.reportError(e); void this.refresh(); });
   }
 
-  public getUsers(): User[] {
-    return this.getItem(STORAGE_KEYS.USERS, SEED_USERS);
+  /** Awaited write whose errors the caller handles. */
+  private async write<T>(request: () => Promise<T>): Promise<T> {
+    const result = await request();
+    await this.refresh();
+    return result;
+  }
+
+  // ---------- auth ----------
+
+  public isAuthenticated(): boolean {
+    return !!this.firebaseUser && !!this.data.me;
   }
 
   public getCurrentUser(): User {
-    const users = this.getUsers();
-    const currentId = this.getItem(STORAGE_KEYS.CURRENT_USER_ID, users[0]?.id || 'user-member-1');
-    const found = users.find(u => u.id === currentId);
-    return found || users[0] || SEED_USERS[1];
+    if (!this.data.me) throw new Error('Not signed in');
+    return withMembership({ ...this.data.me, email_verified: this.firebaseUser?.emailVerified ?? this.data.me.email_verified });
   }
 
-  public setCurrentUser(userId: string): void {
-    this.setItem(STORAGE_KEYS.CURRENT_USER_ID, userId);
+  public isEmailVerified(): boolean {
+    return !!this.firebaseUser?.emailVerified;
+  }
+
+  public async signup(
+    name: string,
+    email: string,
+    password: string,
+    extra?: { location?: string; gender?: Gender; acquisition_source?: AcquisitionSource; background?: FounderBackground },
+  ): Promise<void> {
+    this.signingUp = true;
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, email.trim(), password);
+      await updateFirebaseProfile(cred.user, { displayName: name.trim() });
+      await sendEmailVerification(cred.user).catch(() => undefined);
+      await api.post('/users/me', {
+        name: name.trim(),
+        ...(extra?.location?.trim() ? { location: extra.location.trim() } : {}),
+        ...(extra?.gender ? { gender: extra.gender } : {}),
+        ...(extra?.acquisition_source ? { acquisition_source: extra.acquisition_source } : {}),
+        ...(extra?.background ? { background: extra.background } : {}),
+      });
+    } finally {
+      this.signingUp = false;
+    }
+    await this.refresh();
+  }
+
+  public async login(email: string, password: string): Promise<void> {
+    await signInWithEmailAndPassword(auth, email.trim(), password);
+    await this.refresh();
+  }
+
+  public async logout(): Promise<void> {
+    await signOut(auth);
+    this.data = { ...EMPTY, content: this.data.content };
     this.notify();
+    await this.refresh();
   }
 
-  public isAdmin(user: User): boolean {
+  public async sendPasswordReset(email: string): Promise<void> {
+    await sendPasswordResetEmail(auth, email.trim());
+  }
+
+  public async resendVerificationEmail(): Promise<void> {
+    if (this.firebaseUser) await sendEmailVerification(this.firebaseUser);
+  }
+
+  /** Call after the user clicks the link in their inbox. */
+  public async recheckEmailVerification(): Promise<boolean> {
+    if (!this.firebaseUser) return false;
+    await this.firebaseUser.reload();
+    await this.firebaseUser.getIdToken(true);
+    this.firebaseUser = auth.currentUser;
+    await this.refresh();
+    return !!this.firebaseUser?.emailVerified;
+  }
+
+  public touchActivity(_userId: string): void {
+    api.post('/users/me/activity').catch(() => undefined);
+  }
+
+  // ---------- users, membership, admin user management ----------
+
+  public getUsers(): User[] {
+    if (this.data.admin) return this.data.admin.users.map(withMembership);
+    const me = this.data.me;
+    if (!me) return [];
+    const teammates = (this.data.team_members || [])
+      .filter(m => m.id !== me.id)
+      .map(m => withMembership({ id: m.id, name: m.name, email: m.email, role: 'member', membership_status: 'active' }));
+    return [withMembership(me), ...teammates];
+  }
+
+  public isAdmin(user: User | RawUser): boolean {
     return user.role === 'admin';
   }
 
-  public setUserRole(userId: string, role: UserRole): void {
-    const users = this.getUsers().map(u => (u.id === userId ? { ...u, role } : u));
-    this.setItem(STORAGE_KEYS.USERS, users);
-    this.notify();
+  public async updateProfile(_userId: string, updates: ProfileUpdates): Promise<{ error?: string }> {
+    try {
+      await this.write(() => api.patch('/users/me', updates));
+      if (updates.name && this.firebaseUser) await updateFirebaseProfile(this.firebaseUser, { displayName: updates.name });
+      return {};
+    } catch (e) {
+      return { error: e instanceof Error ? e.message : 'Could not save your profile.' };
+    }
   }
 
-  public getNotifications(userId: string): AppNotification[] {
-    const all = this.getItem<AppNotification[]>(STORAGE_KEYS.NOTIFICATIONS, []);
-    return all
-      .filter(n => n.user_id === userId)
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  public requestMembership(): Promise<void> {
+    return this.write(() => api.post('/users/me/membership-request'));
   }
 
-  public getUnreadNotificationCount(userId: string): number {
-    return this.getNotifications(userId).filter(n => !n.read).length;
+  public setMembershipStatus(userId: string, status: MembershipStatus): Promise<void> {
+    return this.mutate(
+      d => { const u = d.admin?.users.find(x => x.id === userId); if (u) u.membership_status = status; },
+      () => api.patch(`/admin/users/${userId}`, { membership_status: status }),
+    );
   }
 
-  public addNotification(userId: string, type: NotificationType, title: string, message: string): void {
-    const all = this.getItem<AppNotification[]>(STORAGE_KEYS.NOTIFICATIONS, []);
-    all.unshift({
-      id: `notif-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-      user_id: userId,
-      type,
-      title,
-      message,
-      read: false,
-      created_at: new Date().toISOString(),
-    });
-    this.setItem(STORAGE_KEYS.NOTIFICATIONS, all);
-    this.notify();
+  public setUserRole(userId: string, role: UserRole): Promise<void> {
+    return this.mutate(
+      d => { const u = d.admin?.users.find(x => x.id === userId); if (u) u.role = role; },
+      () => api.patch(`/admin/users/${userId}`, { role }),
+    );
   }
 
-  public markNotificationRead(id: string): void {
-    const all = this.getItem<AppNotification[]>(STORAGE_KEYS.NOTIFICATIONS, []);
-    const updated = all.map(n => (n.id === id ? { ...n, read: true } : n));
-    this.setItem(STORAGE_KEYS.NOTIFICATIONS, updated);
-    this.notify();
+  public setMentor(userId: string, isMentor: boolean): Promise<void> {
+    return this.mutate(
+      d => { const u = d.admin?.users.find(x => x.id === userId); if (u) u.is_mentor = isMentor; },
+      () => api.patch(`/admin/users/${userId}`, { is_mentor: isMentor }),
+    );
   }
 
-  public markAllNotificationsRead(userId: string): void {
-    const all = this.getItem<AppNotification[]>(STORAGE_KEYS.NOTIFICATIONS, []);
-    const updated = all.map(n => (n.user_id === userId ? { ...n, read: true } : n));
-    this.setItem(STORAGE_KEYS.NOTIFICATIONS, updated);
-    this.notify();
+  // ---------- teams ----------
+
+  public getScopeKey(user: User | RawUser): string {
+    if (this.data.me && user.id === this.data.me.id && this.data.scope) return this.data.scope.key;
+    return user.team_id || user.id;
   }
 
   public getScopeUserIds(user: User): string[] {
@@ -230,12 +306,9 @@ class LocalDataStore {
     return team ? team.member_ids : [user.id];
   }
 
-  public getScopeKey(user: User): string {
-    return user.team_id || user.id;
-  }
-
   public getTeams(): Team[] {
-    return this.getItem<Team[]>(STORAGE_KEYS.TEAMS, []);
+    if (this.data.admin) return this.data.admin.teams;
+    return this.data.team ? [this.data.team] : [];
   }
 
   public getTeam(teamId: string): Team | undefined {
@@ -246,336 +319,182 @@ class LocalDataStore {
     return user.team_id ? this.getTeam(user.team_id) || null : null;
   }
 
-  private migrateScopeData(fromKey: string, toKey: string): void {
-    if (fromKey === toKey) return;
+  public getTeamMemberName(uid: string): string {
+    return this.data.team_members?.find(m => m.id === uid)?.name
+      || this.data.admin?.users.find(u => u.id === uid)?.name
+      || 'Teammate';
+  }
 
-    const workingProblems = this.getItem<Record<string, string[]>>(STORAGE_KEYS.WORKING_PROBLEMS, {});
-    if (workingProblems[fromKey]?.length) {
-      const merged = Array.from(new Set([...(workingProblems[toKey] || []), ...workingProblems[fromKey]]));
-      workingProblems[toKey] = merged;
-      delete workingProblems[fromKey];
-      this.setItem(STORAGE_KEYS.WORKING_PROBLEMS, workingProblems);
-    }
+  public getIncomingInvites(): TeamInvite[] {
+    return this.data.invites?.incoming || [];
+  }
 
-    const notes = this.getItem<Record<string, Record<string, string>>>(STORAGE_KEYS.PROJECT_NOTES, {});
-    if (notes[fromKey]) {
-      notes[toKey] = { ...notes[fromKey], ...(notes[toKey] || {}) };
-      delete notes[fromKey];
-      this.setItem(STORAGE_KEYS.PROJECT_NOTES, notes);
-    }
+  public getOutgoingInvites(): TeamInvite[] {
+    return this.data.invites?.outgoing || [];
+  }
 
-    const locks = this.getItem<Record<string, Record<string, string>>>(STORAGE_KEYS.CATEGORY_LOCKS, {});
-    if (locks[fromKey]) {
-      locks[toKey] = { ...locks[fromKey], ...(locks[toKey] || {}) };
-      delete locks[fromKey];
-      this.setItem(STORAGE_KEYS.CATEGORY_LOCKS, locks);
-    }
+  public async createTeam(name: string): Promise<void> {
+    await this.write(() => api.post('/teams', { name }));
+  }
 
-    const workspaces = this.getItem<Record<string, StepWorkspace>>(STORAGE_KEYS.STEP_WORKSPACES, {});
-    const fromPrefix = `${fromKey}::`;
-    let movedWorkspace = false;
-    for (const key of Object.keys(workspaces)) {
-      if (!key.startsWith(fromPrefix)) continue;
-      const toWorkspaceKey = `${toKey}::${key.slice(fromPrefix.length)}`;
-      if (!workspaces[toWorkspaceKey]) workspaces[toWorkspaceKey] = workspaces[key];
-      delete workspaces[key];
-      movedWorkspace = true;
-    }
-    if (movedWorkspace) this.setItem(STORAGE_KEYS.STEP_WORKSPACES, workspaces);
-
-    const progress = this.getItem<UserProgress[]>(STORAGE_KEYS.PROGRESS, SEED_PROGRESS);
-    const hasFromEntries = progress.some(p => p.user_id === fromKey);
-    if (hasFromEntries) {
-      const existingKeys = new Set(
-        progress.filter(p => p.user_id === toKey).map(p => `${p.category_id}:${p.step_id}`)
-      );
-      const migrated = progress
-        .filter(p => p.user_id === fromKey && !existingKeys.has(`${p.category_id}:${p.step_id}`))
-        .map(p => ({ ...p, user_id: toKey }));
-      const remaining = progress.filter(p => p.user_id !== fromKey);
-      this.setItem(STORAGE_KEYS.PROGRESS, [...remaining, ...migrated]);
+  public async inviteTeammateByEmail(_user: User, email: string): Promise<{ success?: boolean; registered?: boolean; error?: string }> {
+    try {
+      const res = await this.write(() => api.post<{ registered: boolean }>('/teams/invites', { email }));
+      return { success: true, registered: res.registered };
+    } catch (e) {
+      return { error: e instanceof Error ? e.message : 'Could not send the invite.' };
     }
   }
 
-  public createTeam(user: User, name: string): Team {
-    const teams = this.getTeams();
-    const newTeam: Team = {
-      id: `team-${Date.now()}`,
-      name: name.trim() || `${user.name.split(' ')[0]}'s Team`,
-      owner_id: user.id,
-      member_ids: [user.id],
-      created_at: new Date().toISOString(),
-    };
-    teams.push(newTeam);
-    this.setItem(STORAGE_KEYS.TEAMS, teams);
-
-    const users = this.getUsers().map(u => (u.id === user.id ? { ...u, team_id: newTeam.id } : u));
-    this.setItem(STORAGE_KEYS.USERS, users);
-    this.migrateScopeData(user.id, newTeam.id);
-    this.notify();
-    return newTeam;
+  public respondToInvite(inviteId: string, accept: boolean): Promise<void> {
+    return this.write(() => api.post(`/teams/invites/${inviteId}/${accept ? 'accept' : 'decline'}`));
   }
 
-  public inviteTeammateByEmail(user: User, email: string): { success?: boolean; error?: string } {
-    const trimmedEmail = email.trim().toLowerCase();
-    if (!trimmedEmail) return { error: 'Enter an email address to invite.' };
-
-    const target = this.getUsers().find(u => u.email.toLowerCase() === trimmedEmail);
-    if (!target) {
-      return { error: "No account found for that email yet — ask them to sign up first, then invite them again." };
-    }
-    if (target.id === user.id) {
-      return { error: "That's your own account." };
-    }
-    if (target.team_id) {
-      return { error: `${target.name} is already on a team.` };
-    }
-
-    let team = this.getMyTeam(user);
-    if (!team) {
-      team = this.createTeam(user, `${user.name.split(' ')[0]}'s Team`);
-    }
-
-    const teams = this.getTeams().map(t =>
-      t.id === team!.id ? { ...t, member_ids: [...t.member_ids, target.id] } : t
+  public cancelInvite(inviteId: string): Promise<void> {
+    return this.mutate(
+      d => { if (d.invites) d.invites.outgoing = d.invites.outgoing.filter(i => i.id !== inviteId); },
+      () => api.delete(`/teams/invites/${inviteId}`),
     );
-    this.setItem(STORAGE_KEYS.TEAMS, teams);
+  }
 
-    const users = this.getUsers().map(u => (u.id === target.id ? { ...u, team_id: team!.id } : u));
-    this.setItem(STORAGE_KEYS.USERS, users);
-    this.migrateScopeData(target.id, team!.id);
+  public async removeTeammate(_user: User, memberId: string): Promise<{ success?: boolean; error?: string }> {
+    try {
+      await this.write(() => api.delete(`/teams/members/${memberId}`));
+      return { success: true };
+    } catch (e) {
+      return { error: e instanceof Error ? e.message : 'Could not remove that member.' };
+    }
+  }
 
-    this.addNotification(
-      target.id,
-      'team_invite',
-      "You've joined a team",
-      `${user.name} added you to their team. You now share working problems, applications, and roadmap progress.`
+  public leaveTeam(_user: User): Promise<void> {
+    return this.write(() => api.post('/teams/leave'));
+  }
+
+  public updateMyTeam(fields: { name?: string; tagline?: string; website?: string; is_public?: boolean }): Promise<void> {
+    return this.write(() => api.patch('/teams/mine', fields));
+  }
+
+  // ---------- notifications ----------
+
+  public getNotifications(_userId: string): AppNotification[] {
+    return this.data.notifications || [];
+  }
+
+  public getUnreadNotificationCount(userId: string): number {
+    return this.getNotifications(userId).filter(n => !n.read).length;
+  }
+
+  public markNotificationRead(id: string): void {
+    void this.mutate(
+      d => { const n = d.notifications?.find(x => x.id === id); if (n) n.read = true; },
+      () => api.post(`/notifications/${id}/read`),
     );
-    this.notify();
-    return { success: true };
   }
 
-  public removeTeammate(user: User, memberId: string): { success?: boolean; error?: string } {
-    const team = this.getMyTeam(user);
-    if (!team) return { error: 'You are not on a team.' };
-    if (team.owner_id !== user.id) return { error: 'Only the team owner can remove members.' };
-    if (memberId === team.owner_id) return { error: "The owner can't remove themselves — use Leave Team instead." };
-
-    const teams = this.getTeams().map(t =>
-      t.id === team.id ? { ...t, member_ids: t.member_ids.filter(id => id !== memberId) } : t
+  public markAllNotificationsRead(_userId: string): void {
+    void this.mutate(
+      d => d.notifications?.forEach(n => { n.read = true; }),
+      () => api.post('/notifications/read-all'),
     );
-    this.setItem(STORAGE_KEYS.TEAMS, teams);
-
-    const users = this.getUsers().map(u => (u.id === memberId ? { ...u, team_id: undefined } : u));
-    this.setItem(STORAGE_KEYS.USERS, users);
-    this.notify();
-    return { success: true };
   }
 
-  public leaveTeam(user: User): void {
-    const team = this.getMyTeam(user);
-    if (!team) return;
+  // ---------- content ----------
 
-    const remaining = team.member_ids.filter(id => id !== user.id);
-    let teams: Team[];
-    if (remaining.length === 0) {
-      teams = this.getTeams().filter(t => t.id !== team.id);
-    } else {
-      const nextOwner = team.owner_id === user.id ? remaining[0] : team.owner_id;
-      teams = this.getTeams().map(t =>
-        t.id === team.id ? { ...t, member_ids: remaining, owner_id: nextOwner } : t
-      );
-    }
-    this.setItem(STORAGE_KEYS.TEAMS, teams);
-
-    const users = this.getUsers().map(u => (u.id === user.id ? { ...u, team_id: undefined } : u));
-    this.setItem(STORAGE_KEYS.USERS, users);
-    this.notify();
+  public getSlackUrl(): string {
+    return this.data.content.slack_url;
   }
 
-  public isAuthenticated(): boolean {
-    const sessionUserId = this.getItem<string | null>(STORAGE_KEYS.AUTH_SESSION, null);
-    return !!sessionUserId && this.getUsers().some(u => u.id === sessionUserId);
+  public setSlackUrl(url: string): Promise<void> {
+    return this.mutate(d => { d.content.slack_url = url; }, () => api.put('/admin/settings/slack', { url }));
   }
 
-  public getSessionUser(): User | null {
-    const sessionUserId = this.getItem<string | null>(STORAGE_KEYS.AUTH_SESSION, null);
-    if (!sessionUserId) return null;
-    return this.getUsers().find(u => u.id === sessionUserId) || null;
+  public isContentEmpty(): boolean {
+    return this.data.content.categories.length === 0;
   }
 
-  public signup(
-    name: string,
-    email: string,
-    password: string,
-    extra?: { location?: string; gender?: Gender; acquisition_source?: AcquisitionSource; background?: FounderBackground }
-  ): { user?: User; error?: string } {
-    const trimmedEmail = email.trim().toLowerCase();
-    if (!name.trim() || !trimmedEmail || !password) {
-      return { error: 'Name, email, and password are all required.' };
-    }
-    const users = this.getUsers();
-    if (users.some(u => u.email.toLowerCase() === trimmedEmail)) {
-      return { error: 'An account with that email already exists — try logging in instead.' };
-    }
-    const newUser: User = {
-      id: `user-${Date.now()}`,
-      email: trimmedEmail,
-      name: name.trim(),
-      role: 'member',
-      is_member: false,
-      password,
-      ...(extra?.location ? { location: extra.location.trim() } : {}),
-      ...(extra?.gender ? { gender: extra.gender } : {}),
-      ...(extra?.acquisition_source ? { acquisition_source: extra.acquisition_source } : {}),
-      ...(extra?.background ? { background: extra.background } : {}),
-      created_at: new Date().toISOString(),
-      last_active_at: new Date().toISOString(),
-    };
-    users.push(newUser);
-    this.setItem(STORAGE_KEYS.USERS, users);
-    this.setItem(STORAGE_KEYS.CURRENT_USER_ID, newUser.id);
-    this.setItem(STORAGE_KEYS.AUTH_SESSION, newUser.id);
-    this.notify();
-    return { user: newUser };
-  }
-
-  public login(email: string, password: string): { user?: User; error?: string } {
-    const trimmedEmail = email.trim().toLowerCase();
-    const user = this.getUsers().find(u => u.email.toLowerCase() === trimmedEmail);
-    if (!user || user.password !== password) {
-      return { error: 'Incorrect email or password.' };
-    }
-    this.setItem(STORAGE_KEYS.CURRENT_USER_ID, user.id);
-    this.setItem(STORAGE_KEYS.AUTH_SESSION, user.id);
-    this.touchActivity(user.id);
-    this.notify();
-    return { user };
-  }
-
-  public logout(): void {
-    this.setItem(STORAGE_KEYS.AUTH_SESSION, null);
-    this.notify();
-  }
-
-  public toggleCurrentUserMembership(isMember?: boolean): void {
-    const current = this.getCurrentUser();
-    const users = this.getUsers().map(u => {
-      if (u.id === current.id) {
-        const nextIsMember = isMember !== undefined ? isMember : !u.is_member;
-        return {
-          ...u,
-          is_member: nextIsMember,
-          ...(nextIsMember && !u.membership_started_at ? { membership_started_at: new Date().toISOString() } : {}),
-        };
-      }
-      return u;
-    });
-    this.setItem(STORAGE_KEYS.USERS, users);
-    this.notify();
-  }
-
-  public updateProfile(
-    userId: string,
-    updates: ProfileUpdates
-  ): { error?: string } {
-    const trimmedName = updates.name?.trim();
-    const trimmedEmail = updates.email?.trim().toLowerCase();
-
-    if (trimmedName !== undefined && !trimmedName) {
-      return { error: 'Name cannot be empty.' };
-    }
-    if (trimmedEmail !== undefined) {
-      if (!trimmedEmail) {
-        return { error: 'Email cannot be empty.' };
-      }
-      const users = this.getUsers();
-      if (users.some(u => u.id !== userId && u.email.toLowerCase() === trimmedEmail)) {
-        return { error: 'Another account already uses that email.' };
-      }
-    }
-    if (updates.password !== undefined && updates.password.length < 4) {
-      return { error: 'Password must be at least 4 characters.' };
-    }
-
-    const users = this.getUsers().map(u => {
-      if (u.id !== userId) return u;
-      return {
-        ...u,
-        ...(trimmedName !== undefined ? { name: trimmedName } : {}),
-        ...(trimmedEmail !== undefined ? { email: trimmedEmail } : {}),
-        ...(updates.password ? { password: updates.password } : {}),
-        ...(updates.location !== undefined ? { location: updates.location.trim() } : {}),
-        ...(updates.gender !== undefined ? { gender: updates.gender } : {}),
-        ...(updates.background !== undefined ? { background: updates.background } : {}),
-        ...(updates.first_time_founder !== undefined ? { first_time_founder: updates.first_time_founder } : {}),
-        ...(updates.commitment !== undefined ? { commitment: updates.commitment } : {}),
-        ...(updates.startup_stage !== undefined ? { startup_stage: updates.startup_stage } : {}),
-        ...(updates.funding_raised_total !== undefined ? { funding_raised_total: updates.funding_raised_total } : {}),
-        ...(updates.has_revenue !== undefined ? { has_revenue: updates.has_revenue } : {}),
-        ...(updates.acquisition_source !== undefined ? { acquisition_source: updates.acquisition_source } : {}),
-        ...(updates.outcomes !== undefined ? { outcomes: { ...updates.outcomes, updated_at: new Date().toISOString() } } : {}),
-      };
-    });
-    this.setItem(STORAGE_KEYS.USERS, users);
-    this.notify();
-    return {};
-  }
-
-  public createUser(email: string, name: string, role: 'admin' | 'member', isMember = false): User {
-    const users = this.getUsers();
-    const newUser: User = {
-      id: `user-${Date.now()}`,
-      email,
-      name,
-      role,
-      is_member: isMember || role === 'admin',
-    };
-    users.push(newUser);
-    this.setItem(STORAGE_KEYS.USERS, users);
-    this.setItem(STORAGE_KEYS.CURRENT_USER_ID, newUser.id);
-    this.notify();
-    return newUser;
+  public loadStarterContent(): Promise<void> {
+    return this.write(() => api.post('/admin/starter-content'));
   }
 
   public getProblems(): ProblemStatement[] {
-    return this.getItem(STORAGE_KEYS.PROBLEMS, SEED_PROBLEM_STATEMENTS);
+    return this.data.content.problems;
   }
 
   public getProblemById(id: string): ProblemStatement | undefined {
     return this.getProblems().find(p => p.id === id);
   }
 
-  public saveProblem(problem: Omit<ProblemStatement, 'id' | 'created_at'> & { id?: string }): ProblemStatement {
-    const problems = this.getProblems();
-    if (problem.id) {
-      const index = problems.findIndex(p => p.id === problem.id);
-      if (index >= 0) {
-        problems[index] = { ...problems[index], ...problem } as ProblemStatement;
-        this.setItem(STORAGE_KEYS.PROBLEMS, problems);
-        this.notify();
-        return problems[index];
-      }
-    }
-    const newProblem: ProblemStatement = {
-      ...problem,
-      id: `prob-${Date.now()}`,
-      created_at: new Date().toISOString(),
-    };
-    problems.unshift(newProblem);
-    this.setItem(STORAGE_KEYS.PROBLEMS, problems);
-    this.notify();
-    return newProblem;
+  private saveContent<T extends { id?: string }>(kind: 'problems' | 'categories' | 'steps' | 'resources', item: T): Promise<void> {
+    const { id, ...body } = item as T & Record<string, unknown>;
+    for (const key of ['created_at', 'created_by_admin', 'rsvp_count', 'locked']) delete (body as Record<string, unknown>)[key];
+    return this.write(() => (id ? api.put(`/admin/${kind}/${id}`, body) : api.post(`/admin/${kind}`, body))).then(() => undefined, e => this.reportError(e));
   }
 
-  public deleteProblem(id: string): void {
-    const problems = this.getProblems().filter(p => p.id !== id);
-    this.setItem(STORAGE_KEYS.PROBLEMS, problems);
-    this.notify();
+  private deleteContent(kind: 'problems' | 'categories' | 'steps' | 'resources', id: string): Promise<void> {
+    return this.mutate(
+      d => { (d.content[kind] as { id: string }[]) = (d.content[kind] as { id: string }[]).filter(x => x.id !== id); },
+      () => api.delete(`/admin/${kind}/${id}`),
+    );
   }
+
+  public saveProblem(problem: Omit<ProblemStatement, 'id' | 'created_at' | 'created_by_admin'> & { id?: string }): Promise<void> {
+    return this.saveContent('problems', problem);
+  }
+
+  public deleteProblem(id: string): Promise<void> {
+    return this.deleteContent('problems', id);
+  }
+
+  public getCategories(): Category[] {
+    return [...this.data.content.categories].sort((a, b) => a.order - b.order);
+  }
+
+  public saveCategory(category: Omit<Category, 'id'> & { id?: string }): Promise<void> {
+    return this.saveContent('categories', category);
+  }
+
+  public deleteCategory(id: string): Promise<void> {
+    return this.deleteContent('categories', id);
+  }
+
+  public getSteps(categoryId?: string): Step[] {
+    const steps = categoryId ? this.data.content.steps.filter(s => s.category_id === categoryId) : this.data.content.steps;
+    return [...steps].sort((a, b) => a.order - b.order);
+  }
+
+  public saveStep(step: Omit<Step, 'id'> & { id?: string }): Promise<void> {
+    return this.saveContent('steps', step);
+  }
+
+  public deleteStep(id: string): Promise<void> {
+    return this.deleteContent('steps', id);
+  }
+
+  public getResources(stepId?: string): Resource[] {
+    const all = this.data.content.resources;
+    return stepId ? all.filter(r => r.step_id === stepId) : all;
+  }
+
+  public getResourcesForUser(stepId: string, userId: string, problemId?: string): { common: Resource[]; recommended: Resource[] } {
+    const resources = this.getResources(stepId);
+    return {
+      common: resources.filter(r => !r.assigned_user_id),
+      recommended: resources.filter(r => r.assigned_user_id === userId && (!r.assigned_problem_id || r.assigned_problem_id === problemId)),
+    };
+  }
+
+  public saveResource(res: Omit<Resource, 'id'> & { id?: string }): Promise<void> {
+    return this.saveContent('resources', res);
+  }
+
+  public deleteResource(id: string): Promise<void> {
+    return this.deleteContent('resources', id);
+  }
+
+  // ---------- applications ----------
 
   public getApplications(): FundingApplication[] {
-    return this.getItem(STORAGE_KEYS.APPLICATIONS, SEED_APPLICATIONS);
+    return this.data.applications || [];
   }
 
   public getUserApplications(userId: string): FundingApplication[] {
@@ -583,455 +502,412 @@ class LocalDataStore {
   }
 
   public getScopedApplications(user: User): FundingApplication[] {
-    const ids = this.getScopeUserIds(user);
-    return this.getApplications().filter(a => ids.includes(a.user_id));
+    const key = this.getScopeKey(user);
+    return this.getApplications().filter(a => a.scope_key === key || (!a.scope_key && a.user_id === user.id));
   }
 
-  public upsertApplication(
-    appData: Omit<FundingApplication, 'id' | 'status' | 'submitted_at'> & { id?: string },
-    status: 'Draft' | 'Pending'
-  ): FundingApplication {
-    const apps = this.getApplications();
-    const problem = this.getProblemById(appData.problem_statement_id);
-    const problem_title = problem ? problem.title : appData.problem_title;
-
-    if (appData.id) {
-      const idx = apps.findIndex(a => a.id === appData.id);
-      if (idx >= 0) {
-        const wasDraft = apps[idx].status === 'Draft';
-        apps[idx] = {
-          ...apps[idx],
-          ...appData,
-          problem_title,
-          status,
-          submitted_at: status === 'Pending' && wasDraft ? new Date().toISOString() : apps[idx].submitted_at,
-        };
-        this.setItem(STORAGE_KEYS.APPLICATIONS, apps);
-        this.notify();
-        return apps[idx];
-      }
-    }
-
-    const newApp: FundingApplication = {
-      ...appData,
-      id: `app-${Date.now()}`,
-      problem_title,
+  public async upsertApplication(
+    appData: Omit<FundingApplication, 'id' | 'status' | 'submitted_at' | 'user_id'> & { id?: string; user_id?: string },
+    status: 'Draft' | 'Pending',
+  ): Promise<void> {
+    const body = {
+      applicant_name: appData.applicant_name,
+      applicant_email: appData.applicant_email,
+      startup_name: appData.startup_name,
+      problem_statement_id: appData.problem_statement_id,
+      pitch: appData.pitch,
+      amount_requested: Number(appData.amount_requested) || 0,
+      supporting_notes: appData.supporting_notes,
       status,
-      submitted_at: new Date().toISOString(),
     };
-    apps.unshift(newApp);
-    this.setItem(STORAGE_KEYS.APPLICATIONS, apps);
-    this.notify();
-    return newApp;
+    await this.write(() => (appData.id ? api.patch(`/applications/${appData.id}`, body) : api.post('/applications', body)));
   }
 
-  public deleteApplication(id: string): void {
-    const apps = this.getApplications().filter(a => a.id !== id);
-    this.setItem(STORAGE_KEYS.APPLICATIONS, apps);
-    this.notify();
+  public deleteApplication(id: string): Promise<void> {
+    return this.mutate(
+      d => { d.applications = d.applications?.filter(a => a.id !== id); },
+      () => api.delete(`/applications/${id}`),
+    );
   }
 
-  public updateApplicationStatus(id: string, status: ApplicationStatus, adminFeedback?: string): void {
-    const apps = this.getApplications().map(a => {
-      if (a.id === id) {
-        return {
-          ...a,
-          status,
-          admin_feedback: adminFeedback !== undefined ? adminFeedback : a.admin_feedback,
-          reviewed_at: new Date().toISOString(),
-        };
-      }
-      return a;
-    });
-    this.setItem(STORAGE_KEYS.APPLICATIONS, apps);
-
-    const app = apps.find(a => a.id === id);
-    if (app && (status === 'Approved' || status === 'Rejected')) {
-      this.addNotification(
-        app.user_id,
-        'application_status',
-        status === 'Approved' ? 'Funding application approved 🎉' : 'Funding application update',
-        `Your application for "${app.problem_title}" was ${status.toLowerCase()}.${app.admin_feedback ? ` "${app.admin_feedback}"` : ''}`
-      );
-    }
-    this.notify();
+  public updateApplicationStatus(id: string, status: ApplicationStatus, adminFeedback?: string): Promise<void> {
+    return this.mutate(
+      d => {
+        const a = d.applications?.find(x => x.id === id);
+        if (a) { a.status = status; if (adminFeedback !== undefined) a.admin_feedback = adminFeedback; }
+      },
+      () => api.post(`/admin/applications/${id}/decision`, { status, ...(adminFeedback !== undefined ? { admin_feedback: adminFeedback } : {}) }),
+    );
   }
 
-  public getWorkingProblemIds(userId: string): string[] {
-    const all = this.getItem<Record<string, string[]>>(STORAGE_KEYS.WORKING_PROBLEMS, {});
-    return all[userId] || [];
+  // ---------- roadmap scope ----------
+
+  private scope(): ScopeData {
+    return this.data.scope || { key: '', working_problem_ids: [], category_locks: {}, project_notes: {} };
   }
 
-  public addWorkingProblem(userId: string, problemId: string): void {
-    const all = this.getItem<Record<string, string[]>>(STORAGE_KEYS.WORKING_PROBLEMS, {});
-    const existing = all[userId] || [];
-    if (!existing.includes(problemId)) {
-      all[userId] = [...existing, problemId];
-      this.setItem(STORAGE_KEYS.WORKING_PROBLEMS, all);
-      this.notify();
-    }
+  private scopeFor(scopeKey: string): Omit<ScopeData, 'key'> | undefined {
+    if (this.data.scope?.key === scopeKey) return this.data.scope;
+    return this.data.admin?.scopes.find(s => s.id === scopeKey);
   }
 
-  public removeWorkingProblem(userId: string, problemId: string): void {
-    const all = this.getItem<Record<string, string[]>>(STORAGE_KEYS.WORKING_PROBLEMS, {});
-    all[userId] = (all[userId] || []).filter(id => id !== problemId);
-    this.setItem(STORAGE_KEYS.WORKING_PROBLEMS, all);
-    this.notify();
+  public getWorkingProblemIds(scopeKey: string): string[] {
+    return this.scopeFor(scopeKey)?.working_problem_ids || [];
   }
 
-  public clearWorkingProblems(userId: string): void {
-    const all = this.getItem<Record<string, string[]>>(STORAGE_KEYS.WORKING_PROBLEMS, {});
-    all[userId] = [];
-    this.setItem(STORAGE_KEYS.WORKING_PROBLEMS, all);
-    this.notify();
+  public getAllWorkingProblems(): Record<string, string[]> {
+    if (this.data.admin) return Object.fromEntries(this.data.admin.scopes.map(s => [s.id, s.working_problem_ids || []]));
+    const s = this.scope();
+    return s.key ? { [s.key]: s.working_problem_ids } : {};
   }
 
-  public getSavedProblemIds(userId: string): string[] {
-    const all = this.getItem<Record<string, string[]>>(STORAGE_KEYS.SAVED_PROBLEMS, {});
-    return all[userId] || [];
+  public addWorkingProblem(_scopeKey: string, problemId: string): void {
+    if (this.scope().working_problem_ids.includes(problemId)) return;
+    void this.mutate(
+      d => { d.scope?.working_problem_ids.push(problemId); },
+      () => api.put(`/scope/working-problems/${problemId}`),
+    );
+  }
+
+  public removeWorkingProblem(_scopeKey: string, problemId: string): void {
+    void this.mutate(
+      d => { if (d.scope) d.scope.working_problem_ids = d.scope.working_problem_ids.filter(id => id !== problemId); },
+      () => api.delete(`/scope/working-problems/${problemId}`),
+    );
+  }
+
+  public clearWorkingProblems(_scopeKey: string): void {
+    void this.mutate(d => { if (d.scope) d.scope.working_problem_ids = []; }, () => api.delete('/scope/working-problems'));
+  }
+
+  public getSavedProblemIds(_userId: string): string[] {
+    return this.data.me?.saved_problem_ids || [];
   }
 
   public isProblemSaved(userId: string, problemId: string): boolean {
     return this.getSavedProblemIds(userId).includes(problemId);
   }
 
-  public toggleSavedProblem(userId: string, problemId: string): void {
-    const all = this.getItem<Record<string, string[]>>(STORAGE_KEYS.SAVED_PROBLEMS, {});
-    const existing = all[userId] || [];
-    all[userId] = existing.includes(problemId)
-      ? existing.filter(id => id !== problemId)
-      : [...existing, problemId];
-    this.setItem(STORAGE_KEYS.SAVED_PROBLEMS, all);
-    this.notify();
-  }
-
-  public resetCategoryProgress(userId: string, categoryId: string): void {
-    const progressList = this.getItem<UserProgress[]>(STORAGE_KEYS.PROGRESS, SEED_PROGRESS);
-    const remaining = progressList.filter(p => !(p.user_id === userId && p.category_id === categoryId));
-    this.setItem(STORAGE_KEYS.PROGRESS, remaining);
-    this.notify();
-  }
-
-  public getProjectNote(userId: string, problemId: string): string {
-    const all = this.getItem<Record<string, Record<string, string>>>(STORAGE_KEYS.PROJECT_NOTES, {});
-    return all[userId]?.[problemId] || '';
-  }
-
-  public setProjectNote(userId: string, problemId: string, note: string): void {
-    const all = this.getItem<Record<string, Record<string, string>>>(STORAGE_KEYS.PROJECT_NOTES, {});
-    all[userId] = { ...(all[userId] || {}), [problemId]: note };
-    this.setItem(STORAGE_KEYS.PROJECT_NOTES, all);
-    this.notify();
-  }
-
-  public getCategories(): Category[] {
-    const cats = this.getItem(STORAGE_KEYS.CATEGORIES, SEED_CATEGORIES);
-    return [...cats].sort((a, b) => a.order - b.order);
-  }
-
-  public saveCategory(category: Omit<Category, 'id'> & { id?: string }): Category {
-    const cats = this.getCategories();
-    if (category.id) {
-      const idx = cats.findIndex(c => c.id === category.id);
-      if (idx >= 0) {
-        cats[idx] = { ...cats[idx], ...category } as Category;
-        this.setItem(STORAGE_KEYS.CATEGORIES, cats);
-        this.notify();
-        return cats[idx];
-      }
-    }
-    const newCat: Category = {
-      ...category,
-      id: `cat-${Date.now()}`,
-    };
-    cats.push(newCat);
-    this.setItem(STORAGE_KEYS.CATEGORIES, cats);
-    this.notify();
-    return newCat;
-  }
-
-  public deleteCategory(id: string): void {
-    const cats = this.getCategories().filter(c => c.id !== id);
-    this.setItem(STORAGE_KEYS.CATEGORIES, cats);
-    const steps = this.getSteps().filter(s => s.category_id !== id);
-    this.setItem(STORAGE_KEYS.STEPS, steps);
-    this.notify();
-  }
-
-  public getSteps(categoryId?: string): Step[] {
-    const steps = this.getItem<Step[]>(STORAGE_KEYS.STEPS, SEED_STEPS);
-    const filtered = categoryId ? steps.filter(s => s.category_id === categoryId) : steps;
-    return [...filtered].sort((a, b) => a.order - b.order);
-  }
-
-  public saveStep(step: Omit<Step, 'id'> & { id?: string }): Step {
-    const steps = this.getSteps();
-    if (step.id) {
-      const idx = steps.findIndex(s => s.id === step.id);
-      if (idx >= 0) {
-        steps[idx] = { ...steps[idx], ...step } as Step;
-        this.setItem(STORAGE_KEYS.STEPS, steps);
-        this.notify();
-        return steps[idx];
-      }
-    }
-    const newStep: Step = {
-      ...step,
-      id: `step-${Date.now()}`,
-    };
-    steps.push(newStep);
-    this.setItem(STORAGE_KEYS.STEPS, steps);
-    this.notify();
-    return newStep;
-  }
-
-  public deleteStep(id: string): void {
-    const steps = this.getSteps().filter(s => s.id !== id);
-    this.setItem(STORAGE_KEYS.STEPS, steps);
-    const resources = this.getResources().filter(r => r.step_id !== id);
-    this.setItem(STORAGE_KEYS.RESOURCES, resources);
-    this.notify();
-  }
-
-  public getResources(stepId?: string): Resource[] {
-    const resources = this.getItem<Resource[]>(STORAGE_KEYS.RESOURCES, SEED_RESOURCES);
-    return stepId ? resources.filter(r => r.step_id === stepId) : resources;
-  }
-
-  public getResourcesForUser(stepId: string, userId: string, problemId?: string): { common: Resource[]; recommended: Resource[] } {
-    const resources = this.getResources(stepId);
-    const common = resources.filter(r => !r.assigned_user_id);
-    const recommended = resources.filter(r =>
-      r.assigned_user_id === userId && (!r.assigned_problem_id || r.assigned_problem_id === problemId)
+  public toggleSavedProblem(_userId: string, problemId: string): void {
+    void this.mutate(
+      d => {
+        if (!d.me) return;
+        const saved = d.me.saved_problem_ids || [];
+        d.me.saved_problem_ids = saved.includes(problemId) ? saved.filter(id => id !== problemId) : [...saved, problemId];
+      },
+      () => api.post('/users/me/saved', { problem_id: problemId }),
     );
-    return { common, recommended };
   }
 
-  public saveResource(res: Omit<Resource, 'id'> & { id?: string }): Resource {
-    const resources = this.getResources();
-    if (res.id) {
-      const idx = resources.findIndex(r => r.id === res.id);
-      if (idx >= 0) {
-        resources[idx] = { ...resources[idx], ...res } as Resource;
-        this.setItem(STORAGE_KEYS.RESOURCES, resources);
-        this.notify();
-        return resources[idx];
-      }
-    }
-    const newRes: Resource = {
-      ...res,
-      id: `res-${Date.now()}`,
-    };
-    resources.push(newRes);
-    this.setItem(STORAGE_KEYS.RESOURCES, resources);
-    this.notify();
-    return newRes;
+  public getProjectNote(scopeKey: string, problemId: string): string {
+    return this.scopeFor(scopeKey)?.project_notes?.[problemId] || '';
   }
 
-  public deleteResource(id: string): void {
-    const resources = this.getResources().filter(r => r.id !== id);
-    this.setItem(STORAGE_KEYS.RESOURCES, resources);
-    this.notify();
+  public setProjectNote(_scopeKey: string, problemId: string, note: string): void {
+    void this.mutate(
+      d => { if (d.scope) d.scope.project_notes = { ...d.scope.project_notes, [problemId]: note }; },
+      () => api.put(`/scope/notes/${problemId}`, { note }),
+    );
+  }
+
+  public getLockedCategoryId(scopeKey: string, problemId: string): string | null {
+    const id = this.scopeFor(scopeKey)?.category_locks?.[problemId];
+    return id && this.data.content.categories.some(c => c.id === id) ? id : null;
+  }
+
+  public getAllCategoryLocks(): Record<string, Record<string, string>> {
+    if (this.data.admin) return Object.fromEntries(this.data.admin.scopes.map(s => [s.id, s.category_locks || {}]));
+    const s = this.scope();
+    return s.key ? { [s.key]: s.category_locks } : {};
+  }
+
+  public lockCategory(_scopeKey: string, problemId: string, categoryId: string): void {
+    void this.mutate(
+      d => { if (d.scope) d.scope.category_locks = { ...d.scope.category_locks, [problemId]: categoryId }; },
+      () => api.put(`/scope/locks/${problemId}`, { category_id: categoryId }),
+    );
+  }
+
+  public unlockCategory(_scopeKey: string, problemId: string): void {
+    void this.mutate(
+      d => { if (d.scope) { const { [problemId]: _, ...rest } = d.scope.category_locks; d.scope.category_locks = rest; } },
+      () => api.delete(`/scope/locks/${problemId}`),
+    );
   }
 
   public getAllProgress(): UserProgress[] {
-    return this.getItem<UserProgress[]>(STORAGE_KEYS.PROGRESS, SEED_PROGRESS);
+    return this.data.progress || [];
   }
 
-  public getAllWorkingProblems(): Record<string, string[]> {
-    return this.getItem<Record<string, string[]>>(STORAGE_KEYS.WORKING_PROBLEMS, {});
-  }
-
-  public getUserProgress(userId: string, categoryId: string): Record<string, boolean> {
-    const progress = this.getItem<UserProgress[]>(STORAGE_KEYS.PROGRESS, SEED_PROGRESS);
+  public getUserProgress(scopeKey: string, categoryId: string): Record<string, boolean> {
     const map: Record<string, boolean> = {};
-    progress
-      .filter(p => p.user_id === userId && p.category_id === categoryId)
-      .forEach(p => {
-        map[p.step_id] = p.completed;
-      });
+    this.getAllProgress()
+      .filter(p => p.user_id === scopeKey && p.category_id === categoryId)
+      .forEach(p => { map[p.step_id] = p.completed; });
     return map;
   }
 
-  public toggleStepProgress(userId: string, categoryId: string, stepId: string): boolean {
-    const progressList = this.getItem<UserProgress[]>(STORAGE_KEYS.PROGRESS, SEED_PROGRESS);
-    const index = progressList.findIndex(
-      p => p.user_id === userId && p.category_id === categoryId && p.step_id === stepId
+  public toggleStepProgress(scopeKey: string, categoryId: string, stepId: string): void {
+    void this.mutate(
+      d => {
+        d.progress ||= [];
+        const existing = d.progress.find(p => p.user_id === scopeKey && p.category_id === categoryId && p.step_id === stepId);
+        if (existing) { existing.completed = !existing.completed; existing.updated_at = new Date().toISOString(); }
+        else d.progress.push({ user_id: scopeKey, category_id: categoryId, step_id: stepId, completed: true, updated_at: new Date().toISOString() });
+      },
+      () => api.post('/scope/progress/toggle', { category_id: categoryId, step_id: stepId }),
     );
-
-    let newStatus = true;
-    if (index >= 0) {
-      newStatus = !progressList[index].completed;
-      progressList[index] = {
-        ...progressList[index],
-        completed: newStatus,
-        updated_at: new Date().toISOString(),
-      };
-    } else {
-      progressList.push({
-        user_id: userId,
-        category_id: categoryId,
-        step_id: stepId,
-        completed: true,
-        updated_at: new Date().toISOString(),
-      });
-      newStatus = true;
-    }
-
-    this.setItem(STORAGE_KEYS.PROGRESS, progressList);
-    this.notify();
-    return newStatus;
   }
 
+  public resetCategoryProgress(scopeKey: string, categoryId: string): void {
+    void this.mutate(
+      d => { d.progress = d.progress?.filter(p => !(p.user_id === scopeKey && p.category_id === categoryId)); },
+      () => api.delete(`/scope/progress/${categoryId}`),
+    );
+  }
+
+  private workspaceKey(scopeKey: string, problemId: string, stepId: string): string {
+    return `${scopeKey}::${problemId}::${stepId}`;
+  }
+
+  public getStepWorkspace(scopeKey: string, problemId: string, stepId: string): StepWorkspace | null {
+    return this.data.workspaces?.[this.workspaceKey(scopeKey, problemId, stepId)] || null;
+  }
+
+  public getAllStepWorkspaces(): Record<string, StepWorkspace> {
+    return this.data.workspaces || {};
+  }
+
+  public saveStepWorkspace(scopeKey: string, problemId: string, stepId: string, workspace: StepWorkspace): void {
+    const { status, started_at, target_date, blocker, checklist, log } = workspace;
+    void this.mutate(
+      d => { d.workspaces = { ...d.workspaces, [this.workspaceKey(scopeKey, problemId, stepId)]: { ...workspace, updated_at: new Date().toISOString() } }; },
+      () => api.put(`/scope/workspaces/${problemId}/${stepId}`, {
+        status, checklist, log,
+        ...(started_at ? { started_at } : {}),
+        ...(target_date ? { target_date } : {}),
+        ...(blocker ? { blocker } : {}),
+      }),
+    );
+  }
+
+  public clearStepWorkspaces(scopeKey: string, problemId: string): void {
+    const prefix = `${scopeKey}::${problemId}::`;
+    void this.mutate(
+      d => { d.workspaces = Object.fromEntries(Object.entries(d.workspaces || {}).filter(([k]) => !k.startsWith(prefix))); },
+      () => api.delete(`/scope/workspaces/${problemId}`),
+    );
+  }
+
+  // ---------- evidence ----------
+
   public getAllStepSubmissions(): StepSubmission[] {
-    return this.getItem<StepSubmission[]>(STORAGE_KEYS.STEP_SUBMISSIONS, []);
+    return this.data.submissions || [];
   }
 
   public getStepSubmissionsForStep(stepId: string, scopeUserIds?: string[]): StepSubmission[] {
     return this.getAllStepSubmissions()
       .filter(s => s.step_id === stepId && (!scopeUserIds || scopeUserIds.includes(s.user_id)))
-      .sort((a, b) => new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime());
+      .sort((a, b) => b.submitted_at.localeCompare(a.submitted_at));
   }
 
   public getPendingStepSubmissions(): StepSubmission[] {
-    return this.getAllStepSubmissions()
-      .filter(s => s.status === 'Submitted')
-      .sort((a, b) => new Date(a.submitted_at).getTime() - new Date(b.submitted_at).getTime());
+    return this.getAllStepSubmissions().filter(s => s.status === 'Submitted').sort((a, b) => a.submitted_at.localeCompare(b.submitted_at));
   }
 
-  private stepWorkspaceKey(scopeKey: string, problemId: string, stepId: string): string {
-    return `${scopeKey}::${problemId}::${stepId}`;
+  public async submitStepEvidence(payload: { step_id: string; category_id: string; problem_id: string; note: string; files: File[] }): Promise<void> {
+    const form = new FormData();
+    form.append('step_id', payload.step_id);
+    form.append('category_id', payload.category_id);
+    form.append('problem_id', payload.problem_id);
+    form.append('note', payload.note);
+    payload.files.forEach(f => form.append('files', f));
+    await this.write(() => api.post('/submissions', form));
   }
 
-  public getStepWorkspace(scopeKey: string, problemId: string, stepId: string): StepWorkspace | null {
-    const all = this.getItem<Record<string, StepWorkspace>>(STORAGE_KEYS.STEP_WORKSPACES, {});
-    return all[this.stepWorkspaceKey(scopeKey, problemId, stepId)] || null;
+  public downloadSubmissionFile(fileId: string, name: string): Promise<void> {
+    return api.download(`/files/${fileId}`, name).catch(e => this.reportError(e));
   }
 
-  public saveStepWorkspace(scopeKey: string, problemId: string, stepId: string, workspace: StepWorkspace): void {
-    const all = this.getItem<Record<string, StepWorkspace>>(STORAGE_KEYS.STEP_WORKSPACES, {});
-    all[this.stepWorkspaceKey(scopeKey, problemId, stepId)] = { ...workspace, updated_at: new Date().toISOString() };
-    this.setItem(STORAGE_KEYS.STEP_WORKSPACES, all);
-    this.notify();
+  public reviewStepSubmission(id: string, status: SubmissionStatus, adminFeedback?: string): Promise<void> {
+    return this.mutate(
+      d => { const s = d.submissions?.find(x => x.id === id); if (s) { s.status = status; s.admin_feedback = adminFeedback; } },
+      () => api.post(`/admin/submissions/${id}/review`, { status, ...(adminFeedback !== undefined ? { admin_feedback: adminFeedback } : {}) }),
+    );
   }
 
-  public getAllStepWorkspaces(): Record<string, StepWorkspace> {
-    return this.getItem<Record<string, StepWorkspace>>(STORAGE_KEYS.STEP_WORKSPACES, {});
+  public deleteStepSubmission(id: string): Promise<void> {
+    return this.mutate(
+      d => { d.submissions = d.submissions?.filter(s => s.id !== id); },
+      () => api.delete(`/admin/submissions/${id}`),
+    );
   }
 
-  public clearStepWorkspaces(scopeKey: string, problemId: string): void {
-    const all = this.getAllStepWorkspaces();
-    const prefix = `${scopeKey}::${problemId}::`;
-    for (const key of Object.keys(all)) if (key.startsWith(prefix)) delete all[key];
-    this.setItem(STORAGE_KEYS.STEP_WORKSPACES, all);
-    this.notify();
-  }
+  // ---------- analytics events ----------
 
-  public getLockedCategoryId(scopeKey: string, problemId: string): string | null {
-    const locks = this.getItem<Record<string, Record<string, string>>>(STORAGE_KEYS.CATEGORY_LOCKS, {});
-    return locks[scopeKey]?.[problemId] || null;
-  }
-
-  public getAllCategoryLocks(): Record<string, Record<string, string>> {
-    return this.getItem<Record<string, Record<string, string>>>(STORAGE_KEYS.CATEGORY_LOCKS, {});
-  }
-
-  public lockCategory(scopeKey: string, problemId: string, categoryId: string): void {
-    const locks = this.getAllCategoryLocks();
-    locks[scopeKey] = { ...(locks[scopeKey] || {}), [problemId]: categoryId };
-    this.setItem(STORAGE_KEYS.CATEGORY_LOCKS, locks);
-    this.notify();
-  }
-
-  public unlockCategory(scopeKey: string, problemId: string): void {
-    const locks = this.getAllCategoryLocks();
-    if (!locks[scopeKey]?.[problemId]) return;
-    delete locks[scopeKey][problemId];
-    this.setItem(STORAGE_KEYS.CATEGORY_LOCKS, locks);
-    this.notify();
-  }
-
-  public touchActivity(userId: string): void {
-    const now = Date.now();
-    const users = this.getUsers();
-    const user = users.find(u => u.id === userId);
-    if (!user || (user.last_active_at && now - new Date(user.last_active_at).getTime() < 3_600_000)) return;
-    this.setItem(STORAGE_KEYS.USERS, users.map(u => (u.id === userId ? { ...u, last_active_at: new Date(now).toISOString() } : u)));
-  }
-
-  public logResourceView(userId: string, resourceId: string): void {
-    const views = this.getResourceViews();
-    views.push({ user_id: userId, resource_id: resourceId, viewed_at: new Date().toISOString() });
-    this.setItem(STORAGE_KEYS.RESOURCE_VIEWS, views);
+  public logResourceView(_userId: string, resourceId: string): void {
+    api.post('/events/resource-view', { resource_id: resourceId }).catch(() => undefined);
   }
 
   public getResourceViews(): ResourceView[] {
-    return this.getItem<ResourceView[]>(STORAGE_KEYS.RESOURCE_VIEWS, []);
+    return this.data.admin?.resource_views || [];
   }
 
   public getStepRatings(): StepRating[] {
-    return this.getItem<StepRating[]>(STORAGE_KEYS.STEP_RATINGS, []);
+    return this.data.admin?.step_ratings || this.data.my_ratings || [];
   }
 
   public getUserStepRating(userId: string, stepId: string): StepRating | null {
-    return this.getStepRatings().find(r => r.user_id === userId && r.step_id === stepId) || null;
+    return (this.data.my_ratings || []).find(r => r.step_id === stepId && r.user_id === userId) || null;
   }
 
   public rateStep(userId: string, stepId: string, score: number, comment?: string): void {
-    const ratings = this.getStepRatings().filter(r => !(r.user_id === userId && r.step_id === stepId));
-    ratings.push({ user_id: userId, step_id: stepId, score, ...(comment ? { comment } : {}), created_at: new Date().toISOString() });
-    this.setItem(STORAGE_KEYS.STEP_RATINGS, ratings);
-    this.notify();
-  }
-
-  public submitStepEvidence(payload: {
-    step_id: string;
-    category_id: string;
-    problem_id: string;
-    user_id: string;
-    submitted_by_name: string;
-    note: string;
-    files: SubmissionFile[];
-  }): StepSubmission | null {
-    const all = this.getAllStepSubmissions();
-    const newSubmission: StepSubmission = {
-      ...payload,
-      id: `sub-${Date.now()}`,
-      status: 'Submitted',
-      submitted_at: new Date().toISOString(),
-    };
-    all.unshift(newSubmission);
-    if (!this.setItem(STORAGE_KEYS.STEP_SUBMISSIONS, all)) return null;
-    this.notify();
-    return newSubmission;
-  }
-
-  public reviewStepSubmission(id: string, status: SubmissionStatus, adminFeedback?: string): void {
-    const all = this.getAllStepSubmissions();
-    const updated = all.map(s =>
-      s.id === id
-        ? { ...s, status, admin_feedback: adminFeedback, reviewed_at: new Date().toISOString() }
-        : s
+    void this.mutate(
+      d => {
+        const rating = { user_id: userId, step_id: stepId, score, ...(comment ? { comment } : {}), created_at: new Date().toISOString() };
+        d.my_ratings = [...(d.my_ratings || []).filter(r => r.step_id !== stepId), rating];
+      },
+      () => api.put(`/ratings/${stepId}`, { score, ...(comment ? { comment } : {}) }),
     );
-    this.setItem(STORAGE_KEYS.STEP_SUBMISSIONS, updated);
-
-    const submission = updated.find(s => s.id === id);
-    if (submission && status !== 'Submitted') {
-      this.addNotification(
-        submission.user_id,
-        'submission_review',
-        status === 'Approved' ? 'Evidence approved ✅' : 'Changes requested on your submission',
-        `Your submission for a roadmap step was reviewed: ${status}.${adminFeedback ? ` "${adminFeedback}"` : ''}`
-      );
-    }
-    this.notify();
   }
 
-  public deleteStepSubmission(id: string): void {
-    const all = this.getAllStepSubmissions().filter(s => s.id !== id);
-    this.setItem(STORAGE_KEYS.STEP_SUBMISSIONS, all);
-    this.notify();
+  // ---------- messaging ----------
+
+  public getThreads(): Thread[] {
+    return this.data.threads || [];
+  }
+
+  public getUnreadThreadCount(): number {
+    return this.getThreads().filter(t => t.unread).length;
+  }
+
+  public async openContextThread(type: 'application' | 'submission', id: string): Promise<string> {
+    const { thread } = await api.post<{ thread: Thread }>('/threads/context', { type, id });
+    this.scheduleRefresh();
+    return thread.id;
+  }
+
+  public async fetchThread(threadId: string): Promise<{ thread: Thread; messages: Message[] }> {
+    const result = await api.get<{ thread: Thread; messages: Message[] }>(`/threads/${threadId}/messages`);
+    const cached = this.data.threads?.find(t => t.id === threadId);
+    if (cached?.unread) { cached.unread = false; this.notify(); }
+    return result;
+  }
+
+  public async sendMessage(threadId: string, body: string): Promise<Message> {
+    const { message } = await api.post<{ message: Message }>(`/threads/${threadId}/messages`, { body });
+    this.scheduleRefresh();
+    return message;
+  }
+
+  // ---------- events: RSVP & booking ----------
+
+  public hasRsvp(resourceId: string): boolean {
+    return (this.data.my_rsvps || []).includes(resourceId);
+  }
+
+  public rsvp(resourceId: string): Promise<void> {
+    return this.write(() => api.post(`/events/${resourceId}/rsvp`));
+  }
+
+  public cancelRsvp(resourceId: string): Promise<void> {
+    return this.mutate(
+      d => {
+        d.my_rsvps = (d.my_rsvps || []).filter(id => id !== resourceId);
+        const r = d.content.resources.find(x => x.id === resourceId);
+        if (r?.rsvp_count) r.rsvp_count -= 1;
+      },
+      () => api.delete(`/events/${resourceId}/rsvp`),
+    );
+  }
+
+  public getBookedSlots(resourceId: string): string[] {
+    return this.data.content.booked_slots[resourceId] || [];
+  }
+
+  public getMyBooking(resourceId: string): Booking | null {
+    return (this.data.my_bookings || []).find(b => b.resource_id === resourceId) || null;
+  }
+
+  public getMyBookings(): Booking[] {
+    return this.data.my_bookings || [];
+  }
+
+  public getMyRsvpIds(): string[] {
+    return this.data.my_rsvps || [];
+  }
+
+  public bookSlot(resourceId: string, slot: string): Promise<void> {
+    return this.write(() => api.post(`/events/${resourceId}/bookings`, { slot }));
+  }
+
+  public cancelBooking(resourceId: string, slot: string): Promise<void> {
+    return this.write(() => api.delete(`/events/${resourceId}/bookings/${encodeURIComponent(slot)}`));
+  }
+
+  public getEventAttendees(resourceId: string): { rsvps: Rsvp[]; bookings: Booking[] } {
+    return {
+      rsvps: (this.data.admin?.rsvps || []).filter(r => r.resource_id === resourceId),
+      bookings: (this.data.admin?.bookings || []).filter(b => b.resource_id === resourceId),
+    };
+  }
+
+  // ---------- mentors ----------
+
+  public getMentors(): MentorProfile[] {
+    return this.data.mentors || [];
+  }
+
+  public getMentorRequests(): MentorRequest[] {
+    return this.data.mentor_requests || [];
+  }
+
+  public requestMentor(mentorUid: string, message: string): Promise<void> {
+    return this.write(() => api.post('/mentor-requests', { mentor_uid: mentorUid, message }));
+  }
+
+  public respondToMentorRequest(requestId: string, accept: boolean): Promise<void> {
+    return this.write(() => api.post(`/mentor-requests/${requestId}/respond`, { accept }));
+  }
+
+  public endMentorship(requestId: string): Promise<void> {
+    return this.write(() => api.post(`/mentor-requests/${requestId}/end`));
+  }
+
+  public saveMentorProfile(profile: MentorProfileInput, forUserId?: string): Promise<void> {
+    return this.write(() => (forUserId ? api.put(`/admin/mentors/${forUserId}`, profile) : api.put('/mentor/profile', profile)));
+  }
+
+  // ---------- public profiles ----------
+
+  public getMyPublicProfile(): PublicProfileSettings {
+    return this.data.public_profile || { is_public: false };
+  }
+
+  public savePublicProfile(settings: PublicProfileSettings): Promise<void> {
+    return this.write(() => api.put('/users/me/public-profile', settings));
+  }
+
+  public async fetchPublicFounder(uid: string): Promise<PublicFounder> {
+    const { profile } = await api.get<{ profile: PublicFounder }>(`/public/founders/${uid}`);
+    return profile;
+  }
+
+  public async fetchPublicTeam(teamId: string): Promise<PublicTeam> {
+    const { team } = await api.get<{ team: PublicTeam }>(`/public/teams/${teamId}`);
+    return team;
   }
 }
 
-export const store = new LocalDataStore();
+export interface MentorProfileInput {
+  headline: string;
+  bio: string;
+  expertise_stages: string[];
+  category_ids: string[];
+  background?: FounderBackground;
+  availability: string;
+  capacity: number;
+  accepting: boolean;
+}
+
+export const store = new ApiStore();

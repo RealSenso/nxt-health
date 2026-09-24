@@ -14,12 +14,30 @@ const GENDER_OPTIONS: { value: Gender; label: string }[] = [
   { value: 'prefer_not_to_say', label: 'Prefer not to say' },
 ];
 
+type Mode = 'login' | 'signup' | 'reset';
+
 interface LoginPageProps {
   onBack?: () => void;
+  initialMode?: Mode;
+  onModeChange?: (mode: Mode) => void;
 }
 
-export const LoginPage: React.FC<LoginPageProps> = ({ onBack }) => {
-  const [mode, setMode] = useState<'login' | 'signup'>('login');
+function friendlyAuthError(e: unknown): string {
+  const code = (e as { code?: string })?.code || '';
+  if (code.includes('invalid-credential') || code.includes('wrong-password') || code.includes('user-not-found')) return 'Incorrect email or password.';
+  if (code.includes('email-already-in-use')) return 'An account with that email already exists — try logging in instead.';
+  if (code.includes('weak-password')) return 'Choose a password with at least 8 characters.';
+  if (code.includes('invalid-email')) return "That email address doesn't look right.";
+  if (code.includes('too-many-requests')) return 'Too many attempts. Wait a few minutes and try again.';
+  if (code.includes('network-request-failed')) return "Can't reach the sign-in service. Check your connection.";
+  return e instanceof Error ? e.message : 'Something went wrong. Please try again.';
+}
+
+export const LoginPage: React.FC<LoginPageProps> = ({ onBack, initialMode = 'login', onModeChange }) => {
+  const [mode, setModeState] = useState<Mode>(initialMode);
+  const setMode = (next: Mode) => { setModeState(next); onModeChange?.(next); };
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState('');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -29,18 +47,34 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBack }) => {
   const [background, setBackground] = useState<FounderBackground | ''>('');
   const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    const result = mode === 'login'
-      ? store.login(email, password)
-      : store.signup(name, email, password, {
+    setNotice('');
+    if (mode === 'signup' && password.length < 8) {
+      setError('Choose a password with at least 8 characters.');
+      return;
+    }
+    setBusy(true);
+    try {
+      if (mode === 'reset') {
+        await store.sendPasswordReset(email);
+        setNotice('If an account exists for that email, a password reset link is on its way. Check your inbox and spam folder.');
+      } else if (mode === 'login') {
+        await store.login(email, password);
+      } else {
+        await store.signup(name, email, password, {
           location,
           ...(gender ? { gender } : {}),
           ...(source ? { acquisition_source: source } : {}),
           ...(background ? { background } : {}),
         });
-    if (result.error) setError(result.error);
+      }
+    } catch (err) {
+      setError(friendlyAuthError(err));
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -103,12 +137,14 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBack }) => {
           </div>
 
           <h1 className="font-display text-lg font-bold text-[var(--nxt-ink)] mb-1">
-            {mode === 'login' ? 'Welcome back' : 'Join as a founder'}
+            {mode === 'login' ? 'Welcome back' : mode === 'signup' ? 'Join as a founder' : 'Reset your password'}
           </h1>
           <p className="text-xs text-[var(--nxt-ink-soft)] mb-5">
             {mode === 'login'
               ? 'Log in to continue working on your problem statements and roadmaps.'
-              : 'New accounts start as members — admin access is granted separately.'}
+              : mode === 'signup'
+              ? "We'll email you a link to verify your address. Membership is requested separately after you sign up."
+              : "Enter your account email and we'll send you a link to choose a new password."}
           </p>
 
           <AnimatePresence mode="wait">
@@ -206,6 +242,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBack }) => {
                   <input
                     id="input-auth-email"
                     type="email"
+                    autoComplete="email"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -215,22 +252,38 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBack }) => {
                 </div>
               </div>
 
+              {mode !== 'reset' && (
               <div>
-                <label className="block text-xs font-semibold text-[var(--nxt-ink-soft)] mb-1">Password</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-semibold text-[var(--nxt-ink-soft)]">Password</label>
+                  {mode === 'login' && (
+                    <button type="button" id="btn-forgot-password" onClick={() => { setMode('reset'); setError(''); }} className="text-xs font-semibold text-[var(--nxt-mint-strong)] hover:underline">
+                      Forgot password?
+                    </button>
+                  )}
+                </div>
                 <div className="relative">
                   <Lock className="w-4 h-4 text-[var(--nxt-ink-soft)] absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     id="input-auth-password"
                     type="password"
                     required
-                    minLength={4}
+                    autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
+                    placeholder={mode === 'signup' ? 'At least 8 characters' : '••••••••'}
                     className="w-full pl-9 pr-3 py-2.5 text-sm bg-[var(--nxt-bg-soft)] border border-[var(--nxt-line)] rounded-2xl text-[var(--nxt-ink)] focus:ring-2 focus:ring-[var(--nxt-mint-strong)] focus:outline-hidden focus:bg-[var(--nxt-surface)] transition-colors"
                   />
                 </div>
               </div>
+              )}
+
+              {notice && (
+                <div className="p-2.5 rounded-xl bg-[var(--nxt-mint)] border border-[var(--nxt-mint-strong)]/30 text-[var(--nxt-mint-deep)] text-xs font-semibold flex items-start gap-2">
+                  <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                  <span>{notice}</span>
+                </div>
+              )}
 
               {error && (
                 <div className="p-2.5 rounded-xl bg-[var(--nxt-peach)] border border-[var(--nxt-peach-deep)]/30 text-[var(--nxt-peach-deep)] text-xs font-semibold flex items-center gap-2">
@@ -243,11 +296,18 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBack }) => {
                 whileHover={{ scale: 1.01, y: -1 }}
                 whileTap={{ scale: 0.98 }}
                 type="submit"
-                className="w-full py-3 bg-[var(--nxt-mint-strong)] hover:bg-[var(--nxt-mint-deep)] text-white font-bold rounded-full text-sm shadow-md shadow-[var(--nxt-mint-strong)]/20 transition-colors flex items-center justify-center gap-2"
+                id="btn-auth-submit"
+                disabled={busy}
+                className="w-full disabled:opacity-60 py-3 bg-[var(--nxt-mint-strong)] hover:bg-[var(--nxt-mint-deep)] text-white font-bold rounded-full text-sm shadow-md shadow-[var(--nxt-mint-strong)]/20 transition-colors flex items-center justify-center gap-2"
               >
-                <span>{mode === 'login' ? 'Log In' : 'Create Account'}</span>
+                <span>{busy ? 'Please wait…' : mode === 'login' ? 'Log In' : mode === 'signup' ? 'Create Account' : 'Send reset link'}</span>
                 <ArrowRight className="w-4 h-4" />
               </motion.button>
+              {mode === 'reset' && (
+                <button type="button" onClick={() => { setMode('login'); setNotice(''); setError(''); }} className="w-full text-xs font-semibold text-[var(--nxt-ink-soft)] hover:text-[var(--nxt-ink)]">
+                  Back to log in
+                </button>
+              )}
             </motion.form>
           </AnimatePresence>
         </div>

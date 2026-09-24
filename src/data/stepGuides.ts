@@ -188,6 +188,8 @@ const FALLBACK: StepGuide = {
   whoToTalkTo: ['Your clinical champion', 'Platform mentors'],
 };
 
+export const STAGE_TAGS = Object.keys(GUIDES);
+
 export function getStepGuide(stageTag?: string): StepGuide {
   return (stageTag && GUIDES[stageTag]) || FALLBACK;
 }

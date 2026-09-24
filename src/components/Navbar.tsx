@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   Stethoscope, DollarSign, ListTodo, Shield,
   CheckCircle2, Sparkles, Lock, FileQuestion, LogOut, LogIn, Users2, UserCog,
-  LayoutDashboard, BookMarked, ChevronDown, Sun, Moon, Monitor
+  LayoutDashboard, BookMarked, ChevronDown, Sun, Moon, Monitor, GraduationCap, MessageSquare
 } from 'lucide-react';
 import { User } from '../types';
 import { store } from '../services/store';
@@ -28,6 +28,7 @@ const PROBLEMS_MODE: Mode = { id: 'problems', label: 'Problem Statements', icon:
 const ROADMAP_SUBMODES: Mode[] = [
   { id: 'tasks', label: 'Roadmaps', icon: ListTodo, locked: true, preview: true },
   { id: 'resources', label: 'Resources', icon: BookMarked, locked: true, preview: true },
+  { id: 'mentors', label: 'Mentors', icon: GraduationCap, locked: true },
 ];
 const FUNDS_MODE: Mode = { id: 'funds', label: 'Funds & Grants', icon: DollarSign, locked: true };
 const ADMIN_MODE: Mode = { id: 'admin', label: 'Admin Panel', icon: Shield };
@@ -73,7 +74,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   };
   const ThemeIcon = THEME_ICONS[theme];
 
-  const roadmapActive = currentTab === 'tasks' || currentTab === 'resources';
+  const roadmapActive = currentTab === 'tasks' || currentTab === 'resources' || currentTab === 'mentors';
+  const unreadThreads = currentUser ? store.getUnreadThreadCount() : 0;
   const mobileModes = [PROBLEMS_MODE, ROADMAP_SUBMODES[0], FUNDS_MODE, ...(currentUser && store.isAdmin(currentUser) ? [ADMIN_MODE] : [])];
 
   const handleSelectMode = (mode: Mode) => {
@@ -248,6 +250,21 @@ export const Navbar: React.FC<NavbarProps> = ({
               </motion.button>
             ) : (
               <>
+                <button
+                  id="btn-nav-messages"
+                  onClick={() => setCurrentTab('messages')}
+                  title="Messages"
+                  className={`relative flex items-center justify-center w-9 h-9 rounded-full border border-[var(--nxt-line)] transition-colors ${
+                    currentTab === 'messages' ? 'bg-[var(--nxt-mint)] text-[var(--nxt-mint-deep)]' : 'bg-[var(--nxt-surface)] hover:bg-[var(--nxt-bg-soft)] text-[var(--nxt-ink-soft)] hover:text-[var(--nxt-ink)]'
+                  }`}
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  {unreadThreads > 0 && (
+                    <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-[var(--nxt-mint-strong)] text-white text-[10px] font-bold flex items-center justify-center">
+                      {unreadThreads > 9 ? '9+' : unreadThreads}
+                    </span>
+                  )}
+                </button>
                 <NotificationsBell currentUser={currentUser} />
 
                 <div className="relative" ref={userMenuRef}>
@@ -284,7 +301,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                           <p className="text-xs font-bold text-[var(--nxt-ink)]">{currentUser.name}</p>
                           <p className="text-xs text-[var(--nxt-ink-soft)] truncate">{currentUser.email}</p>
                           <span className="inline-block mt-1 text-[11px] px-2 py-0.5 rounded-full font-semibold bg-[var(--nxt-bg-soft)] text-[var(--nxt-ink-soft)]">
-                            Role: {currentUser.role.toUpperCase()} • {currentUser.is_member ? 'PAYING MEMBER' : 'UNPAID'}
+                            {currentUser.role === 'admin' ? 'Admin' : currentUser.is_member ? 'Member' : currentUser.membership_status === 'requested' ? 'Membership requested' : 'Not a member yet'}
                           </span>
                         </div>
 
@@ -309,7 +326,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                             <span className={`text-[11px] px-1.5 py-0.5 rounded-full font-bold ${
                               currentUser.is_member ? 'bg-[var(--nxt-mint)] text-[var(--nxt-mint-strong)]' : 'bg-[var(--nxt-bg-soft)] text-[var(--nxt-ink-soft)]'
                             }`}>
-                              {currentUser.is_member ? 'Active' : 'Inactive'}
+                              {currentUser.is_member ? 'Active' : currentUser.membership_status === 'requested' ? 'Pending' : 'Inactive'}
                             </span>
                           </button>
                           <button
@@ -319,6 +336,15 @@ export const Navbar: React.FC<NavbarProps> = ({
                             <UserCog className="w-3.5 h-3.5" />
                             Edit Profile
                           </button>
+                          {currentUser.is_mentor && (
+                            <button
+                              onClick={() => { setShowUserMenu(false); setCurrentTab('mentoring'); }}
+                              className="w-full text-left px-3 py-2 rounded-xl text-sm text-[var(--nxt-ink-soft)] hover:bg-[var(--nxt-bg-soft)] font-medium flex items-center gap-1.5"
+                            >
+                              <GraduationCap className="w-3.5 h-3.5" />
+                              Mentoring
+                            </button>
+                          )}
                           <button
                             onClick={() => { setShowUserMenu(false); onOpenTeamModal(); }}
                             className="w-full text-left px-3 py-2 rounded-xl text-sm text-[var(--nxt-ink-soft)] hover:bg-[var(--nxt-bg-soft)] font-medium flex items-center justify-between"

@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { EventPanel } from './EventPanel';
 import { motion } from 'motion/react';
 import {
   BookMarked, Search, Video, Calendar, Hospital, ExternalLink, ArrowLeft, ArrowRight,
@@ -11,7 +13,6 @@ import { Reveal, RevealGroup, RevealItem, PillButton } from './ui/Reveal';
 
 interface ResourcesPageProps {
   currentUser: User | null;
-  initialStepId?: string;
   onOpenLogin: () => void;
   onOpenMembershipModal: () => void;
 }
@@ -32,17 +33,25 @@ const TYPE_ICON: Record<ResourceType, React.ElementType> = {
 
 const PREVIEW_UNLOCKED_COUNT = 6;
 
+
 export const ResourcesPage: React.FC<ResourcesPageProps> = ({
   currentUser,
-  initialStepId,
   onOpenLogin,
   onOpenMembershipModal,
 }) => {
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<'all' | ResourceType>('all');
-  const [stepFilter, setStepFilter] = useState<string | null>(initialStepId || null);
-  const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
+  const navigate = useNavigate();
+  const { resourceId } = useParams<{ resourceId?: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const stepFilter = searchParams.get('step');
+  const setStepFilter = (value: string | null) => setSearchParams(value ? { step: value } : {}, { replace: true });
+  const selectedResource = resourceId ? store.getResources().find(r => r.id === resourceId && !r.locked) || null : null;
+  const setSelectedResource = (resource: Resource | null) => {
+    if (resource && currentUser) store.logResourceView(currentUser.id, resource.id);
+    navigate(resource ? `/resources/${resource.id}` : `/resources${stepFilter ? `?step=${stepFilter}` : ''}`);
+  };
 
   const isMember = !!currentUser?.is_member;
   const categories = store.getCategories();
@@ -70,7 +79,6 @@ export const ResourcesPage: React.FC<ResourcesPageProps> = ({
     return true;
   });
 
-  const previewResourceIds = new Set(resources.slice(0, PREVIEW_UNLOCKED_COUNT).map(r => r.id));
   const upgradeAction = currentUser ? onOpenMembershipModal : onOpenLogin;
   const upgradeLabel = currentUser ? 'Become a Member' : 'Log In / Register';
 
@@ -165,6 +173,8 @@ export const ResourcesPage: React.FC<ResourcesPageProps> = ({
             </a>
           )}
         </Reveal>
+
+        <EventPanel resource={selectedResource} currentUser={currentUser} onOpenLogin={onOpenLogin} onOpenMembershipModal={onOpenMembershipModal} />
       </div>
     );
   }
@@ -232,7 +242,7 @@ export const ResourcesPage: React.FC<ResourcesPageProps> = ({
 
       <RevealGroup className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" stagger={0.03}>
         {filtered.map(({ resource, step, category }, i) => {
-          const locked = !isMember && !previewResourceIds.has(resource.id);
+          const locked = !!resource.locked;
           const Icon = TYPE_ICON[resource.type];
           if (locked) {
             return (
@@ -262,7 +272,7 @@ export const ResourcesPage: React.FC<ResourcesPageProps> = ({
             <RevealItem key={resource.id}>
               <motion.button
                 whileHover={{ y: -3 }}
-                onClick={() => { if (currentUser) store.logResourceView(currentUser.id, resource.id); setSelectedResource(resource); }}
+                onClick={() => setSelectedResource(resource)}
                 className="w-full text-left bg-[var(--nxt-surface)] border border-[var(--nxt-line)] rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-[var(--nxt-blue-strong)]/30 transition-shadow h-full flex flex-col justify-between"
               >
                 <div>

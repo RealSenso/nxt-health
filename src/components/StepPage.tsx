@@ -2,14 +2,16 @@ import React, { useRef, useState } from 'react';
 import {
   Check, CheckCircle, Hospital, Sparkles, ArrowRight, ArrowLeft, Paperclip, Upload, Download,
   AlertCircle, Clock, MessageSquareWarning, X, Plus, Trash2, Target, AlertTriangle, Users,
-  NotebookPen, ListChecks, Flag, Lightbulb, Star, Pencil, RotateCcw
+  NotebookPen, ListChecks, Flag, Lightbulb, Star, Pencil, RotateCcw, MessageSquare
 } from 'lucide-react';
-import { Step, User, Category, SubmissionFile, StepWorkspace, StepWorkStatus } from '../types';
+import { useNavigate } from 'react-router-dom';
+import { Step, User, Category, StepWorkspace, StepWorkStatus } from '../types';
 import { store } from '../services/store';
 import { getStepGuide } from '../data/stepGuides';
 import { Reveal } from './ui/Reveal';
 
-const MAX_FILE_BYTES = 4 * 1024 * 1024;
+const MAX_FILE_BYTES = 10 * 1024 * 1024;
+const MAX_FILES = 5;
 
 const STATUS_OPTIONS: { value: StepWorkStatus; label: string; tone: string }[] = [
   { value: 'not_started', label: 'Not started', tone: 'bg-[var(--nxt-bg-soft)] text-[var(--nxt-ink-soft)]' },
@@ -17,15 +19,6 @@ const STATUS_OPTIONS: { value: StepWorkStatus; label: string; tone: string }[] =
   { value: 'blocked', label: 'Blocked', tone: 'bg-[var(--nxt-peach)] text-[var(--nxt-peach-deep)]' },
   { value: 'done', label: 'Done', tone: 'bg-[var(--nxt-mint)] text-[var(--nxt-mint-deep)]' },
 ];
-
-function readFileAsDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
 
 function daysBetween(fromIso: string, to: Date = new Date()): number {
   return Math.floor((to.getTime() - new Date(fromIso).getTime()) / 86_400_000);
@@ -545,51 +538,61 @@ const EvidencePanel: React.FC<{ step: Step; category: Category; currentUser: Use
   step, category, currentUser, problemId,
 }) => {
   const [note, setNote] = useState('');
-  const [pendingFiles, setPendingFiles] = useState<SubmissionFile[]>([]);
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [fileError, setFileError] = useState('');
-  const [isReadingFiles, setIsReadingFiles] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [justSubmitted, setJustSubmitted] = useState(false);
+  const navigate = useNavigate();
+
+  const openDiscussion = async (submissionId: string) => {
+    try {
+      navigate(`/messages/${await store.openContextThread('submission', submissionId)}`);
+    } catch (e) {
+      setFileError(e instanceof Error ? e.message : 'Could not open the conversation.');
+    }
+  };
 
   const submissions = store
     .getStepSubmissionsForStep(step.id, store.getScopeUserIds(currentUser))
     .filter(s => s.problem_id === problemId);
 
-  const handleFilesSelected = async (fileList: FileList | null) => {
+  const handleFilesSelected = (fileList: FileList | null) => {
     if (!fileList || fileList.length === 0) return;
     setFileError('');
-    setIsReadingFiles(true);
-    try {
-      const accepted: SubmissionFile[] = [];
-      for (const file of Array.from(fileList)) {
-        if (file.size > MAX_FILE_BYTES) {
-          setFileError(`"${file.name}" is over the 4MB demo limit — try a smaller file.`);
-          continue;
-        }
-        accepted.push({ name: file.name, size: file.size, type: file.type, dataUrl: await readFileAsDataUrl(file) });
+    const accepted: File[] = [];
+    for (const file of Array.from(fileList)) {
+      if (file.size > MAX_FILE_BYTES) {
+        setFileError(`"${file.name}" is over the 10 MB limit — try a smaller file.`);
+        continue;
       }
-      setPendingFiles(prev => [...prev, ...accepted]);
-    } finally {
-      setIsReadingFiles(false);
+      accepted.push(file);
     }
+    setPendingFiles(prev => {
+      const next = [...prev, ...accepted];
+      if (next.length > MAX_FILES) setFileError(`You can attach up to ${MAX_FILES} files per submission.`);
+      return next.slice(0, MAX_FILES);
+    });
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!note.trim() && pendingFiles.length === 0) {
       setFileError('Add a note or attach at least one file before submitting.');
       return;
     }
-    const saved = store.submitStepEvidence({
-      step_id: step.id,
-      category_id: category.id,
-      problem_id: problemId,
-      user_id: currentUser.id,
-      submitted_by_name: currentUser.name,
-      note: note.trim(),
-      files: pendingFiles,
-    });
-    if (!saved) {
-      setFileError("Couldn't save — your browser's storage is full. Remove some files or attach smaller ones.");
+    setIsUploading(true);
+    try {
+      await store.submitStepEvidence({
+        step_id: step.id,
+        category_id: category.id,
+        problem_id: problemId,
+        note: note.trim(),
+        files: pendingFiles,
+      });
+    } catch (e) {
+      setFileError(e instanceof Error ? e.message : 'Upload failed. Please try again.');
       return;
+    } finally {
+      setIsUploading(false);
     }
     setNote('');
     setPendingFiles([]);
@@ -627,15 +630,14 @@ const EvidencePanel: React.FC<{ step: Step; category: Category; currentUser: Use
               {sub.files.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mb-1.5">
                   {sub.files.map((f, i) => (
-                    <a
+                    <button
                       key={i}
-                      href={f.dataUrl}
-                      download={f.name}
+                      onClick={() => store.downloadSubmissionFile(f.file_id, f.name)}
                       className="inline-flex items-center gap-1 px-2 py-1 bg-[var(--nxt-surface)] border border-[var(--nxt-line)] rounded-lg text-[11px] font-semibold text-[var(--nxt-ink)] hover:border-[var(--nxt-mint-strong)]/40 transition-colors"
                     >
                       <Download className="w-2.5 h-2.5" />
                       <span className="truncate max-w-[120px]">{f.name}</span>
-                    </a>
+                    </button>
                   ))}
                 </div>
               )}
@@ -646,6 +648,12 @@ const EvidencePanel: React.FC<{ step: Step; category: Category; currentUser: Use
                   "{sub.admin_feedback}"
                 </p>
               )}
+              <button
+                onClick={() => openDiscussion(sub.id)}
+                className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-[var(--nxt-mint-strong)] hover:underline"
+              >
+                <MessageSquare className="w-3.5 h-3.5" /> Discuss with reviewers
+              </button>
             </div>
           ))}
         </div>
@@ -663,7 +671,7 @@ const EvidencePanel: React.FC<{ step: Step; category: Category; currentUser: Use
           <div className="flex flex-wrap gap-1.5">
             {pendingFiles.map((f, i) => (
               <span key={i} className="inline-flex items-center gap-1.5 px-2 py-1 bg-[var(--nxt-mint)]/40 text-[var(--nxt-mint-deep)] rounded-lg text-[11px] font-semibold">
-                {f.name}
+                {f.name} <span className="font-normal opacity-70">({(f.size / 1024 / 1024).toFixed(1)} MB)</span>
                 <button onClick={() => setPendingFiles(prev => prev.filter((_, j) => j !== i))} className="hover:text-[var(--nxt-peach-deep)]">
                   <X className="w-2.5 h-2.5" />
                 </button>
@@ -679,16 +687,18 @@ const EvidencePanel: React.FC<{ step: Step; category: Category; currentUser: Use
         <div className="flex flex-wrap items-center gap-2">
           <label className="px-3 py-1.5 border border-[var(--nxt-line)] bg-[var(--nxt-surface)] hover:bg-[var(--nxt-bg-soft)] text-[var(--nxt-ink-soft)] rounded-full text-xs font-semibold cursor-pointer flex items-center gap-1.5 transition-colors">
             <Upload className="w-3.5 h-3.5" />
-            <span>{isReadingFiles ? 'Reading...' : 'Attach Files'}</span>
+            <span>Attach files</span>
             <input type="file" multiple className="hidden" onChange={(e) => handleFilesSelected(e.target.files)} />
           </label>
           <button
             id="btn-submit-step-evidence"
             onClick={handleSubmit}
-            className="px-3.5 py-1.5 bg-[var(--nxt-mint-strong)] hover:bg-[var(--nxt-mint-deep)] text-white rounded-full text-xs font-semibold flex items-center gap-1.5 transition-colors"
+            disabled={isUploading}
+            className="px-3.5 py-1.5 bg-[var(--nxt-mint-strong)] hover:bg-[var(--nxt-mint-deep)] disabled:opacity-60 text-white rounded-full text-xs font-semibold flex items-center gap-1.5 transition-colors"
           >
-            <Paperclip className="w-3.5 h-3.5" /> Submit for Review
+            <Paperclip className="w-3.5 h-3.5" /> {isUploading ? 'Uploading…' : 'Submit for review'}
           </button>
+          <span className="text-[11px] text-[var(--nxt-ink-soft)]">Up to {MAX_FILES} files, 10 MB each</span>
           {justSubmitted && (
             <span className="text-xs text-[var(--nxt-mint-strong)] font-semibold flex items-center gap-1">
               <Check className="w-3 h-3" /> Submitted!

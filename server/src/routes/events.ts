@@ -23,7 +23,7 @@ export function eventsRouter(database: Database): Router {
   r.post('/events/:id/rsvp', async (req, res) => {
     const user = requireMember(req);
     const resource = await loadEvent(String(req.params.id), ['webinar', 'seminar', 'session']);
-    if (resource.date && new Date(resource.date as string).getTime() < Date.now() - 86_400_000) {
+    if (resource.starts_at && new Date(resource.starts_at as string).getTime() < Date.now() - 86_400_000) {
       throw new HttpError(400, 'This event has already happened.');
     }
     if (await rsvps.findOne({ resource_id: resource._id, user_id: user._id })) return res.json({ ok: true });

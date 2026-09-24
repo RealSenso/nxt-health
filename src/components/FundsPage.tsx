@@ -8,6 +8,7 @@ import { User, FundingApplication } from '../types';
 import { store } from '../services/store';
 import { RevealGroup, RevealItem, PillButton } from './ui/Reveal';
 import { FundingApplicationModal } from './FundingApplicationModal';
+import { DiscussButton } from './ui/DiscussButton';
 import { PageHeader } from './ui/PageHeader';
 import { BadgeDollarSign } from 'lucide-react';
 
@@ -179,6 +180,8 @@ export const FundsPage: React.FC<FundsPageProps> = ({
                       </PillButton>
                     </div>
                   ) : (
+                    <span className="flex items-center gap-4 shrink-0">
+                    <DiscussButton type="application" id={app.id} label="Message reviewers" />
                     <button
                       onClick={() => onNavigateToRoadmap(app.problem_statement_id)}
                       className="text-xs font-semibold text-[var(--nxt-mint-strong)] hover:text-[var(--nxt-mint-deep)] flex items-center gap-1 shrink-0"
@@ -186,6 +189,7 @@ export const FundsPage: React.FC<FundsPageProps> = ({
                       <span>Work on Category Roadmap</span>
                       <ArrowRight className="w-3.5 h-3.5" />
                     </button>
+                    </span>
                   )}
                 </div>
               </motion.div>

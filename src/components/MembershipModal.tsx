@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Check, X, Sparkles, MessageSquare, DollarSign, ListTodo, Hospital } from 'lucide-react';
+import { Check, X, Sparkles, MessageSquare, DollarSign, ListTodo, Hospital, Clock, MailCheck, AlertCircle } from 'lucide-react';
 import { User } from '../types';
 import { store } from '../services/store';
 
@@ -17,16 +17,33 @@ export const MembershipModal: React.FC<MembershipModalProps> = ({
   currentUser,
   onSuccess,
 }) => {
-  const handleActivate = () => {
-    store.toggleCurrentUserMembership(true);
-    if (onSuccess) onSuccess();
-    onClose();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [verifyNotice, setVerifyNotice] = useState('');
+  const verified = store.isEmailVerified();
+  const status = currentUser.is_member ? 'active' : currentUser.membership_status;
+
+  const run = async (action: () => Promise<unknown>) => {
+    setBusy(true);
+    setError('');
+    try {
+      await action();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Something went wrong.');
+    } finally {
+      setBusy(false);
+    }
   };
 
-  const handleDeactivate = () => {
-    store.toggleCurrentUserMembership(false);
-    onClose();
-  };
+  const handleRequest = () => run(async () => {
+    await store.requestMembership();
+    onSuccess?.();
+  });
+
+  const handleRecheck = () => run(async () => {
+    const ok = await store.recheckEmailVerification();
+    setVerifyNotice(ok ? 'Email verified — you can request membership now.' : "Still not verified. Click the link in the email we sent, then try again.");
+  });
 
   return (
     <AnimatePresence>
@@ -63,7 +80,7 @@ export const MembershipModal: React.FC<MembershipModalProps> = ({
                 <Sparkles className="w-6 h-6" />
               </motion.div>
               <h3 className="font-display text-2xl font-bold text-[var(--nxt-ink)]">
-                {currentUser.is_member ? 'Entrepreneur Membership Active' : 'Unlock Entrepreneur Membership'}
+                {status === 'active' ? "You're a member" : 'Become a member'}
               </h3>
               <p className="text-sm text-[var(--nxt-ink-soft)] mt-1.5">
                 Full access to medical problem grants, category roadmaps, and clinical hospital networks.
@@ -118,36 +135,57 @@ export const MembershipModal: React.FC<MembershipModalProps> = ({
                 <span className="text-xs text-[var(--nxt-ink-soft)] font-medium">/ month</span>
               </div>
               <p className="text-xs text-[var(--nxt-mint-strong)] mt-1 font-medium">
-                Cancel anytime — billed monthly
+                Online payment is coming soon — for now our team reviews and approves each request.
               </p>
             </div>
 
             <div className="space-y-2">
-              {!currentUser.is_member ? (
-                <motion.button
-                  whileHover={{ scale: 1.02, y: -1 }}
-                  whileTap={{ scale: 0.98 }}
-                  id="btn-confirm-membership"
-                  onClick={handleActivate}
-                  className="w-full py-3 px-4 bg-[var(--nxt-mint-strong)] hover:bg-[var(--nxt-mint-deep)] text-white font-semibold rounded-full text-sm shadow-md shadow-[var(--nxt-mint-strong)]/20 transition-colors flex items-center justify-center gap-2"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  <span>Unlock Membership Now</span>
-                </motion.button>
-              ) : (
-                <div className="space-y-2">
-                  <div className="p-3 rounded-full bg-[var(--nxt-mint)] text-[var(--nxt-mint-strong)] text-xs font-medium text-center flex items-center justify-center gap-1.5">
-                    <Check className="w-4 h-4 text-[var(--nxt-mint-strong)]" />
-                    <span>You are currently an Active Paying Member!</span>
-                  </div>
-                  <button
-                    id="btn-deactivate-membership"
-                    onClick={handleDeactivate}
-                    className="w-full py-2 px-3 text-[var(--nxt-ink-soft)] hover:text-[var(--nxt-peach-deep)] text-xs font-medium transition-colors"
-                  >
-                    Deactivate Membership
-                  </button>
+              {error && (
+                <p className="p-2.5 rounded-xl bg-[var(--nxt-peach)] text-[var(--nxt-peach-deep)] text-xs font-semibold flex items-center gap-2">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" /> {error}
+                </p>
+              )}
+              {status === 'active' ? (
+                <div className="p-3 rounded-full bg-[var(--nxt-mint)] text-[var(--nxt-mint-strong)] text-xs font-medium text-center flex items-center justify-center gap-1.5">
+                  <Check className="w-4 h-4" /> Your membership is active.
                 </div>
+              ) : !verified ? (
+                <div className="space-y-2">
+                  <div className="p-3 rounded-2xl bg-[var(--nxt-blue)] text-[var(--nxt-blue-deep)] text-xs font-medium flex items-start gap-2">
+                    <MailCheck className="w-4 h-4 shrink-0" />
+                    <span>Verify your email address first — we sent a link to <strong>{currentUser.email}</strong>.</span>
+                  </div>
+                  {verifyNotice && <p className="text-xs text-center text-[var(--nxt-ink-soft)]">{verifyNotice}</p>}
+                  <div className="flex gap-2">
+                    <button disabled={busy} onClick={handleRecheck} className="flex-1 py-2.5 rounded-full bg-[var(--nxt-mint-strong)] hover:bg-[var(--nxt-mint-deep)] disabled:opacity-60 text-white text-sm font-semibold">
+                      I've verified
+                    </button>
+                    <button disabled={busy} onClick={() => run(async () => { await store.resendVerificationEmail(); setVerifyNotice('Sent a new verification email.'); })} className="flex-1 py-2.5 rounded-full border border-[var(--nxt-line)] text-sm font-semibold text-[var(--nxt-ink-soft)] hover:bg-[var(--nxt-bg-soft)] disabled:opacity-60">
+                      Resend email
+                    </button>
+                  </div>
+                </div>
+              ) : status === 'requested' ? (
+                <div className="p-3 rounded-2xl bg-[var(--nxt-peach)] text-[var(--nxt-peach-deep)] text-xs font-medium flex items-center gap-2">
+                  <Clock className="w-4 h-4 shrink-0" /> Request received — we'll notify you here once an admin reviews it.
+                </div>
+              ) : (
+                <>
+                  {status === 'declined' && (
+                    <p className="text-xs text-center text-[var(--nxt-ink-soft)]">Your last request wasn't approved. You're welcome to request again.</p>
+                  )}
+                  <motion.button
+                    whileHover={{ scale: 1.02, y: -1 }}
+                    whileTap={{ scale: 0.98 }}
+                    id="btn-confirm-membership"
+                    disabled={busy}
+                    onClick={handleRequest}
+                    className="w-full py-3 px-4 bg-[var(--nxt-mint-strong)] hover:bg-[var(--nxt-mint-deep)] disabled:opacity-60 text-white font-semibold rounded-full text-sm shadow-md shadow-[var(--nxt-mint-strong)]/20 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    <span>{busy ? 'Sending…' : 'Request membership'}</span>
+                  </motion.button>
+                </>
               )}
 
               <button

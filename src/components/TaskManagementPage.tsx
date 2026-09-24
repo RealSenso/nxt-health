@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Circle, ArrowRight, Hospital,
@@ -15,7 +16,6 @@ import { categoryIcon, departmentIcon } from '../data/icons';
 
 interface TaskManagementPageProps {
   currentUser: User | null;
-  initialProblemId?: string;
   onOpenAdminPanel?: () => void;
   onOpenLogin: () => void;
   onOpenMembershipModal: () => void;
@@ -28,7 +28,6 @@ const PREVIEW_UNLOCKED_STEPS = 3;
 
 export const TaskManagementPage: React.FC<TaskManagementPageProps> = ({
   currentUser,
-  initialProblemId,
   onOpenLogin,
   onOpenMembershipModal,
   onViewResources,
@@ -37,11 +36,17 @@ export const TaskManagementPage: React.FC<TaskManagementPageProps> = ({
   const allProblems = store.getProblems();
   const scopeKey = currentUser ? store.getScopeKey(currentUser) : '';
 
-  const [view, setView] = useState<View>('problems');
-  const [selectedProblemId, setSelectedProblemId] = useState<string | null>(null);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const params = useParams<{ problemId?: string; stepId?: string }>();
+  const selectedProblemId = params.problemId || null;
+  const selectedStepId = params.stepId || null;
+  const selectedCategoryId = selectedProblemId ? store.getLockedCategoryId(scopeKey, selectedProblemId) : null;
+  const view: View = !selectedProblemId ? 'problems' : !selectedCategoryId ? 'categories' : selectedStepId ? 'step' : 'roadmap';
+  const goTo = (problemId?: string | null, stepId?: string | null) => {
+    navigate(problemId ? `/roadmaps/${problemId}${stepId ? `/steps/${stepId}` : ''}` : '/roadmaps');
+  };
+  const setView = (next: View) => goTo(next === 'problems' ? null : selectedProblemId);
   const [categorySearch, setCategorySearch] = useState('');
-  const [selectedStepId, setSelectedStepId] = useState<string | null>(null);
   const [showPicker, setShowPicker] = useState(false);
   const [settingsProblemId, setSettingsProblemId] = useState<string | null>(null);
 
@@ -58,15 +63,11 @@ export const TaskManagementPage: React.FC<TaskManagementPageProps> = ({
 
   const [pendingCategoryId, setPendingCategoryId] = useState<string | null>(null);
 
+  const isMember = !!currentUser?.is_member;
   useEffect(() => {
-    if (initialProblemId && currentUser) {
-      store.addWorkingProblem(scopeKey, initialProblemId);
-      const locked = store.getLockedCategoryId(scopeKey, initialProblemId);
-      setSelectedProblemId(initialProblemId);
-      setSelectedCategoryId(locked);
-      setView(locked ? 'roadmap' : 'categories');
-    }
-  }, [initialProblemId, currentUser?.id]);
+    if (!selectedProblemId || !isMember || !store.getProblemById(selectedProblemId)) return;
+    if (!store.getWorkingProblemIds(scopeKey).includes(selectedProblemId)) store.addWorkingProblem(scopeKey, selectedProblemId);
+  }, [selectedProblemId, isMember, scopeKey]);
 
   if (!currentUser || !currentUser.is_member) {
     return (
@@ -80,6 +81,16 @@ export const TaskManagementPage: React.FC<TaskManagementPageProps> = ({
 
   const selectedProblem = allProblems.find(p => p.id === selectedProblemId) || null;
   const selectedCategory = categories.find(c => c.id === selectedCategoryId) || null;
+
+  if (selectedProblemId && !selectedProblem) {
+    return (
+      <div className="bg-[var(--nxt-surface)] rounded-3xl border border-dashed border-[var(--nxt-line)] p-10 text-center">
+        <h2 className="font-display text-lg font-bold text-[var(--nxt-ink)]">We couldn't find that project</h2>
+        <p className="text-sm text-[var(--nxt-ink-soft)] mt-1">The problem statement may have been removed.</p>
+        <button onClick={() => goTo(null)} className="mt-4 px-4 py-2 rounded-full bg-[var(--nxt-mint-strong)] text-white text-sm font-semibold">Back to my projects</button>
+      </div>
+    );
+  }
 
   const steps = selectedCategoryId ? store.getSteps(selectedCategoryId) : [];
   const userProgress = selectedCategoryId ? store.getUserProgress(scopeKey, selectedCategoryId) : {};
@@ -98,19 +109,14 @@ export const TaskManagementPage: React.FC<TaskManagementPageProps> = ({
   };
 
   const handleSelectProblem = (problemId: string) => {
-    const locked = store.getLockedCategoryId(scopeKey, problemId);
-    setSelectedProblemId(problemId);
-    setSelectedCategoryId(locked);
     setCategorySearch('');
-    setView(locked ? 'roadmap' : 'categories');
+    goTo(problemId);
   };
 
   const handleConfirmCategory = () => {
     if (!selectedProblemId || !pendingCategoryId) return;
     store.lockCategory(scopeKey, selectedProblemId, pendingCategoryId);
-    setSelectedCategoryId(pendingCategoryId);
     setPendingCategoryId(null);
-    setView('roadmap');
   };
 
   const handleResetCategory = (problemId: string) => {
@@ -118,10 +124,7 @@ export const TaskManagementPage: React.FC<TaskManagementPageProps> = ({
     if (locked) store.resetCategoryProgress(scopeKey, locked);
     store.clearStepWorkspaces(scopeKey, problemId);
     store.unlockCategory(scopeKey, problemId);
-    setSelectedProblemId(problemId);
-    setSelectedCategoryId(null);
-    setSelectedStepId(null);
-    setView('categories');
+    goTo(problemId);
   };
 
   const handleAddProblem = (problemId: string) => {
@@ -132,19 +135,13 @@ export const TaskManagementPage: React.FC<TaskManagementPageProps> = ({
 
   const handleRemoveProblem = (problemId: string) => {
     store.removeWorkingProblem(scopeKey, problemId);
-    if (problemId === selectedProblemId) {
-      setSelectedProblemId(null);
-      setSelectedCategoryId(null);
-      setView('problems');
-    }
+    if (problemId === selectedProblemId) goTo(null);
   };
 
   const handleResetSelection = () => {
     if (window.confirm('Clear every problem from your roadmap workspace and start over? Tracked milestone progress is kept, but you will need to reselect which problems to work on.')) {
       store.clearWorkingProblems(scopeKey);
-      setSelectedProblemId(null);
-      setSelectedCategoryId(null);
-      setView('problems');
+      goTo(null);
     }
   };
 
@@ -473,7 +470,7 @@ export const TaskManagementPage: React.FC<TaskManagementPageProps> = ({
           scopeKey={scopeKey}
           isCompleted={!!userProgress[selectedStep.id]}
           onToggleComplete={() => handleToggleStep(selectedStep.id)}
-          onNavigateStep={(stepId) => { setSelectedStepId(stepId); window.scrollTo({ top: 0 }); }}
+          onNavigateStep={(stepId) => goTo(selectedProblemId, stepId)}
           onViewResources={onViewResources}
         />
       </div>
@@ -546,7 +543,7 @@ export const TaskManagementPage: React.FC<TaskManagementPageProps> = ({
                   whileHover={{ y: -2 }}
                   transition={{ duration: 0.2 }}
                   id={`step-card-${step.id}`}
-                  onClick={() => { setSelectedStepId(step.id); setView('step'); window.scrollTo({ top: 0 }); }}
+                  onClick={() => goTo(selectedProblemId, step.id)}
                   className={`relative flex gap-4 sm:gap-5 rounded-3xl border p-4 sm:p-5 cursor-pointer group transition-shadow hover:shadow-md ${
                     isCompleted ? 'bg-[var(--nxt-surface)] border-[var(--nxt-mint-strong)]/30' : 'bg-[var(--nxt-surface)] border-[var(--nxt-line)]'
                   }`}

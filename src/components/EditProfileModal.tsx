@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, UserRound, Mail, Lock, AlertCircle, Check, MapPin, Briefcase, Trophy } from 'lucide-react';
+import { X, UserRound, Mail, Lock, AlertCircle, Check, MapPin, Briefcase, Trophy, Globe } from 'lucide-react';
 import { User, Gender, FounderBackground, Commitment, StartupStage, AcquisitionSource } from '../types';
 import { store } from '../services/store';
 import { BACKGROUND_OPTIONS, COMMITMENT_OPTIONS, SOURCE_OPTIONS, STAGE_OPTIONS } from '../data/profileOptions';
@@ -41,10 +41,20 @@ const SectionTitle: React.FC<{ icon: React.ElementType; title: string; text: str
 
 export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose, currentUser }) => {
   const [name, setName] = useState(currentUser.name);
-  const [email, setEmail] = useState(currentUser.email);
   const [location, setLocation] = useState(currentUser.location || '');
   const [gender, setGender] = useState<Gender | ''>(currentUser.gender || '');
-  const [password, setPassword] = useState('');
+  const initialPublic = store.getMyPublicProfile();
+  const [isPublic, setIsPublic] = useState(initialPublic.is_public);
+  const [headline, setHeadline] = useState(initialPublic.headline || '');
+  const [bio, setBio] = useState(initialPublic.bio || '');
+  const [website, setWebsite] = useState(initialPublic.website || '');
+  const [linkedin, setLinkedin] = useState(initialPublic.linkedin || '');
+  const [showLocation, setShowLocation] = useState(!!initialPublic.show_location);
+  const [showBackground, setShowBackground] = useState(!!initialPublic.show_background);
+  const [showStage, setShowStage] = useState(!!initialPublic.show_startup_stage);
+  const [showTeam, setShowTeam] = useState(!!initialPublic.show_team);
+  const [saving, setSaving] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
   const [background, setBackground] = useState<FounderBackground | ''>(currentUser.background || '');
   const [firstTime, setFirstTime] = useState<'' | 'yes' | 'no'>(
     currentUser.first_time_founder === undefined ? '' : currentUser.first_time_founder ? 'yes' : 'no'
@@ -67,16 +77,20 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
   const toNumber = (v: string) => Math.max(0, Number(v.replace(/[^0-9]/g, '')) || 0);
   const hasOutcomes = pilots !== '' || filings !== '' || fundingSinceJoining !== '';
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setSuccess('');
-    const result = store.updateProfile(currentUser.id, {
+    const urlOk = (v: string) => !v || /^https?:\/\/\S+\.\S+/.test(v);
+    if (!urlOk(website) || !urlOk(linkedin)) {
+      setError('Links must start with https://');
+      return;
+    }
+    setSaving(true);
+    const result = await store.updateProfile(currentUser.id, {
       name,
-      email,
       location,
       ...(gender ? { gender } : {}),
-      ...(password ? { password } : {}),
       ...(background ? { background } : {}),
       ...(firstTime ? { first_time_founder: firstTime === 'yes' } : {}),
       ...(commitment ? { commitment } : {}),
@@ -92,12 +106,24 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
         },
       } : {}),
     });
-    if (result.error) {
-      setError(result.error);
-    } else {
-      setSuccess('Profile updated.');
-      setPassword('');
+    if (!result.error) {
+      try {
+        await store.savePublicProfile({
+          is_public: isPublic, headline: headline.trim(), bio: bio.trim(), website: website.trim(), linkedin: linkedin.trim(),
+          show_location: showLocation, show_background: showBackground, show_startup_stage: showStage, show_team: showTeam,
+        });
+      } catch (err) {
+        result.error = err instanceof Error ? err.message : 'Could not save your public profile.';
+      }
     }
+    setSaving(false);
+    if (result.error) setError(result.error);
+    else setSuccess('Profile saved.');
+  };
+
+  const handlePasswordReset = async () => {
+    await store.sendPasswordReset(currentUser.email).catch(() => undefined);
+    setResetSent(true);
   };
 
   return (
@@ -146,7 +172,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
             <Field label="Email">
               <div className="relative">
                 <Mail className="w-4 h-4 text-[var(--nxt-ink-soft)] absolute left-3 top-1/2 -translate-y-1/2" />
-                <input id="input-profile-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className={`${inputClass} pl-9`} />
+                <input id="input-profile-email" type="email" value={currentUser.email} readOnly disabled className={`${inputClass} pl-9 opacity-70 cursor-not-allowed`} />
               </div>
             </Field>
 
@@ -229,21 +255,48 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
               </Field>
             </div>
 
-            <div className="pt-5 border-t border-[var(--nxt-line)]">
-              <Field label="New password">
-                <div className="relative">
-                  <Lock className="w-4 h-4 text-[var(--nxt-ink-soft)] absolute left-3 top-1/2 -translate-y-1/2" />
-                  <input
-                    id="input-profile-password"
-                    type="password"
-                    minLength={4}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Leave blank to keep current password"
-                    className={`${inputClass} pl-9`}
-                  />
-                </div>
-              </Field>
+            <SectionTitle icon={Globe} title="Public profile" text="Off by default. When on, anyone with the link can see the fields you choose — even without an account." />
+            <label className="flex items-center justify-between gap-3 rounded-2xl bg-[var(--nxt-bg-soft)] border border-[var(--nxt-line)] px-4 py-3 cursor-pointer">
+              <span className="text-sm font-semibold text-[var(--nxt-ink)]">Make my profile public</span>
+              <input id="input-public-toggle" type="checkbox" checked={isPublic} onChange={(e) => setIsPublic(e.target.checked)} className="w-5 h-5 accent-[var(--nxt-mint-strong)]" />
+            </label>
+            <Field label="Headline" hint="(shown under your name)">
+              <input value={headline} maxLength={140} onChange={(e) => setHeadline(e.target.value)} placeholder="ICU nurse building sepsis early-warning tools" className={inputClass} />
+            </Field>
+            <Field label="About you">
+              <textarea value={bio} maxLength={1500} rows={3} onChange={(e) => setBio(e.target.value)} className={inputClass} />
+            </Field>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Website"><input value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="https://" className={inputClass} /></Field>
+              <Field label="LinkedIn"><input value={linkedin} onChange={(e) => setLinkedin(e.target.value)} placeholder="https://linkedin.com/in/…" className={inputClass} /></Field>
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-sm text-[var(--nxt-ink)]">
+              {[
+                ['Show location', showLocation, setShowLocation],
+                ['Show background', showBackground, setShowBackground],
+                ['Show startup stage', showStage, setShowStage],
+                ['Show my team', showTeam, setShowTeam],
+              ].map(([label, value, setter]) => (
+                <label key={label as string} className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={value as boolean} onChange={(e) => (setter as (v: boolean) => void)(e.target.checked)} className="w-4 h-4 accent-[var(--nxt-mint-strong)]" />
+                  {label as string}
+                </label>
+              ))}
+            </div>
+            {initialPublic.is_public && (
+              <a href={`${import.meta.env.BASE_URL}founders/${currentUser.id}`} target="_blank" rel="noreferrer" className="inline-flex text-sm font-semibold text-[var(--nxt-mint-strong)] hover:underline">
+                View my public profile →
+              </a>
+            )}
+
+            <div className="pt-5 border-t border-[var(--nxt-line)] flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-bold text-[var(--nxt-ink)] flex items-center gap-2"><Lock className="w-4 h-4 text-[var(--nxt-mint-strong)]" /> Password</p>
+                <p className="text-xs text-[var(--nxt-ink-soft)] mt-0.5">{resetSent ? `Reset link sent to ${currentUser.email}.` : "We'll email you a secure link to set a new one."}</p>
+              </div>
+              <button type="button" onClick={handlePasswordReset} disabled={resetSent} className="shrink-0 px-4 py-2 rounded-full border border-[var(--nxt-line)] text-sm font-semibold text-[var(--nxt-ink-soft)] hover:bg-[var(--nxt-bg-soft)] disabled:opacity-60">
+                Send reset link
+              </button>
             </div>
 
             {error && (
@@ -262,7 +315,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
               type="submit"
               className="w-full py-3 bg-[var(--nxt-mint-strong)] hover:bg-[var(--nxt-mint-deep)] text-white font-bold rounded-full text-sm shadow-md shadow-[var(--nxt-mint-strong)]/20 transition-colors"
             >
-              Save changes
+              {saving ? 'Saving…' : 'Save changes'}
             </button>
           </form>
         </motion.div>

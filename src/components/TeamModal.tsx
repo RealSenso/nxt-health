@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Users2, Mail, UserMinus, LogOut, Crown, AlertCircle, Check } from 'lucide-react';
+import { X, Users2, Mail, UserMinus, LogOut, Crown, AlertCircle, Check, Clock, Globe } from 'lucide-react';
 import { User } from '../types';
 import { store } from '../services/store';
 
@@ -14,37 +14,59 @@ export const TeamModal: React.FC<TeamModalProps> = ({ isOpen, onClose, currentUs
   const [inviteEmail, setInviteEmail] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [busy, setBusy] = useState(false);
+  const team = store.getMyTeam(currentUser);
+  const [tagline, setTagline] = useState(team?.tagline || '');
+  const [website, setWebsite] = useState(team?.website || '');
 
   if (!isOpen) return null;
 
-  const team = store.getMyTeam(currentUser);
   const members = team ? store.getUsers().filter(u => team.member_ids.includes(u.id)) : [];
   const isOwner = team?.owner_id === currentUser.id;
+  const incoming = store.getIncomingInvites();
+  const outgoing = store.getOutgoingInvites();
 
-  const handleInvite = (e: React.FormEvent) => {
-    e.preventDefault();
+  const run = async (action: () => Promise<unknown>, successMessage?: string) => {
+    setBusy(true);
     setError('');
     setSuccess('');
-    const result = store.inviteTeammateByEmail(currentUser, inviteEmail);
+    try {
+      await action();
+      if (successMessage) setSuccess(successMessage);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Something went wrong.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleInvite = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBusy(true);
+    setError('');
+    setSuccess('');
+    const result = await store.inviteTeammateByEmail(currentUser, inviteEmail);
+    setBusy(false);
     if (result.error) {
       setError(result.error);
     } else {
-      setSuccess(`Invited! ${inviteEmail} now shares this workspace.`);
+      setSuccess(result.registered
+        ? `Invitation sent. ${inviteEmail} will see it next time they open NxT Health.`
+        : `Invitation saved. ${inviteEmail} will see it as soon as they sign up with that email.`);
       setInviteEmail('');
     }
   };
 
-  const handleRemove = (memberId: string, name: string) => {
+  const handleRemove = async (memberId: string, name: string) => {
     if (window.confirm(`Remove ${name} from your team? They'll keep their own account but lose access to shared projects.`)) {
-      const result = store.removeTeammate(currentUser, memberId);
+      const result = await store.removeTeammate(currentUser, memberId);
       if (result.error) setError(result.error);
     }
   };
 
   const handleLeave = () => {
     if (window.confirm("Leave this team? You'll keep your own account, but lose access to the shared projects and applications.")) {
-      store.leaveTeam(currentUser);
-      onClose();
+      void run(() => store.leaveTeam(currentUser)).then(onClose);
     }
   };
 
@@ -85,6 +107,27 @@ export const TeamModal: React.FC<TeamModalProps> = ({ isOpen, onClose, currentUs
             Teammates share the same working problems, funding applications, and roadmap progress —
             picking up exactly where each other left off.
           </p>
+
+          {incoming.length > 0 && (
+            <div className="mb-5 space-y-2">
+              <p className="text-xs font-bold text-[var(--nxt-ink-soft)] uppercase tracking-wider">Invitations for you</p>
+              {incoming.map(inv => (
+                <div key={inv.id} className="rounded-2xl border border-[var(--nxt-mint-strong)]/30 bg-[var(--nxt-mint)]/40 p-3">
+                  <p className="text-sm text-[var(--nxt-ink)]"><strong>{inv.from_name}</strong> invited you to join <strong>{inv.team_name}</strong>.</p>
+                  <p className="text-xs text-[var(--nxt-ink-soft)] mt-1">Joining merges your roadmap projects into the team's shared workspace.</p>
+                  <div className="flex gap-2 mt-2.5">
+                    <button id={`btn-accept-invite-${inv.id}`} disabled={busy || !!team} onClick={() => run(() => store.respondToInvite(inv.id, true), `You joined ${inv.team_name}.`)} className="px-3.5 py-1.5 rounded-full bg-[var(--nxt-mint-strong)] hover:bg-[var(--nxt-mint-deep)] disabled:opacity-60 text-white text-xs font-semibold">
+                      Accept
+                    </button>
+                    <button disabled={busy} onClick={() => run(() => store.respondToInvite(inv.id, false), 'Invitation declined.')} className="px-3.5 py-1.5 rounded-full border border-[var(--nxt-line)] text-xs font-semibold text-[var(--nxt-ink-soft)] hover:bg-[var(--nxt-surface)]">
+                      Decline
+                    </button>
+                  </div>
+                  {team && <p className="text-[11px] text-[var(--nxt-ink-soft)] mt-2">Leave your current team first to accept.</p>}
+                </div>
+              ))}
+            </div>
+          )}
 
           {members.length > 0 && (
             <div className="mb-5">
@@ -142,15 +185,53 @@ export const TeamModal: React.FC<TeamModalProps> = ({ isOpen, onClose, currentUs
               </div>
               <button
                 type="submit"
-                className="px-4 py-2 bg-[var(--nxt-mint-strong)] hover:bg-[var(--nxt-mint-deep)] text-white rounded-full text-xs font-semibold shrink-0 transition-colors"
+                disabled={busy}
+                className="px-4 py-2 disabled:opacity-60 bg-[var(--nxt-mint-strong)] hover:bg-[var(--nxt-mint-deep)] text-white rounded-full text-xs font-semibold shrink-0 transition-colors"
               >
                 Invite
               </button>
             </div>
             <p className="text-[11px] text-[var(--nxt-ink-soft)] mt-1.5">
-              They need an existing NxT Health account — no real email is sent.
+              They'll see the invitation in NxT Health and can accept or decline. If they haven't signed up yet, it waits for them.
             </p>
           </form>
+
+          {outgoing.length > 0 && (
+            <div className="mt-3 space-y-1.5">
+              <p className="text-xs font-bold text-[var(--nxt-ink-soft)] uppercase tracking-wider">Pending invitations</p>
+              {outgoing.map(inv => (
+                <div key={inv.id} className="flex items-center justify-between gap-2 rounded-xl bg-[var(--nxt-bg-soft)] border border-[var(--nxt-line)] px-3 py-2">
+                  <span className="text-xs text-[var(--nxt-ink)] flex items-center gap-1.5 min-w-0"><Clock className="w-3.5 h-3.5 shrink-0 text-[var(--nxt-ink-soft)]" /><span className="truncate">{inv.to_email}</span></span>
+                  <button onClick={() => store.cancelInvite(inv.id)} className="text-xs font-semibold text-[var(--nxt-ink-soft)] hover:text-[var(--nxt-peach-deep)] shrink-0">Cancel</button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {team && isOwner && (
+            <div className="mt-5 pt-4 border-t border-[var(--nxt-line)] space-y-2.5">
+              <label className="flex items-center justify-between gap-3 cursor-pointer">
+                <span className="text-sm font-semibold text-[var(--nxt-ink)] flex items-center gap-2"><Globe className="w-4 h-4 text-[var(--nxt-mint-strong)]" /> Public team page</span>
+                <input
+                  type="checkbox"
+                  checked={!!team.is_public}
+                  onChange={(e) => run(() => store.updateMyTeam({ is_public: e.target.checked }))}
+                  className="w-5 h-5 accent-[var(--nxt-mint-strong)]"
+                />
+              </label>
+              <p className="text-xs text-[var(--nxt-ink-soft)]">Shows your team name, tagline and website. Members appear only if their own profile is public.</p>
+              <input value={tagline} maxLength={160} onChange={(e) => setTagline(e.target.value)} placeholder="Tagline — e.g. Continuous sepsis prediction for surgical ICUs" className="w-full px-3 py-2 text-xs bg-[var(--nxt-bg-soft)] border border-[var(--nxt-line)] rounded-xl text-[var(--nxt-ink)]" />
+              <div className="flex gap-2">
+                <input value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="https://yourstartup.com" className="flex-1 px-3 py-2 text-xs bg-[var(--nxt-bg-soft)] border border-[var(--nxt-line)] rounded-xl text-[var(--nxt-ink)]" />
+                <button disabled={busy} onClick={() => run(() => store.updateMyTeam({ tagline: tagline.trim(), website: website.trim() }), 'Team page saved.')} className="px-3.5 py-2 rounded-full bg-[var(--nxt-mint-strong)] hover:bg-[var(--nxt-mint-deep)] disabled:opacity-60 text-white text-xs font-semibold">
+                  Save
+                </button>
+              </div>
+              {team.is_public && (
+                <a href={`${import.meta.env.BASE_URL}teams/${team.id}`} target="_blank" rel="noreferrer" className="inline-flex text-xs font-semibold text-[var(--nxt-mint-strong)] hover:underline">View public team page →</a>
+              )}
+            </div>
+          )}
 
           {error && (
             <div className="mt-3 p-2.5 rounded-xl bg-[var(--nxt-peach)] border border-[var(--nxt-peach-deep)]/30 text-[var(--nxt-peach-deep)] text-xs font-semibold flex items-center gap-2">

@@ -1,11 +1,12 @@
 import React from 'react';
 import {
-  Trophy,
+  Trophy, CalendarDays, Users,
   LayoutDashboard, DollarSign, Bookmark, FolderKanban, Users2, ArrowRight,
   Clock, CheckCircle2, XCircle, PenLine, ShieldCheck, Sparkles, MessageSquare
 } from 'lucide-react';
 import { User } from '../types';
 import { store } from '../services/store';
+import { useNavigate } from 'react-router-dom';
 import { PageHeader } from './ui/PageHeader';
 import { Reveal, RevealGroup, RevealItem, PillButton } from './ui/Reveal';
 
@@ -105,6 +106,9 @@ export const FounderDashboard: React.FC<FounderDashboardProps> = ({
           </PillButton>
         </Reveal>
       )}
+
+      <DashboardInvites />
+      <UpcomingEvents />
 
       <RevealGroup className="grid grid-cols-2 lg:grid-cols-4 gap-4" stagger={0.05}>
         <RevealItem>
@@ -364,5 +368,68 @@ export const FounderDashboard: React.FC<FounderDashboardProps> = ({
         </div>
       </div>
     </div>
+  );
+};
+
+const DashboardInvites: React.FC = () => {
+  const invites = store.getIncomingInvites();
+  const [busy, setBusy] = React.useState<string | null>(null);
+  const [error, setError] = React.useState('');
+  if (invites.length === 0) return null;
+  const respond = async (id: string, accept: boolean) => {
+    setBusy(id);
+    setError('');
+    try { await store.respondToInvite(id, accept); } catch (e) { setError(e instanceof Error ? e.message : 'Something went wrong.'); } finally { setBusy(null); }
+  };
+  return (
+    <Reveal className="rounded-3xl border border-[var(--nxt-mint-strong)]/30 bg-[var(--nxt-surface)] p-5 space-y-3">
+      <p className="font-display text-base font-bold text-[var(--nxt-ink)] flex items-center gap-2"><Users className="w-5 h-5 text-[var(--nxt-mint-strong)]" /> Team invitations</p>
+      {invites.map(inv => (
+        <div key={inv.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl bg-[var(--nxt-bg-soft)] px-4 py-3">
+          <p className="text-sm text-[var(--nxt-ink)]"><strong>{inv.from_name}</strong> invited you to join <strong>{inv.team_name}</strong>. Your roadmap projects will merge into the team's.</p>
+          <div className="flex gap-2 shrink-0">
+            <button disabled={busy === inv.id} onClick={() => respond(inv.id, true)} className="px-4 py-2 rounded-full bg-[var(--nxt-mint-strong)] text-white text-sm font-semibold disabled:opacity-60">Accept</button>
+            <button disabled={busy === inv.id} onClick={() => respond(inv.id, false)} className="px-4 py-2 rounded-full border border-[var(--nxt-line)] text-sm font-semibold text-[var(--nxt-ink-soft)]">Decline</button>
+          </div>
+        </div>
+      ))}
+      {error && <p className="text-sm text-[var(--nxt-peach-deep)] font-semibold">{error}</p>}
+    </Reveal>
+  );
+};
+
+const UpcomingEvents: React.FC = () => {
+  const navigate = useNavigate();
+  const resources = store.getResources();
+  const items = [
+    ...store.getMyRsvpIds().map(id => {
+      const r = resources.find(x => x.id === id);
+      return r ? { id: r.id, title: r.title, when: r.starts_at, label: r.starts_at ? undefined : r.date } : null;
+    }),
+    ...store.getMyBookings().map(b => {
+      const r = resources.find(x => x.id === b.resource_id);
+      return r ? { id: r.id, title: r.title, when: b.slot, label: undefined } : null;
+    }),
+  ]
+    .filter((x): x is { id: string; title: string; when: string | undefined; label: string | undefined } => !!x)
+    .filter(x => !x.when || new Date(x.when).getTime() > Date.now() - 3_600_000)
+    .sort((a, b) => (a.when || '9').localeCompare(b.when || '9'));
+  if (items.length === 0) return null;
+  return (
+    <Reveal className="rounded-3xl border border-[var(--nxt-line)] bg-[var(--nxt-surface)] p-5">
+      <p className="font-display text-base font-bold text-[var(--nxt-ink)] flex items-center gap-2 mb-3"><CalendarDays className="w-5 h-5 text-[var(--nxt-mint-strong)]" /> Upcoming events</p>
+      <ul className="space-y-2">
+        {items.map(item => (
+          <li key={`${item.id}-${item.when}`}>
+            <button onClick={() => navigate(`/resources/${item.id}`)} className="w-full text-left flex items-center justify-between gap-3 rounded-2xl bg-[var(--nxt-bg-soft)] px-4 py-3 hover:bg-[var(--nxt-mint)]/30">
+              <span className="text-sm font-semibold text-[var(--nxt-ink)]">{item.title}</span>
+              <span className="text-xs text-[var(--nxt-ink-soft)] shrink-0">
+                {item.when ? new Date(item.when).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : item.label}
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </Reveal>
   );
 };

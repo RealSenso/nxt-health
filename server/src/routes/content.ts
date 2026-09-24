@@ -40,6 +40,7 @@ const schemas = {
     pilot_status: text(200).optional(),
     assigned_user_id: z.string().max(200).optional(),
     assigned_problem_id: z.string().max(200).optional(),
+    starts_at: z.string().datetime().or(z.literal('')).optional(),
     capacity: z.number().int().min(1).max(100000).nullable().optional(),
     slots: z.array(z.string().datetime()).max(200).optional(),
     slot_minutes: z.number().int().min(5).max(480).optional(),
