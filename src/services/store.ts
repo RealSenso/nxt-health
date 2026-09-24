@@ -1,6 +1,7 @@
 import {
   User, UserRole, ProblemStatement, FundingApplication, Category, Step, Resource, UserProgress, ApplicationStatus,
-  Team, AppNotification, NotificationType, StepSubmission, SubmissionStatus, SubmissionFile, Gender
+  Team, AppNotification, NotificationType, StepSubmission, SubmissionStatus, SubmissionFile, Gender,
+  StepWorkspace
 } from '../types';
 import {
   SEED_USERS, SEED_PROBLEM_STATEMENTS, SEED_CATEGORIES,
@@ -24,6 +25,7 @@ const STORAGE_KEYS = {
   NOTIFICATIONS: 'medplatform_notifications_v1',
   TEAMS: 'medplatform_teams_v1',
   STEP_SUBMISSIONS: 'medplatform_step_submissions_v1',
+  STEP_WORKSPACES: 'medplatform_step_workspaces_v1',
 };
 
 export const PLATFORM_NAME = 'NxT Health';
@@ -83,6 +85,7 @@ class LocalDataStore {
       this.setItem(STORAGE_KEYS.NOTIFICATIONS, []);
       this.setItem(STORAGE_KEYS.TEAMS, []);
       this.setItem(STORAGE_KEYS.STEP_SUBMISSIONS, []);
+      this.setItem(STORAGE_KEYS.STEP_WORKSPACES, {});
       if (isFirstInit) {
         this.setItem(STORAGE_KEYS.CURRENT_USER_ID, SEED_USERS[1].id);
       }
@@ -204,6 +207,18 @@ class LocalDataStore {
       delete notes[fromKey];
       this.setItem(STORAGE_KEYS.PROJECT_NOTES, notes);
     }
+
+    const workspaces = this.getItem<Record<string, StepWorkspace>>(STORAGE_KEYS.STEP_WORKSPACES, {});
+    const fromPrefix = `${fromKey}::`;
+    let movedWorkspace = false;
+    for (const key of Object.keys(workspaces)) {
+      if (!key.startsWith(fromPrefix)) continue;
+      const toWorkspaceKey = `${toKey}::${key.slice(fromPrefix.length)}`;
+      if (!workspaces[toWorkspaceKey]) workspaces[toWorkspaceKey] = workspaces[key];
+      delete workspaces[key];
+      movedWorkspace = true;
+    }
+    if (movedWorkspace) this.setItem(STORAGE_KEYS.STEP_WORKSPACES, workspaces);
 
     const progress = this.getItem<UserProgress[]>(STORAGE_KEYS.PROGRESS, SEED_PROGRESS);
     const hasFromEntries = progress.some(p => p.user_id === fromKey);
@@ -801,6 +816,22 @@ class LocalDataStore {
     return this.getAllStepSubmissions()
       .filter(s => s.status === 'Submitted')
       .sort((a, b) => new Date(a.submitted_at).getTime() - new Date(b.submitted_at).getTime());
+  }
+
+  private stepWorkspaceKey(scopeKey: string, problemId: string, stepId: string): string {
+    return `${scopeKey}::${problemId}::${stepId}`;
+  }
+
+  public getStepWorkspace(scopeKey: string, problemId: string, stepId: string): StepWorkspace | null {
+    const all = this.getItem<Record<string, StepWorkspace>>(STORAGE_KEYS.STEP_WORKSPACES, {});
+    return all[this.stepWorkspaceKey(scopeKey, problemId, stepId)] || null;
+  }
+
+  public saveStepWorkspace(scopeKey: string, problemId: string, stepId: string, workspace: StepWorkspace): void {
+    const all = this.getItem<Record<string, StepWorkspace>>(STORAGE_KEYS.STEP_WORKSPACES, {});
+    all[this.stepWorkspaceKey(scopeKey, problemId, stepId)] = { ...workspace, updated_at: new Date().toISOString() };
+    this.setItem(STORAGE_KEYS.STEP_WORKSPACES, all);
+    this.notify();
   }
 
   public submitStepEvidence(payload: {

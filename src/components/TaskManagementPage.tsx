@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Circle, ArrowRight, ArrowLeft, Hospital,
@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { User, Step, ProblemStatement, Category } from '../types';
 import { store } from '../services/store';
-import { StepDetailModal } from './StepDetailModal';
+import { StepPage } from './StepPage';
 import { ProjectSettingsModal } from './ProjectSettingsModal';
 import { Reveal, RevealGroup, RevealItem, PillButton } from './ui/Reveal';
 
@@ -20,7 +20,7 @@ interface TaskManagementPageProps {
   onViewResources: (stepId: string) => void;
 }
 
-type View = 'problems' | 'categories' | 'roadmap';
+type View = 'problems' | 'categories' | 'roadmap' | 'step';
 
 const PREVIEW_UNLOCKED_STEPS = 3;
 
@@ -39,7 +39,7 @@ export const TaskManagementPage: React.FC<TaskManagementPageProps> = ({
   const [selectedProblemId, setSelectedProblemId] = useState<string | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [categorySearch, setCategorySearch] = useState('');
-  const [selectedStep, setSelectedStep] = useState<Step | null>(null);
+  const [selectedStepId, setSelectedStepId] = useState<string | null>(null);
   const [showPicker, setShowPicker] = useState(false);
   const [settingsProblemId, setSettingsProblemId] = useState<string | null>(null);
 
@@ -78,7 +78,7 @@ export const TaskManagementPage: React.FC<TaskManagementPageProps> = ({
 
   const steps = selectedCategoryId ? store.getSteps(selectedCategoryId) : [];
   const userProgress = selectedCategoryId ? store.getUserProgress(scopeKey, selectedCategoryId) : {};
-  const completedCount = useMemo(() => steps.filter(s => !!userProgress[s.id]).length, [steps, userProgress]);
+  const completedCount = steps.filter(s => !!userProgress[s.id]).length;
   const progressPercent = steps.length > 0 ? Math.round((completedCount / steps.length) * 100) : 0;
 
   const filteredCategories = categories.filter(c =>
@@ -368,6 +368,35 @@ export const TaskManagementPage: React.FC<TaskManagementPageProps> = ({
     );
   }
 
+  const selectedStep = steps.find(s => s.id === selectedStepId) || null;
+  if (view === 'step' && selectedStep && selectedCategory && selectedProblemId) {
+    return (
+      <div className="space-y-6">
+        <Breadcrumb
+          items={[
+            { label: 'My Problems', onClick: () => setView('problems') },
+            { label: selectedProblem?.title || '—', onClick: () => setView('categories') },
+            { label: selectedCategory.name, onClick: () => setView('roadmap') },
+            { label: `Step ${selectedStep.order}` },
+          ]}
+        />
+        <StepPage
+          key={selectedStep.id}
+          step={selectedStep}
+          category={selectedCategory}
+          categorySteps={steps}
+          currentUser={currentUser}
+          problemId={selectedProblemId}
+          scopeKey={scopeKey}
+          isCompleted={!!userProgress[selectedStep.id]}
+          onToggleComplete={() => handleToggleStep(selectedStep.id)}
+          onNavigateStep={(stepId) => { setSelectedStepId(stepId); window.scrollTo({ top: 0 }); }}
+          onViewResources={onViewResources}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <Breadcrumb
@@ -447,6 +476,7 @@ export const TaskManagementPage: React.FC<TaskManagementPageProps> = ({
             const stepSubmissions = selectedProblemId
               ? store.getStepSubmissionsForStep(step.id, store.getScopeUserIds(currentUser)).filter(s => s.problem_id === selectedProblemId)
               : [];
+            const workspace = selectedProblemId ? store.getStepWorkspace(scopeKey, selectedProblemId, step.id) : null;
             const pendingSubmission = stepSubmissions.find(s => s.status === 'Submitted');
             const approvedSubmission = stepSubmissions.find(s => s.status === 'Approved');
 
@@ -456,7 +486,7 @@ export const TaskManagementPage: React.FC<TaskManagementPageProps> = ({
                 whileHover={{ y: -3 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 22 }}
                 id={`step-card-${step.id}`}
-                onClick={() => setSelectedStep(step)}
+                onClick={() => { setSelectedStepId(step.id); setView('step'); window.scrollTo({ top: 0 }); }}
                 className={`bg-[var(--nxt-surface)] rounded-2xl border p-5 sm:p-6 shadow-sm hover:shadow-md transition-shadow cursor-pointer group ${
                   isCompleted
                     ? 'border-[var(--nxt-mint-strong)]/30 bg-[var(--nxt-mint)]/10'
@@ -519,6 +549,16 @@ export const TaskManagementPage: React.FC<TaskManagementPageProps> = ({
                             Completed
                           </span>
                         )}
+                        {!isCompleted && workspace?.status === 'in_progress' && (
+                          <span className="text-[10px] font-bold text-[var(--nxt-blue-strong)] bg-[var(--nxt-blue)] px-2 py-0.5 rounded-full">
+                            In progress
+                          </span>
+                        )}
+                        {!isCompleted && workspace?.status === 'blocked' && (
+                          <span className="text-[10px] font-bold text-[var(--nxt-peach-deep)] bg-[var(--nxt-peach)] px-2 py-0.5 rounded-full">
+                            Blocked
+                          </span>
+                        )}
                       </div>
 
                       <h3 className="font-display text-base font-bold text-[var(--nxt-ink)] group-hover:text-[var(--nxt-blue-strong)] transition-colors">
@@ -533,11 +573,15 @@ export const TaskManagementPage: React.FC<TaskManagementPageProps> = ({
 
                   <div className="flex items-center justify-between md:justify-end gap-3 pt-3 md:pt-0 border-t md:border-t-0 border-[var(--nxt-line)]">
                     <div className="flex items-center gap-1 text-xs text-[var(--nxt-ink-soft)] bg-[var(--nxt-bg-soft)] px-2.5 py-1.5 rounded-full border border-[var(--nxt-line)]">
-                      <span>{stepResources.length} Resources</span>
+                      <span>
+                        {workspace
+                          ? `${workspace.checklist.filter(t => t.done).length}/${workspace.checklist.length} tasks`
+                          : `${stepResources.length} resources`}
+                      </span>
                     </div>
 
                     <div className="inline-flex items-center gap-1 text-xs font-bold text-[var(--nxt-blue-strong)] group-hover:translate-x-0.5 transition-transform">
-                      <span>View Resources</span>
+                      <span>Open step</span>
                       <ArrowRight className="w-3.5 h-3.5" />
                     </div>
                   </div>
@@ -549,18 +593,6 @@ export const TaskManagementPage: React.FC<TaskManagementPageProps> = ({
         </RevealGroup>
       )}
 
-      {selectedStep && (
-        <StepDetailModal
-          step={selectedStep}
-          category={selectedCategory}
-          currentUser={currentUser}
-          problemId={selectedProblemId || undefined}
-          isCompleted={!!userProgress[selectedStep.id]}
-          onToggleComplete={() => handleToggleStep(selectedStep.id)}
-          onClose={() => setSelectedStep(null)}
-          onViewResources={onViewResources}
-        />
-      )}
 
       <ProjectSettingsModal
         isOpen={!!settingsProblemId}

@@ -109,6 +109,32 @@ export interface AppNotification {
 
 export type SubmissionStatus = 'Submitted' | 'Approved' | 'Changes Requested';
 
+export type StepWorkStatus = 'not_started' | 'in_progress' | 'blocked' | 'done';
+
+export interface StepChecklistItem {
+  id: string;
+  label: string;
+  done: boolean;
+  custom: boolean;
+}
+
+export interface StepLogEntry {
+  id: string;
+  text: string;
+  author_name: string;
+  created_at: string;
+}
+
+export interface StepWorkspace {
+  status: StepWorkStatus;
+  started_at?: string;
+  target_date?: string;
+  blocker?: string;
+  checklist: StepChecklistItem[];
+  log: StepLogEntry[];
+  updated_at: string;
+}
+
 export interface SubmissionFile {
   name: string;
   size: number;
