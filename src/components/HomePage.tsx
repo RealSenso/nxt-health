@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'motion/react';
 import {
   Stethoscope, ArrowRight, FileSearch, BadgeDollarSign, Route, Hospital, UserRound, Wrench, Rocket,
-  CheckCircle2, ShieldCheck, Layers,
+  CheckCircle2, Layers,
 } from 'lucide-react';
 import { store, PLATFORM_NAME } from '../services/store';
 import { Reveal, RevealGroup, RevealItem } from './ui/Reveal';
@@ -94,16 +94,17 @@ export const HomePage: React.FC<HomePageProps> = ({ onGetStarted, onBrowseProble
       </header>
 
       <main className="flex-1">
-        <section className="nxt-container pt-10 sm:pt-16 lg:pt-20 pb-12 lg:pb-20 grid lg:grid-cols-2 gap-10 xl:gap-20 items-center">
+        <section className="nxt-container pt-10 sm:pt-16 lg:pt-20 pb-12 lg:pb-20">
+          <Reveal className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--nxt-mint)] text-[var(--nxt-mint-deep)] text-sm font-semibold mb-5">
+            <Stethoscope className="w-4 h-4" />
+            Built for doctors — and the builders who join them
+          </Reveal>
+          <Reveal delay={0.05} as="h1" className="font-display text-4xl sm:text-5xl xl:text-[clamp(2.5rem,3.1vw,4.25rem)] xl:whitespace-nowrap font-extrabold leading-[1.1] tracking-tight text-[var(--nxt-ink)]">
+            They see the problem every shift.{' '}
+            <span className="text-[var(--nxt-mint-strong)]">Help them build the fix.</span>
+          </Reveal>
+          <div className="grid lg:grid-cols-2 gap-10 xl:gap-20 items-center">
           <div>
-            <Reveal className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--nxt-mint)] text-[var(--nxt-mint-deep)] text-sm font-semibold mb-5">
-              <Stethoscope className="w-4 h-4" />
-              Built for doctors — and the builders who join them
-            </Reveal>
-            <Reveal delay={0.05} as="h1" className="font-display text-4xl sm:text-5xl lg:text-[3.25rem] font-extrabold leading-[1.1] tracking-tight text-[var(--nxt-ink)]">
-              You see the problem every shift.{' '}
-              <span className="text-[var(--nxt-mint-strong)]">Now build the fix.</span>
-            </Reveal>
             <Reveal delay={0.1} as="p" className="text-base sm:text-lg text-[var(--nxt-ink-soft)] leading-relaxed mt-5 max-w-xl">
               {PLATFORM_NAME} helps doctors turn clinical problems into real medical products — with verified
               hospital needs, non-dilutive grants, engineers to build with, and a step-by-step roadmap to your first hospital pilot.
@@ -138,15 +139,16 @@ export const HomePage: React.FC<HomePageProps> = ({ onGetStarted, onBrowseProble
             )}
           </div>
           <Reveal delay={0.1} className="relative">
-            <HeroIllustration className="w-full max-w-2xl mx-auto" />
+            <HeroIllustration className="w-full max-w-xl mx-auto" />
           </Reveal>
+          </div>
         </section>
 
         <section className="bg-[var(--nxt-surface)] border-y border-[var(--nxt-line)]">
           <div className="nxt-container py-14">
-            <Reveal className="text-center max-w-2xl mx-auto">
-              <h2 className="font-display text-2xl sm:text-3xl font-bold">Made for doctors. Open to the people who build with them.</h2>
-              <p className="text-base text-[var(--nxt-ink-soft)] mt-3">Every project on {PLATFORM_NAME} starts with a clinical problem — and a doctor who knows it.</p>
+            <Reveal className="text-center">
+              <h2 className="font-display text-2xl sm:text-3xl font-bold lg:whitespace-nowrap">Made for doctors. Open to the people who build with them.</h2>
+              <p className="text-base text-[var(--nxt-ink-soft)] mt-3 lg:whitespace-nowrap">Every project on {PLATFORM_NAME} starts with a clinical problem — and a doctor who knows it.</p>
             </Reveal>
             <RevealGroup className="grid md:grid-cols-3 gap-5 mt-10" stagger={0.06}>
               {PERSONAS.map(p => (
@@ -168,9 +170,9 @@ export const HomePage: React.FC<HomePageProps> = ({ onGetStarted, onBrowseProble
         </section>
 
         <section className="nxt-container py-16">
-          <Reveal className="max-w-2xl">
+          <Reveal>
             <p className="text-sm font-bold uppercase tracking-wider text-[var(--nxt-mint-strong)]">What you get</p>
-            <h2 className="font-display text-2xl sm:text-3xl font-bold mt-2">Everything a doctor needs, from idea to hospital pilot</h2>
+            <h2 className="font-display text-2xl sm:text-3xl font-bold mt-2 lg:whitespace-nowrap">Everything a doctor needs, from idea to hospital pilot</h2>
           </Reveal>
           <RevealGroup className="grid sm:grid-cols-2 2xl:grid-cols-4 gap-5 mt-8" stagger={0.06}>
             {FEATURES.map(f => (
@@ -262,13 +264,6 @@ export const HomePage: React.FC<HomePageProps> = ({ onGetStarted, onBrowseProble
                 Create free account <ArrowRight className="w-4 h-4" />
               </button>
             </div>
-            <ul className="space-y-2.5 text-sm text-[var(--nxt-ink-soft)]">
-              {['Keep your clinical job while you build', 'Non-dilutive grants — no equity given up', 'Engineers and mentors to build with'].map(item => (
-                <li key={item} className="flex items-center gap-2.5">
-                  <ShieldCheck className="w-4 h-4 text-[var(--nxt-mint-strong)] shrink-0" /> {item}
-                </li>
-              ))}
-            </ul>
           </Reveal>
         </section>
       </main>
