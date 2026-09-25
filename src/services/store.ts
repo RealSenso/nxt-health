@@ -130,6 +130,11 @@ class ApiStore {
     if (this.inFlight) return this.inFlight;
     this.inFlight = (async () => {
       try {
+        // Pick up a verification done in another tab so the banner clears and gated actions work.
+        if (this.firebaseUser && !this.firebaseUser.emailVerified) {
+          await this.firebaseUser.reload().catch(() => undefined);
+          if (this.firebaseUser.emailVerified) await this.firebaseUser.getIdToken(true);
+        }
         let data = await api.get<BootstrapData>('/bootstrap');
         if (data.needs_profile && this.firebaseUser && !this.signingUp) {
           const fallbackName = this.firebaseUser.displayName || this.firebaseUser.email?.split('@')[0] || 'Founder';
