@@ -123,8 +123,8 @@ export const MembershipModal: React.FC<MembershipModalProps> = ({
                   <MessageSquare className="w-3 h-3" />
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-[var(--nxt-ink)]">Private Doctor & Builder Slack</p>
-                  <p className="text-xs text-[var(--nxt-ink-soft)]">Peer doctors building products, engineers, regulatory experts and mentors.</p>
+                  <p className="text-xs font-semibold text-[var(--nxt-ink)]">Private Founder & Expert Slack</p>
+                  <p className="text-xs text-[var(--nxt-ink-soft)]">Peer founders, clinicians, regulatory experts and mentors.</p>
                 </div>
               </div>
             </div>

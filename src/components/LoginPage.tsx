@@ -82,10 +82,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBack, initialMode = 'log
       <aside className="hidden lg:flex nxt-hero-glow border-r border-[var(--nxt-line)] flex-col justify-center px-14 xl:px-20">
         <SpotIllustration kind="login" className="w-64 mb-8" />
         <h2 className="font-display text-3xl font-extrabold text-[var(--nxt-ink)] leading-tight">
-          Turn what you see in clinic into a medical product.
+          Build the solutions doctors are asking for.
         </h2>
         <ul className="mt-8 space-y-4 text-base text-[var(--nxt-ink-soft)]">
-          {['Verified clinical problems from fellow doctors', 'Non-dilutive grants tied to each problem', 'Engineers, mentors and a roadmap to a hospital pilot'].map(item => (
+          {['Verified clinical problems from doctors', 'Non-dilutive grants tied to each problem', 'Mentors and a roadmap to a hospital pilot'].map(item => (
             <li key={item} className="flex items-start gap-3">
               <CheckCircle2 className="w-5 h-5 text-[var(--nxt-mint-strong)] mt-0.5 shrink-0" /> {item}
             </li>
@@ -246,7 +246,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBack, initialMode = 'log
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@hospital.org"
+                    placeholder="you@startup.com"
                     className="w-full pl-9 pr-3 py-2.5 text-sm bg-[var(--nxt-bg-soft)] border border-[var(--nxt-line)] rounded-2xl text-[var(--nxt-ink)] focus:ring-2 focus:ring-[var(--nxt-mint-strong)] focus:outline-hidden focus:bg-[var(--nxt-surface)] transition-colors"
                   />
                 </div>
