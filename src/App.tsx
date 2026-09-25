@@ -257,7 +257,7 @@ function Shell({ currentUser, modals }: { currentUser: User | null; modals: Moda
 
       {currentUser && !store.isEmailVerified() && <VerifyEmailBanner email={currentUser.email} />}
 
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 pb-28 md:pb-10">
+      <main className="flex-1 nxt-container pt-6 sm:pt-8 pb-28 md:pb-10">
         <motion.div
           key={currentTab}
           initial={{ opacity: 0, y: 10 }}
@@ -269,7 +269,7 @@ function Shell({ currentUser, modals }: { currentUser: User | null; modals: Moda
       </main>
 
       <footer className="hidden md:block border-t border-[var(--nxt-line)] bg-[var(--nxt-surface)]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="nxt-container py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <span className="w-9 h-9 rounded-xl bg-[var(--nxt-mint-strong)] text-white flex items-center justify-center">
               <Stethoscope className="w-4 h-4" />
@@ -280,7 +280,7 @@ function Shell({ currentUser, modals }: { currentUser: User | null; modals: Moda
             </div>
           </div>
           <div className="flex items-center gap-5 text-sm text-[var(--nxt-ink-soft)]">
-            <button onClick={modals.openSlack} className="hover:text-[var(--nxt-ink)] transition-colors">Founder Slack</button>
+            <button onClick={modals.openSlack} className="hover:text-[var(--nxt-ink)] transition-colors">Community Slack</button>
             {currentUser ? (
               <button onClick={modals.openMembership} className="hover:text-[var(--nxt-ink)] transition-colors">
                 Membership: <span className="font-semibold text-[var(--nxt-ink)]">{currentUser.is_member ? 'Active' : currentUser.membership_status === 'requested' ? 'Requested' : 'Not active'}</span>
@@ -347,7 +347,7 @@ function VerifyEmailBanner({ email }: { email: string }) {
   };
   return (
     <div className="bg-[var(--nxt-blue)] border-b border-[var(--nxt-blue-strong)]/20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-[var(--nxt-blue-deep)]">
+      <div className="nxt-container py-2.5 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-[var(--nxt-blue-deep)]">
         <span className="flex items-center gap-2 font-medium"><MailWarning className="w-4 h-4" /> Verify your email ({email}) to request membership, apply and send messages.</span>
         <span className="flex items-center gap-3">
           <button disabled={busy} onClick={() => run(async () => ((await store.recheckEmailVerification()) ? 'Verified — thanks!' : 'Not verified yet — check your inbox.'))} className="font-semibold underline">I've verified</button>

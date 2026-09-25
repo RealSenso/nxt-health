@@ -401,7 +401,7 @@ export const ProblemStatementsList: React.FC<ProblemStatementsListProps> = ({
         </div>
       </Reveal>
 
-      <RevealGroup className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5" stagger={0.06}>
+      <RevealGroup className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-5" stagger={0.06}>
         {filteredProblems.map((problem, i) => (
           <RevealItem key={problem.id}>
             <motion.div

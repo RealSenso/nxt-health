@@ -130,6 +130,14 @@ body {
   font-family: var(--nxt-font-display);
 }
 
+/* Page container: full width with side padding that grows with the screen. */
+@utility nxt-container {
+  width: 100%;
+  max-width: 1920px;
+  margin-inline: auto;
+  padding-inline: clamp(1rem, 4vw, 4.5rem);
+}
+
 .nxt-hero-glow {
   background:
     radial-gradient(60% 80% at 85% 20%, color-mix(in srgb, var(--nxt-mint-strong) 18%, transparent), transparent 70%),
