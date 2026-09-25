@@ -99,9 +99,9 @@ export const HomePage: React.FC<HomePageProps> = ({ onGetStarted, onBrowseProble
             <Stethoscope className="w-4 h-4" />
             Problems from doctors, solved by startups
           </Reveal>
-          <Reveal delay={0.05} as="h1" className="font-display text-4xl sm:text-5xl xl:text-[clamp(2.5rem,3.1vw,4.25rem)] xl:whitespace-nowrap font-extrabold leading-[1.1] tracking-tight text-[var(--nxt-ink)]">
-            They see the problem every shift.{' '}
-            <span className="text-[var(--nxt-mint-strong)]">Help them build the fix.</span>
+          <Reveal delay={0.05} as="h1" className="font-display text-4xl sm:text-5xl xl:text-[clamp(3rem,4vw,5rem)] xl:whitespace-nowrap font-extrabold leading-[1.08] tracking-tight text-[var(--nxt-ink)]">
+            They see the problem every shift.
+            <span className="block text-[var(--nxt-mint-strong)]">Help them build the fix.</span>
           </Reveal>
           <div className="grid lg:grid-cols-2 gap-10 xl:gap-20 items-center">
           <div>
