@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Navigate, Outlet, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
-import { AlertCircle, Bell, BookMarked, GraduationCap, Handshake, ListTodo, MailWarning, Stethoscope, Users, X } from 'lucide-react';
+import { AlertCircle, Bell, BookMarked, GraduationCap, ListTodo, MailWarning, Stethoscope, X } from 'lucide-react';
 import { store, PLATFORM_NAME } from './services/store';
 import { Navbar } from './components/Navbar';
 import { HomePage } from './components/HomePage';
@@ -18,7 +18,6 @@ import { FounderDashboard } from './components/FounderDashboard';
 import { ResourcesPage } from './components/ResourcesPage';
 import { MessagesPage } from './components/MessagesPage';
 import { MentorsPage, MentoringPage } from './components/MentorsPage';
-import { PlaceholderPage } from './components/PlaceholderPage';
 import { PublicFounderPage, PublicTeamPage } from './components/PublicProfilePages';
 import { SegmentedTabs } from './components/ui/PageHeader';
 import { AppNotification, User } from './types';
@@ -29,8 +28,6 @@ const TAB_PATHS: Record<string, string> = {
   tasks: '/roadmaps',
   resources: '/resources',
   mentors: '/mentors',
-  partners: '/partners',
-  collaborators: '/collaborators',
   mentoring: '/mentoring',
   funds: '/funds',
   dashboard: '/dashboard',
@@ -152,8 +149,6 @@ export default function App() {
               <ResourcesPage currentUser={currentUser} onOpenLogin={goToLogin} onOpenMembershipModal={modals.openMembership} />
             </RoadmapTabs>
           } />
-          <Route path="/partners" element={<RoadmapTabs><PlaceholderPage icon={Handshake} title="Ecosystem Partners" /></RoadmapTabs>} />
-          <Route path="/collaborators" element={<RoadmapTabs><PlaceholderPage icon={Users} title="Collaborators" /></RoadmapTabs>} />
           <Route path="/founders/:uid" element={<PublicFounderPage />} />
           <Route path="/teams/:teamId" element={<PublicTeamPage />} />
 
@@ -310,8 +305,6 @@ function RoadmapTabs({ children }: { children: React.ReactNode }) {
     { id: 'tasks', label: 'Roadmaps', icon: ListTodo },
     { id: 'resources', label: 'Resources', icon: BookMarked },
     ...(isMember ? [{ id: 'mentors', label: 'Mentors', icon: GraduationCap }] : []),
-    { id: 'partners', label: 'Partners', icon: Handshake },
-    { id: 'collaborators', label: 'Collaborators', icon: Users },
   ];
   return (
     <>
