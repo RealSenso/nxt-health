@@ -3,7 +3,7 @@ import {
   signInWithEmailAndPassword, signOut, updateProfile as updateFirebaseProfile, type User as FirebaseUser,
 } from 'firebase/auth';
 import {
-  AcquisitionSource, AppNotification, ApplicationStatus, Booking, Category, Commitment, FounderBackground,
+  AcquisitionSource, AppNotification, ApplicationStatus, Booking, Category, Commitment, Consultation, FounderBackground,
   FounderOutcomes, FundingApplication, Gender, MembershipStatus, MentorProfile, MentorRequest, Message,
   ProblemStatement, PublicFounder, PublicProfileSettings, PublicTeam, Resource, ResourceView, Rsvp,
   StartupStage, Step, StepRating, StepSubmission, StepWorkspace, SubmissionStatus, Team, TeamInvite,
@@ -64,6 +64,8 @@ interface BootstrapData {
   public_profile?: (PublicProfileSettings & { id: string }) | null;
   mentors?: MentorProfile[];
   mentor_requests?: MentorRequest[];
+  consultations?: Consultation[];
+  consultation_rate_usd?: number;
   admin?: {
     users: RawUser[];
     teams: Team[];
@@ -877,6 +879,29 @@ class ApiStore {
 
   public endMentorship(requestId: string): Promise<void> {
     return this.write(() => api.post(`/mentor-requests/${requestId}/end`));
+  }
+
+  // ---------- paid consultations ----------
+
+  public getConsultations(): Consultation[] {
+    return this.data.consultations || [];
+  }
+
+  public getConsultationRate(): number {
+    return this.data.consultation_rate_usd ?? 200;
+  }
+
+  public bookConsultation(input: { mentor_uid: string; hours: number; topic: string; preferred_time?: string }): Promise<Consultation> {
+    return this.write(async () => (await api.post<{ consultation: Consultation }>('/consultations', input)).consultation);
+  }
+
+  /** Demo payment: marks the booking paid and opens the chat. No card is charged. */
+  public payConsultation(id: string): Promise<Consultation> {
+    return this.write(async () => (await api.post<{ consultation: Consultation }>(`/consultations/${id}/pay`)).consultation);
+  }
+
+  public cancelConsultation(id: string): Promise<void> {
+    return this.write(() => api.post(`/consultations/${id}/cancel`));
   }
 
   public saveMentorProfile(profile: MentorProfileInput, forUserId?: string): Promise<void> {

@@ -8,7 +8,7 @@
  * if the database has none.
  *
  * Re-running resets the demo: everything the demo accounts did (messages, RSVPs, bookings, teams,
- * mentor requests, uploads, notifications) is wiped and the seeded activity is restored. Passwords
+ * mentor requests, consultations, uploads, notifications) is wiped and the seeded activity is restored. Passwords
  * are reset to the ones printed at the end (or DEMO_ADMIN_PASSWORD / DEMO_MEMBER_PASSWORD if set).
  * Add --reset-content to also restore the starter problems, roadmaps and resources — this discards
  * any content admins added or edited. Accounts that are not demo accounts are never touched.
@@ -253,6 +253,7 @@ await Promise.all([
   col('rsvps').deleteMany({ user_id: { $in: demoIds } }),
   col('bookings').deleteMany({ user_id: { $in: demoIds } }),
   col('mentorRequests').deleteMany({ $or: [{ founder_uid: { $in: demoIds } }, { mentor_uid: { $in: demoIds } }] }),
+  col('consultations').deleteMany({ $or: [{ founder_uid: { $in: demoIds } }, { mentor_uid: { $in: demoIds } }] }),
   col('teamInvites').deleteMany({ $or: [{ team_id: { $in: teamIds } }, { to_email: { $in: USERS.map(u => u.email) } }] }),
   col('teams').deleteMany({ _id: { $in: teamIds } }),
   col('publicProfiles').deleteMany({ _id: { $in: demoIds } }),

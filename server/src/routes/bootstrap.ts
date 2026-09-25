@@ -3,6 +3,7 @@ import { isAdmin, scopeKeyOf, UserDoc } from '../auth.js';
 import type { Database } from '../db.js';
 import { out, outAll } from '../db.js';
 import { threadQueryFor } from './threads.js';
+import { CONSULTATION_RATE_USD } from './consultations.js';
 
 const DEFAULT_SLACK_URL = 'https://join.slack.com/';
 export const PREVIEW_STEPS = 3;
@@ -66,7 +67,7 @@ export function bootstrapRouter(database: Database): Router {
     const [
       teamMembers, incomingInvites, outgoingInvites, scope, progress, workspaces, applications, submissions,
       notifications, threads, myRsvps, myBookings, myRatings, publicProfile, mentorProfiles, mentorUsers,
-      mentorRequests,
+      mentorRequests, consultations,
     ] = await Promise.all([
       col('users').find({ _id: { $in: memberIds } }, { projection: { name: 1, email: 1 } }).toArray(),
       col('teamInvites').find({ to_email: user.email, status: 'pending' }).toArray(),
@@ -85,6 +86,7 @@ export function bootstrapRouter(database: Database): Router {
       col('mentorProfiles').find().toArray(),
       col('users').find({ is_mentor: true }, { projection: { name: 1, background: 1 } }).toArray(),
       col('mentorRequests').find(admin ? {} : { $or: [{ mentor_uid: user._id }, { founder_uid: user._id }] }).sort({ created_at: -1 }).toArray(),
+      col('consultations').find(admin ? {} : { $or: [{ mentor_uid: user._id }, { founder_uid: user._id }] }).sort({ created_at: -1 }).toArray(),
     ]);
 
     const acceptedCounts: Record<string, number> = {};
@@ -124,6 +126,8 @@ export function bootstrapRouter(database: Database): Router {
         })
         : [],
       mentor_requests: outAll(mentorRequests),
+      consultations: outAll(consultations),
+      consultation_rate_usd: CONSULTATION_RATE_USD,
     });
 
     if (admin) {

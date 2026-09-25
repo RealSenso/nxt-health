@@ -10,7 +10,7 @@ export const COLLECTIONS = [
   'applications', 'submissions', 'notifications',
   'threads', 'messages',
   'rsvps', 'bookings',
-  'mentorProfiles', 'mentorRequests',
+  'mentorProfiles', 'mentorRequests', 'consultations',
   'resourceViews', 'stepRatings',
 ] as const;
 
@@ -57,6 +57,8 @@ export async function ensureIndexes({ col }: Database): Promise<void> {
     col('bookings').createIndex({ resource_id: 1, user_id: 1 }, { unique: true }),
     col('mentorRequests').createIndex({ mentor_uid: 1, status: 1 }),
     col('mentorRequests').createIndex({ founder_uid: 1 }),
+    col('consultations').createIndex({ founder_uid: 1, created_at: -1 }),
+    col('consultations').createIndex({ mentor_uid: 1, created_at: -1 }),
     col('stepRatings').createIndex({ user_id: 1, step_id: 1 }, { unique: true }),
   ]);
 }

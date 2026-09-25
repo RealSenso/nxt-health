@@ -217,4 +217,36 @@ describe('uploads and profiles', () => {
     await request(app).get(`/api/threads/${accepted.body.request.thread_id}/messages`).set('Authorization', token('founder')).expect(200);
     await request(app).get(`/api/threads/${accepted.body.request.thread_id}/messages`).set('Authorization', token('boss')).expect(404);
   });
+
+  it('opens a consultation chat only after the founder pays, at a price set by the server', async () => {
+    await admin('boss');
+    await member('mentor');
+    await member('founder');
+    await member('other');
+    await signup('freeloader');
+    await request(app).patch('/api/admin/users/mentor').set('Authorization', token('boss')).send({ is_mentor: true }).expect(200);
+
+    await request(app).post('/api/consultations').set('Authorization', token('freeloader')).send({ mentor_uid: 'mentor', hours: 1, topic: 'Hi' }).expect(403);
+    await request(app).post('/api/consultations').set('Authorization', token('founder')).send({ mentor_uid: 'other', hours: 1, topic: 'Hi' }).expect(400);
+    await request(app).post('/api/consultations').set('Authorization', token('founder')).send({ mentor_uid: 'mentor', hours: 9, topic: 'Hi' }).expect(400);
+
+    const booked = await request(app).post('/api/consultations').set('Authorization', token('founder'))
+      .send({ mentor_uid: 'mentor', hours: 2, topic: 'Pre-Sub strategy', amount_usd: 1, status: 'paid' }).expect(201);
+    expect(booked.body.consultation).toMatchObject({ status: 'awaiting_payment', amount_usd: 400 });
+    expect(booked.body.consultation.thread_id).toBeUndefined();
+    const id = booked.body.consultation.id;
+
+    await request(app).post(`/api/consultations/${id}/pay`).set('Authorization', token('other')).expect(404);
+    const paid = await request(app).post(`/api/consultations/${id}/pay`).set('Authorization', token('founder')).expect(200);
+    expect(paid.body.consultation.status).toBe('paid');
+    const threadId = paid.body.consultation.thread_id;
+    await request(app).get(`/api/threads/${threadId}/messages`).set('Authorization', token('mentor')).expect(200);
+    await request(app).get(`/api/threads/${threadId}/messages`).set('Authorization', token('other')).expect(404);
+
+    const again = await request(app).post(`/api/consultations/${id}/pay`).set('Authorization', token('founder')).expect(200);
+    expect(again.body.consultation.thread_id).toBe(threadId);
+    await request(app).post(`/api/consultations/${id}/cancel`).set('Authorization', token('founder')).expect(400);
+    const mentorView = await request(app).get('/api/bootstrap').set('Authorization', token('mentor')).expect(200);
+    expect(mentorView.body.consultations).toHaveLength(1);
+  });
 });

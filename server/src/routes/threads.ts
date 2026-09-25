@@ -8,7 +8,7 @@ import { adminIds, newId, notify, now, parse } from '../util.js';
 export interface ThreadDoc {
   _id: string;
   subject: string;
-  context: { type: 'application' | 'submission' | 'mentorship'; id: string };
+  context: { type: 'application' | 'submission' | 'mentorship' | 'consultation'; id: string };
   scope_key?: string;
   participant_uids: string[];
   admin_visible: boolean;

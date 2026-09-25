@@ -246,7 +246,7 @@ export interface StepSubmission {
 export interface Thread {
   id: string;
   subject: string;
-  context: { type: 'application' | 'submission' | 'mentorship'; id: string };
+  context: { type: 'application' | 'submission' | 'mentorship' | 'consultation'; id: string };
   scope_key?: string;
   participant_uids: string[];
   admin_visible: boolean;
@@ -293,6 +293,25 @@ export interface MentorRequest {
   message: string;
   status: MentorRequestStatus;
   thread_id?: string;
+  created_at: string;
+}
+
+export type ConsultationStatus = 'awaiting_payment' | 'paid' | 'cancelled';
+
+export interface Consultation {
+  id: string;
+  mentor_uid: string;
+  mentor_name: string;
+  founder_uid: string;
+  founder_name: string;
+  hours: number;
+  rate_usd: number;
+  amount_usd: number;
+  topic: string;
+  preferred_time?: string;
+  status: ConsultationStatus;
+  thread_id?: string;
+  paid_at?: string;
   created_at: string;
 }
 

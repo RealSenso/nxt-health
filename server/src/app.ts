@@ -7,6 +7,7 @@ import { authenticate, HttpError, type TokenVerifier } from './auth.js';
 import type { Database } from './db.js';
 import { applicationsRouter, MAX_FILE_BYTES } from './routes/applications.js';
 import { bootstrapRouter } from './routes/bootstrap.js';
+import { consultationsRouter } from './routes/consultations.js';
 import { contentRouter } from './routes/content.js';
 import { eventsRouter } from './routes/events.js';
 import { mentorsRouter } from './routes/mentors.js';
@@ -49,6 +50,7 @@ export function createApp({ database, verifyToken, allowedOrigins, rateLimitPerM
   api.use(threadsRouter(database));
   api.use(eventsRouter(database));
   api.use(mentorsRouter(database));
+  api.use(consultationsRouter(database));
   app.use('/api', api);
 
   app.use('/api', (_req, res) => { res.status(404).json({ error: 'Not found.' }); });

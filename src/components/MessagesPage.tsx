@@ -9,6 +9,7 @@ const CONTEXT_ICON: Record<Thread['context']['type'], React.ElementType> = {
   application: DollarSign,
   submission: FileCheck,
   mentorship: GraduationCap,
+  consultation: GraduationCap,
 };
 
 const timeLabel = (iso: string) => {
