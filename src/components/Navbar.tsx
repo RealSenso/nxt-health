@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   Stethoscope, DollarSign, ListTodo, Shield,
   CheckCircle2, Sparkles, Lock, FileQuestion, LogOut, LogIn, Users2, UserCog,
-  LayoutDashboard, BookMarked, ChevronDown, Sun, Moon, Monitor, GraduationCap, MessageSquare
+  LayoutDashboard, BookMarked, ChevronDown, Sun, Moon, Monitor, GraduationCap, MessageSquare, Handshake, Users
 } from 'lucide-react';
 import { User } from '../types';
 import { store } from '../services/store';
@@ -29,6 +29,8 @@ const ROADMAP_SUBMODES: Mode[] = [
   { id: 'tasks', label: 'Roadmaps', icon: ListTodo, locked: true, preview: true },
   { id: 'resources', label: 'Resources', icon: BookMarked, locked: true, preview: true },
   { id: 'mentors', label: 'Mentors', icon: GraduationCap, locked: true },
+  { id: 'partners', label: 'Ecosystem Partners', icon: Handshake },
+  { id: 'collaborators', label: 'Collaborators', icon: Users },
 ];
 const FUNDS_MODE: Mode = { id: 'funds', label: 'Funds & Grants', icon: DollarSign, locked: true };
 const ADMIN_MODE: Mode = { id: 'admin', label: 'Admin Panel', icon: Shield };
@@ -74,7 +76,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   };
   const ThemeIcon = THEME_ICONS[theme];
 
-  const roadmapActive = currentTab === 'tasks' || currentTab === 'resources' || currentTab === 'mentors';
+  const roadmapActive = ROADMAP_SUBMODES.some(mode => mode.id === currentTab);
   const unreadThreads = currentUser ? store.getUnreadThreadCount() : 0;
   const mobileModes = [PROBLEMS_MODE, ROADMAP_SUBMODES[0], FUNDS_MODE, ...(currentUser && store.isAdmin(currentUser) ? [ADMIN_MODE] : [])];
 
