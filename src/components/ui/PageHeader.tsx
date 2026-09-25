@@ -1,39 +1,34 @@
 import React from 'react';
-import { Reveal } from './Reveal';
-import { SpotIllustration, SpotKind } from './Illustrations';
+import { SpotKind } from './Illustrations';
 
 interface PageHeaderProps {
   icon: React.ElementType;
   eyebrow?: string;
   title: React.ReactNode;
   subtitle?: React.ReactNode;
+  /** Kept for API compatibility; app pages no longer show illustrations. */
   illustration?: SpotKind;
   actions?: React.ReactNode;
   children?: React.ReactNode;
 }
 
-export const PageHeader: React.FC<PageHeaderProps> = ({ icon: Icon, eyebrow, title, subtitle, illustration, actions, children }) => (
-  <Reveal className="nxt-hero-glow relative overflow-hidden rounded-3xl border border-[var(--nxt-line)] shadow-sm">
-    <div className="flex items-center gap-6 p-6 sm:p-8">
+export const PageHeader: React.FC<PageHeaderProps> = ({ icon: Icon, eyebrow, title, subtitle, actions, children }) => (
+  <header className="pb-5 border-b border-[var(--nxt-line)]">
+    <div className="flex flex-col sm:flex-row sm:items-end gap-4">
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2.5 mb-3">
-          <span className="w-10 h-10 rounded-2xl bg-[var(--nxt-mint)] text-[var(--nxt-mint-strong)] flex items-center justify-center shrink-0">
-            <Icon className="w-5 h-5" />
-          </span>
-          {eyebrow && (
-            <span className="text-xs font-bold uppercase tracking-wider text-[var(--nxt-mint-strong)]">{eyebrow}</span>
-          )}
-        </div>
-        <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-[var(--nxt-ink)] leading-tight tracking-tight">{title}</h1>
-        {subtitle && <p className="text-sm sm:text-base text-[var(--nxt-ink-soft)] mt-2 max-w-2xl leading-relaxed">{subtitle}</p>}
-        {actions && <div className="flex flex-wrap items-center gap-2 mt-5">{actions}</div>}
+        {eyebrow && (
+          <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[var(--nxt-mint-strong)] mb-1.5">
+            <Icon className="w-3.5 h-3.5" /> {eyebrow}
+          </p>
+        )}
+        <h1 className="font-display text-2xl sm:text-[1.75rem] font-extrabold text-[var(--nxt-ink)] leading-tight tracking-tight">{title}</h1>
+        {subtitle && <p className="text-sm sm:text-base text-[var(--nxt-ink-soft)] mt-1.5 max-w-2xl leading-relaxed">{subtitle}</p>}
       </div>
-      {illustration && <SpotIllustration kind={illustration} className="hidden md:block w-44 lg:w-52 shrink-0" />}
+      {actions && <div className="flex flex-wrap items-center gap-2 shrink-0">{actions}</div>}
     </div>
-    {children && <div className="border-t border-[var(--nxt-line)] px-6 sm:px-8 py-4 bg-[var(--nxt-surface)]/60">{children}</div>}
-  </Reveal>
+    {children && <div className="mt-4">{children}</div>}
+  </header>
 );
-
 export const SegmentedTabs: React.FC<{
   tabs: { id: string; label: string; icon: React.ElementType }[];
   active: string;

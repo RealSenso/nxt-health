@@ -12,7 +12,7 @@ export const Reveal: React.FC<RevealProps> = ({
   children,
   className,
   delay = 0,
-  y = 18,
+  y = 6,
   as = 'div',
   ...rest
 }) => {
@@ -21,9 +21,8 @@ export const Reveal: React.FC<RevealProps> = ({
     <Component
       className={className}
       initial={{ opacity: 0, y }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-60px' }}
-      transition={{ duration: 0.55, delay, ease: [0.22, 1, 0.36, 1] }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25, delay: Math.min(delay, 0.1), ease: [0.22, 1, 0.36, 1] }}
       {...rest}
     >
       {children}
@@ -33,14 +32,13 @@ export const Reveal: React.FC<RevealProps> = ({
 export const RevealGroup: React.FC<{ children: React.ReactNode; className?: string; stagger?: number }> = ({
   children,
   className,
-  stagger = 0.08,
+  stagger = 0.02,
 }) => (
   <motion.div
     className={className}
     initial="hidden"
-    whileInView="visible"
-    viewport={{ once: true, margin: '-60px' }}
-    transition={{ staggerChildren: stagger }}
+    animate="visible"
+    transition={{ staggerChildren: Math.min(stagger, 0.03) }}
   >
     {children}
   </motion.div>
@@ -48,12 +46,12 @@ export const RevealGroup: React.FC<{ children: React.ReactNode; className?: stri
 export const RevealItem: React.FC<{ children: React.ReactNode; className?: string; y?: number }> = ({
   children,
   className,
-  y = 18,
+  y = 6,
 }) => (
   <motion.div
     className={className}
     variants={{ hidden: { opacity: 0, y }, visible: { opacity: 1, y: 0 } }}
-    transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+    transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
   >
     {children}
   </motion.div>

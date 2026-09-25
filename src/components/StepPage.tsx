@@ -141,7 +141,7 @@ export const StepPage: React.FC<StepPageProps> = ({
 
   return (
     <div className="space-y-6">
-      <Reveal className="bg-[var(--nxt-surface)] rounded-2xl border border-[var(--nxt-line)] p-6 sm:p-8 shadow-sm">
+      <Reveal className="bg-[var(--nxt-surface)] rounded-2xl border border-[var(--nxt-line)] p-6 sm:p-7">
         <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-5">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2 mb-2">
@@ -179,44 +179,39 @@ export const StepPage: React.FC<StepPageProps> = ({
           </button>
         </div>
 
-        <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <Stat label="Status">
+        <div className="mt-5 pt-4 border-t border-[var(--nxt-line)] flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-[var(--nxt-ink-soft)]">
+          <Meta label="Status">
             <select
               id="select-step-status"
               value={displayStatus}
               onChange={(e) => handleStatusChange(e.target.value as StepWorkStatus)}
-              className={`w-full text-xs font-bold rounded-full px-2.5 py-1 border-0 focus:outline-hidden focus:ring-2 focus:ring-[var(--nxt-mint-strong)] ${
+              className={`text-xs font-bold rounded-full px-2.5 py-1 border-0 focus:outline-hidden focus:ring-2 focus:ring-[var(--nxt-mint-strong)] ${
                 STATUS_OPTIONS.find(s => s.value === displayStatus)?.tone
               }`}
             >
               {STATUS_OPTIONS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
             </select>
-          </Stat>
-          <Stat label="Deliverables">
-            <span className="text-sm font-bold text-[var(--nxt-ink)]">{doneTasks}/{workspace.checklist.length}</span>
-            <div className="w-full h-1.5 bg-[var(--nxt-line)] rounded-full mt-1.5 overflow-hidden">
-              <div className="h-full bg-[var(--nxt-mint-strong)] rounded-full transition-all duration-300" style={{ width: `${taskPct}%` }} />
-            </div>
-          </Stat>
-          <Stat label="Time on step">
-            <span className="text-sm font-bold text-[var(--nxt-ink)]">
-              {daysActive === null ? '—' : `${daysActive} day${daysActive === 1 ? '' : 's'}`}
-            </span>
-            <span className="block text-[11px] text-[var(--nxt-ink-soft)]">Typical: {guide.typicalDuration}</span>
-          </Stat>
-          <Stat label="Target date">
+          </Meta>
+          <Meta label="Tasks">
+            <span className="font-semibold text-[var(--nxt-ink)]">{doneTasks}/{workspace.checklist.length}</span>
+          </Meta>
+          <Meta label="Time on step">
+            <span className="font-semibold text-[var(--nxt-ink)]">{daysActive === null ? '—' : `${daysActive} day${daysActive === 1 ? '' : 's'}`}</span>
+            <span className="text-xs">(typical {guide.typicalDuration})</span>
+          </Meta>
+          <Meta label="Target">
             <input
               type="date"
               value={workspace.target_date || ''}
               onChange={(e) => save({ target_date: e.target.value || undefined })}
-              className="w-full text-xs bg-transparent text-[var(--nxt-ink)] focus:outline-hidden"
+              className="text-xs bg-transparent text-[var(--nxt-ink)] focus:outline-hidden"
             />
             {daysToTarget !== null && !isCompleted && (
-              <span className={`block text-[11px] font-semibold ${daysToTarget < 0 ? 'text-[var(--nxt-peach-deep)]' : 'text-[var(--nxt-ink-soft)]'}`}>
-                {daysToTarget < 0 ? `${-daysToTarget} days overdue` : `${daysToTarget} days left`}
+              <span className={`text-xs font-semibold ${daysToTarget < 0 ? 'text-[var(--nxt-peach-deep)]' : ''}`}>
+                {daysToTarget < 0 ? `${-daysToTarget}d overdue` : `${daysToTarget}d left`}
               </span>
             )}
-          </Stat>
+          </Meta>
         </div>
 
         {displayStatus === 'blocked' && (
@@ -237,10 +232,6 @@ export const StepPage: React.FC<StepPageProps> = ({
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         <div className="lg:col-span-2 space-y-6">
-          <Section icon={Lightbulb} title="Why this step matters">
-            <p className="text-sm text-[var(--nxt-ink-soft)] leading-relaxed">{guide.whyItMatters}</p>
-          </Section>
-
           <Section icon={ListChecks} title="Deliverables" aside={`${taskPct}% done`}>
             <ul className="space-y-1.5">
               {workspace.checklist.map(item => (
@@ -377,23 +368,17 @@ export const StepPage: React.FC<StepPageProps> = ({
         </div>
 
         <aside className="space-y-6">
-          <Section icon={Flag} title="Exit criteria">
-            <p className="text-xs text-[var(--nxt-ink-soft)] mb-2">You're ready to move on when:</p>
-            <BulletList items={guide.exitCriteria} />
-          </Section>
-
-          <Section icon={AlertTriangle} title="Common pitfalls">
-            <BulletList items={guide.pitfalls} />
-          </Section>
-
-          <Section icon={Users} title="Who to talk to">
-            <div className="flex flex-wrap gap-1.5">
-              {guide.whoToTalkTo.map(w => (
-                <span key={w} className="text-xs font-medium bg-[var(--nxt-bg-soft)] text-[var(--nxt-ink-soft)] border border-[var(--nxt-line)] px-2.5 py-1 rounded-full">
-                  {w}
-                </span>
-              ))}
-            </div>
+          <Section icon={Lightbulb} title="Step guide">
+            <p className="text-sm text-[var(--nxt-ink-soft)] leading-relaxed">{guide.whyItMatters}</p>
+            <GuidePart icon={Flag} title="Ready to move on when">
+              <BulletList items={guide.exitCriteria} />
+            </GuidePart>
+            <GuidePart icon={AlertTriangle} title="Common pitfalls">
+              <BulletList items={guide.pitfalls} />
+            </GuidePart>
+            <GuidePart icon={Users} title="Who to talk to">
+              <p className="text-xs text-[var(--nxt-ink-soft)] leading-relaxed">{guide.whoToTalkTo.join(' · ')}</p>
+            </GuidePart>
           </Section>
 
           <Section icon={Sparkles} title="Resources" aside={`${stepResources.length}`}>
@@ -486,9 +471,18 @@ const StepRatingPanel: React.FC<{ stepId: string; userId: string }> = ({ stepId,
   );
 };
 
-const Stat: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
-  <div className="bg-[var(--nxt-bg-soft)] border border-[var(--nxt-line)] rounded-2xl p-3 min-w-0">
-    <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--nxt-ink-soft)] mb-1.5">{label}</p>
+const Meta: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
+  <div className="flex items-center gap-2 min-w-0">
+    <span className="text-xs font-semibold text-[var(--nxt-ink-soft)]">{label}</span>
+    {children}
+  </div>
+);
+
+const GuidePart: React.FC<{ icon: React.ElementType; title: string; children: React.ReactNode }> = ({ icon: Icon, title, children }) => (
+  <div className="mt-4 pt-4 border-t border-[var(--nxt-line)]">
+    <h3 className="text-xs font-bold text-[var(--nxt-ink)] flex items-center gap-1.5 mb-2">
+      <Icon className="w-3.5 h-3.5 text-[var(--nxt-ink-soft)]" /> {title}
+    </h3>
     {children}
   </div>
 );
@@ -496,7 +490,7 @@ const Stat: React.FC<{ label: string; children: React.ReactNode }> = ({ label, c
 const Section: React.FC<{ icon: React.ElementType; title: string; aside?: string; children: React.ReactNode }> = ({
   icon: Icon, title, aside, children,
 }) => (
-  <Reveal className="bg-[var(--nxt-surface)] rounded-2xl border border-[var(--nxt-line)] p-5 shadow-sm">
+  <Reveal className="bg-[var(--nxt-surface)] rounded-2xl border border-[var(--nxt-line)] p-5">
     <div className="flex items-center justify-between gap-2 mb-3">
       <h2 className="text-xs font-bold text-[var(--nxt-ink)] uppercase tracking-wider flex items-center gap-1.5">
         <Icon className="w-3.5 h-3.5 text-[var(--nxt-mint-strong)]" /> {title}

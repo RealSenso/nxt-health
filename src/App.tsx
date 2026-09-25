@@ -307,7 +307,7 @@ function RoadmapTabs({ children }: { children: React.ReactNode }) {
   ];
   return (
     <>
-      <div className="mb-5">
+      <div className="mb-5 md:hidden">
         <SegmentedTabs tabs={tabs} active={active} onChange={(tab) => navigate(TAB_PATHS[tab])} />
       </div>
       {children}

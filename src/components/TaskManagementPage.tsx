@@ -544,7 +544,7 @@ export const TaskManagementPage: React.FC<TaskManagementPageProps> = ({
                   transition={{ duration: 0.2 }}
                   id={`step-card-${step.id}`}
                   onClick={() => goTo(selectedProblemId, step.id)}
-                  className={`relative flex gap-4 sm:gap-5 rounded-3xl border p-4 sm:p-5 cursor-pointer group transition-shadow hover:shadow-md ${
+                  className={`relative flex gap-4 sm:gap-5 rounded-2xl border p-4 sm:p-5 cursor-pointer group transition hover:border-[var(--nxt-mint-strong)]/50 ${
                     isCompleted ? 'bg-[var(--nxt-surface)] border-[var(--nxt-mint-strong)]/30' : 'bg-[var(--nxt-surface)] border-[var(--nxt-line)]'
                   }`}
                 >
@@ -569,10 +569,6 @@ export const TaskManagementPage: React.FC<TaskManagementPageProps> = ({
                       {isCompleted && <StatusChip tone="mint">Completed</StatusChip>}
                       {!isCompleted && workspace?.status === 'in_progress' && <StatusChip tone="blue">In progress</StatusChip>}
                       {!isCompleted && workspace?.status === 'blocked' && <StatusChip tone="peach">Blocked</StatusChip>}
-                      {hospitalCount > 0 && (
-                        <StatusChip tone="lavender"><Hospital className="w-3.5 h-3.5" /> {hospitalCount} hospital partner{hospitalCount === 1 ? '' : 's'}</StatusChip>
-                      )}
-                      {recommendedResources.length > 0 && <StatusChip tone="mint"><Sparkles className="w-3.5 h-3.5" /> Recommended</StatusChip>}
                       {pendingSubmission && <StatusChip tone="peach"><Paperclip className="w-3.5 h-3.5" /> Evidence in review</StatusChip>}
                       {!pendingSubmission && approvedSubmission && <StatusChip tone="blue"><Paperclip className="w-3.5 h-3.5" /> Evidence approved</StatusChip>}
                     </div>
@@ -581,8 +577,9 @@ export const TaskManagementPage: React.FC<TaskManagementPageProps> = ({
                     </h3>
                     <p className="text-sm text-[var(--nxt-ink-soft)] mt-1 line-clamp-2">{step.description}</p>
                     <div className="flex flex-wrap items-center gap-x-5 gap-y-1 mt-3 text-sm text-[var(--nxt-ink-soft)]">
-                      {workspace && <span>{tasksDone}/{workspace.checklist.length} tasks</span>}
-                      <span>{stepResources.length} resource{stepResources.length === 1 ? '' : 's'}</span>
+                      {workspace && workspace.checklist.length > 0 && <span>{tasksDone}/{workspace.checklist.length} tasks</span>}
+                      {stepResources.length > 0 && <span>{stepResources.length} resource{stepResources.length === 1 ? '' : 's'}</span>}
+                      {hospitalCount > 0 && <span className="inline-flex items-center gap-1"><Hospital className="w-3.5 h-3.5" /> {hospitalCount} hospital partner{hospitalCount === 1 ? '' : 's'}</span>}
                       <span className="ml-auto inline-flex items-center gap-1 font-semibold text-[var(--nxt-mint-strong)]">
                         Open step <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
                       </span>
