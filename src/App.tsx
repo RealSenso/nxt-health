@@ -23,6 +23,7 @@ import { SegmentedTabs } from './components/ui/PageHeader';
 import { AppNotification, User } from './types';
 
 const TAB_PATHS: Record<string, string> = {
+  home: '/',
   problems: '/problems',
   tasks: '/roadmaps',
   resources: '/resources',

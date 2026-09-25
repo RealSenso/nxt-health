@@ -5,11 +5,17 @@
  *
  * Creates Firebase logins (email already verified) plus matching profiles, roadmap progress,
  * funding applications, evidence reviews, ratings and a mentor. Loads the starter content first
- * if the database has none. Safe to re-run: demo records are replaced, and passwords are reset
- * to the ones printed at the end (or DEMO_ADMIN_PASSWORD / DEMO_MEMBER_PASSWORD if set).
+ * if the database has none.
+ *
+ * Re-running resets the demo: everything the demo accounts did (messages, RSVPs, bookings, teams,
+ * mentor requests, uploads, notifications) is wiped and the seeded activity is restored. Passwords
+ * are reset to the ones printed at the end (or DEMO_ADMIN_PASSWORD / DEMO_MEMBER_PASSWORD if set).
+ * Add --reset-content to also restore the starter problems, roadmaps and resources — this discards
+ * any content admins added or edited. Accounts that are not demo accounts are never touched.
  */
 import { randomBytes } from 'node:crypto';
 import { readFileSync } from 'node:fs';
+import { ObjectId } from 'mongodb';
 import { cert, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { connect } from '../src/db.js';
@@ -209,27 +215,66 @@ for (const u of USERS) {
 }
 console.log(`✓ ${USERS.length} accounts`);
 
+const resetContent = process.argv.includes('--reset-content');
+if (resetContent) {
+  await Promise.all(['categories', 'steps', 'resources', 'problems'].map(name => col(name as 'steps').deleteMany({})));
+}
 if (!(await col('categories').countDocuments({}, { limit: 1 }))) {
   const toDocs = (items: Record<string, unknown>[]) => items.map(({ id, ...rest }) => ({ _id: id as string, ...rest }));
   await col('categories').insertMany(toDocs(STARTER_CATEGORIES));
   await col('steps').insertMany(toDocs(STARTER_STEPS));
   await col('resources').insertMany(toDocs(STARTER_RESOURCES).map(r => ({ ...r, rsvp_count: 0 })));
   await col('problems').insertMany(toDocs(STARTER_PROBLEMS).map(p => ({ ...p, created_by_admin: uid.admin, created_at: daysAgo(300) })));
-  console.log('✓ starter content (problems, roadmaps, resources)');
+  console.log(`✓ starter content (problems, roadmaps, resources)${resetContent ? ' — reset' : ''}`);
 } else {
   console.log('• content already present — left as is');
 }
 
-// Replace earlier demo activity so re-runs don't duplicate it.
-const demoIds = Object.values(uid);
+// Wipe everything earlier demo sessions created, so each run starts from the same state.
+// Include demo users from earlier runs whose login was recreated (their uid changed).
+const staleUsers = await col('users').find({ email: { $in: USERS.map(u => u.email) }, _id: { $nin: Object.values(uid) } }).toArray();
+await col('users').deleteMany({ _id: { $in: staleUsers.map(u => u._id) } });
+const demoIds = [...Object.values(uid), ...staleUsers.map(u => u._id)];
+const demoTeams = await col('teams').find({ member_ids: { $in: demoIds } }).toArray();
+const teamIds = demoTeams.map(t => t._id);
+const scopeKeys = [...demoIds, ...teamIds];
+
+const oldSubmissions = await col('submissions').find({ $or: [{ user_id: { $in: demoIds } }, { scope_key: { $in: scopeKeys } }] }).toArray();
+for (const sub of oldSubmissions) {
+  for (const file of (sub.files as { file_id: string }[] | undefined) || []) {
+    await database.files.delete(new ObjectId(file.file_id)).catch(() => undefined);
+  }
+}
+const oldThreads = await col('threads').find({ $or: [{ participant_uids: { $in: demoIds } }, { scope_key: { $in: scopeKeys } }] }).toArray();
 await Promise.all([
-  col('scopes').deleteMany({ _id: { $in: demoIds } }),
-  col('progress').deleteMany({ user_id: { $in: demoIds } }),
-  col('workspaces').deleteMany({ scope_key: { $in: demoIds } }),
-  col('applications').deleteMany({ user_id: { $in: demoIds } }),
-  col('submissions').deleteMany({ user_id: { $in: demoIds } }),
-  col('stepRatings').deleteMany({ user_id: { $in: demoIds } }),
-  col('resourceViews').deleteMany({ user_id: { $in: demoIds } }),
+  col('messages').deleteMany({ thread_id: { $in: oldThreads.map(t => t._id) } }),
+  col('threads').deleteMany({ _id: { $in: oldThreads.map(t => t._id) } }),
+  col('notifications').deleteMany({ user_id: { $in: demoIds } }),
+  col('rsvps').deleteMany({ user_id: { $in: demoIds } }),
+  col('bookings').deleteMany({ user_id: { $in: demoIds } }),
+  col('mentorRequests').deleteMany({ $or: [{ founder_uid: { $in: demoIds } }, { mentor_uid: { $in: demoIds } }] }),
+  col('teamInvites').deleteMany({ $or: [{ team_id: { $in: teamIds } }, { to_email: { $in: USERS.map(u => u.email) } }] }),
+  col('teams').deleteMany({ _id: { $in: teamIds } }),
+  col('publicProfiles').deleteMany({ _id: { $in: demoIds } }),
+]);
+// Non-demo users who had joined a demo team go back to working solo.
+await col('users').updateMany({ team_id: { $in: teamIds } }, { $set: { team_id: null } });
+// Keep RSVP counters in line with the RSVPs that remain.
+await col('resources').updateMany({}, { $set: { rsvp_count: 0 } });
+for (const { _id, n } of await col('rsvps').aggregate<{ _id: string; n: number }>([{ $group: { _id: '$resource_id', n: { $sum: 1 } } }]).toArray()) {
+  await col('resources').updateOne({ _id }, { $set: { rsvp_count: n } });
+}
+
+await Promise.all([
+  col('scopes').deleteMany({ _id: { $in: scopeKeys } }),
+  col('progress').deleteMany({ user_id: { $in: scopeKeys } }),
+  col('workspaces').deleteMany({ scope_key: { $in: scopeKeys } }),
+  col('applications').deleteMany({ $or: [{ user_id: { $in: demoIds } }, { scope_key: { $in: scopeKeys } }] }),
+  col('submissions').deleteMany({ _id: { $in: oldSubmissions.map(s => s._id) } }),
+  col('applications').deleteMany({ _id: { $regex: '^app-demo-' } }),
+  col('submissions').deleteMany({ _id: { $regex: '^sub-demo-' } }),
+  col('stepRatings').deleteMany({ $or: [{ user_id: { $in: demoIds } }, { _id: { $regex: '^rating-demo-' } }] }),
+  col('resourceViews').deleteMany({ $or: [{ user_id: { $in: demoIds } }, { _id: { $regex: '^view-demo-' } }] }),
   col('mentorProfiles').deleteMany({ _id: { $in: demoIds } }),
 ]);
 

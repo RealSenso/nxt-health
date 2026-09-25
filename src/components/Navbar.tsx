@@ -110,7 +110,8 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div className="flex items-center gap-6 min-w-0">
             <button
               id="btn-logo-home"
-              onClick={() => setCurrentTab('problems')}
+              onClick={() => setCurrentTab(currentUser ? 'problems' : 'home')}
+              title={currentUser ? 'Problem statements' : 'Home'}
               className="flex items-center gap-2.5 shrink-0"
             >
               <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${roleTone.logoBg} ${roleTone.logoText}`}>
