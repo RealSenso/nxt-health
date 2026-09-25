@@ -145,12 +145,12 @@ export const HomePage: React.FC<HomePageProps> = ({ onGetStarted, onBrowseProble
         </section>
 
         <section className="bg-[var(--nxt-surface)] border-y border-[var(--nxt-line)]">
-          <div className="nxt-container py-14">
+          <div className="nxt-container py-20">
             <Reveal className="text-center">
               <h2 className="font-display text-2xl sm:text-3xl font-bold lg:whitespace-nowrap">Doctors bring the problems. Startups build the solutions.</h2>
               <p className="text-base text-[var(--nxt-ink-soft)] mt-3 lg:whitespace-nowrap">{PLATFORM_NAME} sits in the middle — verifying each need, funding the work and connecting both sides until it reaches a pilot.</p>
             </Reveal>
-            <RevealGroup className="grid md:grid-cols-3 gap-5 mt-10" stagger={0.06}>
+            <RevealGroup className="grid md:grid-cols-3 gap-6 lg:gap-8 mt-12" stagger={0.06}>
               {PERSONAS.map(p => (
                 <RevealItem key={p.title}>
                   <div className={`h-full rounded-3xl border p-6 ${p.featured ? 'bg-[var(--nxt-mint)] border-[var(--nxt-mint-strong)]/40' : 'bg-[var(--nxt-bg)] border-[var(--nxt-line)]'}`}>
@@ -169,12 +169,12 @@ export const HomePage: React.FC<HomePageProps> = ({ onGetStarted, onBrowseProble
           </div>
         </section>
 
-        <section className="nxt-container py-16">
+        <section className="nxt-container py-20 lg:py-24">
           <Reveal>
             <p className="text-sm font-bold uppercase tracking-wider text-[var(--nxt-mint-strong)]">What you get</p>
             <h2 className="font-display text-2xl sm:text-3xl font-bold mt-2 lg:whitespace-nowrap">Everything you need to solve a real clinical problem</h2>
           </Reveal>
-          <RevealGroup className="grid sm:grid-cols-2 2xl:grid-cols-4 gap-5 mt-8" stagger={0.06}>
+          <RevealGroup className="grid sm:grid-cols-2 2xl:grid-cols-4 gap-6 lg:gap-8 mt-10" stagger={0.06}>
             {FEATURES.map(f => (
               <RevealItem key={f.title}>
                 <div className="h-full rounded-3xl bg-[var(--nxt-surface)] border border-[var(--nxt-line)] p-6 flex 2xl:flex-col gap-5 items-center 2xl:items-start hover:shadow-md transition-shadow">
@@ -192,7 +192,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onGetStarted, onBrowseProble
           </RevealGroup>
         </section>
 
-        <section className="nxt-container pb-16">
+        <section className="nxt-container pb-20 lg:pb-24">
           <Reveal className="rounded-3xl bg-[var(--nxt-ink-fixed)] border border-white/10 text-white p-8 sm:p-12">
             <h2 className="font-display text-2xl sm:text-3xl font-bold">How it works</h2>
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
@@ -212,8 +212,8 @@ export const HomePage: React.FC<HomePageProps> = ({ onGetStarted, onBrowseProble
           </Reveal>
         </section>
 
-        <section className="nxt-container pb-16">
-          <div className="flex items-end justify-between gap-4 mb-6">
+        <section className="nxt-container pb-20 lg:pb-24">
+          <div className="flex items-end justify-between gap-4 mb-8">
             <Reveal>
               <p className="text-sm font-bold uppercase tracking-wider text-[var(--nxt-mint-strong)]">Open right now</p>
               <h2 className="font-display text-2xl sm:text-3xl font-bold mt-2">Problems doctors want solved</h2>
@@ -222,7 +222,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onGetStarted, onBrowseProble
               See all {problems.length} <ArrowRight className="w-4 h-4" />
             </button>
           </div>
-          <RevealGroup className="grid md:grid-cols-3 gap-5" stagger={0.06}>
+          <RevealGroup className="grid md:grid-cols-3 gap-6 lg:gap-8" stagger={0.06}>
             {problems.slice(0, 3).map(p => {
               const DeptIcon = departmentIcon(p.department);
               return (
@@ -250,7 +250,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onGetStarted, onBrowseProble
           </RevealGroup>
         </section>
 
-        <section className="nxt-container pb-20">
+        <section className="nxt-container pb-24">
           <Reveal className="nxt-hero-glow rounded-3xl border border-[var(--nxt-line)] p-8 sm:p-12 flex flex-col md:flex-row items-center gap-8">
             <div className="flex-1 text-center md:text-left">
               <h2 className="font-display text-2xl sm:text-3xl font-bold">Ready to build what doctors are asking for?</h2>

@@ -140,7 +140,7 @@ export const StepPage: React.FC<StepPageProps> = ({
   const daysToTarget = workspace.target_date ? -daysBetween(workspace.target_date) : null;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 lg:space-y-10">
       <Reveal className="bg-[var(--nxt-surface)] rounded-2xl border border-[var(--nxt-line)] p-6 sm:p-7">
         <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-5">
           <div className="min-w-0">
@@ -231,7 +231,7 @@ export const StepPage: React.FC<StepPageProps> = ({
       </Reveal>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-8">
           <Section icon={ListChecks} title="Deliverables" aside={`${taskPct}% done`}>
             <ul className="space-y-1.5">
               {workspace.checklist.map(item => (
@@ -367,7 +367,7 @@ export const StepPage: React.FC<StepPageProps> = ({
           {isCompleted && <StepRatingPanel stepId={step.id} userId={currentUser.id} />}
         </div>
 
-        <aside className="space-y-6">
+        <aside className="space-y-8">
           <Section icon={Lightbulb} title="Step guide">
             <p className="text-sm text-[var(--nxt-ink-soft)] leading-relaxed">{guide.whyItMatters}</p>
             <GuidePart icon={Flag} title="Ready to move on when">
@@ -490,7 +490,7 @@ const GuidePart: React.FC<{ icon: React.ElementType; title: string; children: Re
 const Section: React.FC<{ icon: React.ElementType; title: string; aside?: string; children: React.ReactNode }> = ({
   icon: Icon, title, aside, children,
 }) => (
-  <Reveal className="bg-[var(--nxt-surface)] rounded-2xl border border-[var(--nxt-line)] p-5">
+  <Reveal className="bg-[var(--nxt-surface)] rounded-2xl border border-[var(--nxt-line)] p-6 lg:p-7">
     <div className="flex items-center justify-between gap-2 mb-3">
       <h2 className="text-xs font-bold text-[var(--nxt-ink)] uppercase tracking-wider flex items-center gap-1.5">
         <Icon className="w-3.5 h-3.5 text-[var(--nxt-mint-strong)]" /> {title}

@@ -68,7 +68,7 @@ export const FundsPage: React.FC<FundsPageProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 lg:space-y-10">
       <PageHeader
         icon={BadgeDollarSign}
         eyebrow="Funding"
@@ -102,7 +102,7 @@ export const FundsPage: React.FC<FundsPageProps> = ({
           </button>
         </div>
       ) : (
-        <RevealGroup className="grid grid-cols-1 gap-4" stagger={0.06}>
+        <RevealGroup className="grid grid-cols-1 gap-6 lg:gap-8" stagger={0.06}>
           {userApplications.map((app) => (
             <RevealItem key={app.id}>
               <motion.div

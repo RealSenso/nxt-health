@@ -108,7 +108,7 @@ export const ProblemStatementsList: React.FC<ProblemStatementsListProps> = ({
       type === 'hospital_connection' ? Hospital : type === 'webinar' ? Video : Calendar;
 
     return (
-      <div className="space-y-6">
+      <div className="space-y-8 lg:space-y-10">
         <button
           id="btn-back-to-problems"
           onClick={() => setSelectedProblem(null)}
@@ -226,7 +226,7 @@ export const ProblemStatementsList: React.FC<ProblemStatementsListProps> = ({
         {relatedResources.length > 0 && (
           <Reveal className="space-y-3">
             <h2 className="text-sm font-bold text-[var(--nxt-ink)] px-1">Resources Recommended for This Problem</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 lg:gap-8">
               {relatedResources.map(resource => {
                 const Icon = resourceIcon(resource.type);
                 return (
@@ -277,7 +277,7 @@ export const ProblemStatementsList: React.FC<ProblemStatementsListProps> = ({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 lg:space-y-10">
       <PageHeader
         icon={FileSearch}
         eyebrow="Clinical unmet needs"
@@ -401,7 +401,7 @@ export const ProblemStatementsList: React.FC<ProblemStatementsListProps> = ({
         </div>
       </Reveal>
 
-      <RevealGroup className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-5" stagger={0.06}>
+      <RevealGroup className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6 lg:gap-8" stagger={0.06}>
         {filteredProblems.map((problem, i) => (
           <RevealItem key={problem.id}>
             <motion.div
@@ -412,7 +412,7 @@ export const ProblemStatementsList: React.FC<ProblemStatementsListProps> = ({
             >
               <div
                 onClick={() => setSelectedProblem(problem)}
-                className="bg-[var(--nxt-surface)] rounded-2xl p-5 flex flex-col justify-between h-full border border-[var(--nxt-line)] hover:border-[var(--nxt-mint-strong)]/50 hover:shadow-sm transition cursor-pointer"
+                className="bg-[var(--nxt-surface)] rounded-2xl p-6 flex flex-col justify-between h-full border border-[var(--nxt-line)] hover:border-[var(--nxt-mint-strong)]/50 hover:shadow-sm transition cursor-pointer"
               >
                 <div>
                   <div className="flex items-start justify-between gap-2 mb-4">

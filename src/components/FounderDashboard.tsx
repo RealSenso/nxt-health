@@ -87,7 +87,7 @@ export const FounderDashboard: React.FC<FounderDashboardProps> = ({
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 lg:space-y-10">
       <PageHeader
         icon={LayoutDashboard}
         eyebrow="Dashboard"
@@ -113,7 +113,7 @@ export const FounderDashboard: React.FC<FounderDashboardProps> = ({
 
       <DashboardInvites />
 
-      <Reveal className="bg-[var(--nxt-surface)] border border-[var(--nxt-line)] rounded-2xl p-5 sm:p-6">
+      <Reveal className="bg-[var(--nxt-surface)] border border-[var(--nxt-line)] rounded-2xl p-6 sm:p-8">
         <div className="flex items-center justify-between gap-3 mb-4">
           <h2 className="font-display text-lg font-bold text-[var(--nxt-ink)] flex items-center gap-2">
             <FolderKanban className="w-5 h-5 text-[var(--nxt-mint-strong)]" /> Your projects
@@ -160,12 +160,12 @@ export const FounderDashboard: React.FC<FounderDashboardProps> = ({
 
       <UpcomingEvents />
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-4 lg:gap-6">
         {stats.map(stat => (
           <button
             key={stat.label}
             onClick={stat.onClick}
-            className="text-left bg-[var(--nxt-surface)] border border-[var(--nxt-line)] rounded-2xl px-4 py-3 hover:border-[var(--nxt-mint-strong)]/40 transition-colors"
+            className="text-left bg-[var(--nxt-surface)] border border-[var(--nxt-line)] rounded-2xl px-5 py-4 hover:border-[var(--nxt-mint-strong)]/40 transition-colors"
           >
             <p className="text-xs font-semibold text-[var(--nxt-ink-soft)]">{stat.label}</p>
             <p className="mt-0.5 flex items-baseline gap-2">
@@ -227,7 +227,7 @@ export const FounderDashboard: React.FC<FounderDashboardProps> = ({
 };
 
 const DashCard: React.FC<{ title: string; action: string; onAction: () => void; children: React.ReactNode }> = ({ title, action, onAction, children }) => (
-  <Reveal className="bg-[var(--nxt-surface)] border border-[var(--nxt-line)] rounded-2xl p-5">
+  <Reveal className="bg-[var(--nxt-surface)] border border-[var(--nxt-line)] rounded-2xl p-6">
     <div className="flex items-center justify-between mb-1">
       <h2 className="text-sm font-bold text-[var(--nxt-ink)]">{title}</h2>
       <button onClick={onAction} className="text-xs font-semibold text-[var(--nxt-mint-strong)] hover:underline flex items-center gap-1">

@@ -258,7 +258,7 @@ function Shell({ currentUser, modals }: { currentUser: User | null; modals: Moda
 
       {currentUser && !store.isEmailVerified() && <VerifyEmailBanner email={currentUser.email} />}
 
-      <main className="flex-1 nxt-container pt-6 sm:pt-8 pb-28 md:pb-10">
+      <main className="flex-1 nxt-container pt-8 sm:pt-12 pb-28 md:pb-16">
         <motion.div
           key={currentTab}
           initial={{ opacity: 0, y: 10 }}

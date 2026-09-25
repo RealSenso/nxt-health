@@ -23,14 +23,14 @@ export const MessagesPage: React.FC<{ currentUser: User }> = ({ currentUser }) =
   const threads = store.getThreads();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 lg:space-y-10">
       <PageHeader
         icon={MessageSquare}
         eyebrow="Messages"
         title="Conversations"
         subtitle="Discussions about your funding applications and evidence, and chats with your mentors."
       />
-      <div className="grid lg:grid-cols-[340px_1fr] gap-5 items-start">
+      <div className="grid lg:grid-cols-[340px_1fr] gap-6 lg:gap-8 items-start">
         <aside className={`${threadId ? 'hidden lg:block' : ''} rounded-3xl border border-[var(--nxt-line)] bg-[var(--nxt-surface)] overflow-hidden`}>
           {threads.length === 0 ? (
             <p className="p-6 text-sm text-[var(--nxt-ink-soft)]">

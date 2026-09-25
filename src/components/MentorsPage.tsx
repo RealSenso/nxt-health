@@ -25,7 +25,7 @@ export const MentorsPage: React.FC<{ currentUser: User }> = ({ currentUser }) =>
   const [requesting, setRequesting] = useState<MentorProfile | null>(null);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 lg:space-y-10">
       <PageHeader
         icon={GraduationCap}
         eyebrow="Mentors"
@@ -62,7 +62,7 @@ export const MentorsPage: React.FC<{ currentUser: User }> = ({ currentUser }) =>
           <p className="text-sm text-[var(--nxt-ink-soft)] mt-1">We're adding mentors regularly — check back soon.</p>
         </div>
       ) : (
-        <div className="grid md:grid-cols-2 gap-5">
+        <div className="grid md:grid-cols-2 gap-6 lg:gap-8">
           {matches.map(({ mentor, reasons, score }, index) => {
             const existing = openRequestFor(mentor.id);
             const background = mentor.background || mentor.user_background;
@@ -175,11 +175,11 @@ export const MentoringPage: React.FC<{ currentUser: User }> = ({ currentUser }) 
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 lg:space-y-10">
       <PageHeader icon={GraduationCap} eyebrow="Mentoring" title="Your mentoring" subtitle="Keep your profile current so founders find you, and respond to requests." />
       {error && <p className="text-sm text-[var(--nxt-peach-deep)] font-semibold">{error}</p>}
 
-      <div className="grid lg:grid-cols-2 gap-5 items-start">
+      <div className="grid lg:grid-cols-2 gap-6 lg:gap-8 items-start">
         <section className="rounded-3xl border border-[var(--nxt-line)] bg-[var(--nxt-surface)] p-6 space-y-4">
           <h2 className="font-display text-base font-bold text-[var(--nxt-ink)] flex items-center gap-2"><Clock className="w-4 h-4 text-[var(--nxt-mint-strong)]" /> Requests ({pending.length})</h2>
           {pending.length === 0 && <p className="text-sm text-[var(--nxt-ink-soft)]">No pending requests.</p>}

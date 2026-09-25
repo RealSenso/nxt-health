@@ -185,7 +185,7 @@ export const TaskManagementPage: React.FC<TaskManagementPageProps> = ({
 
   if (view === 'problems') {
     return (
-      <div className="space-y-6">
+      <div className="space-y-8 lg:space-y-10">
         <PageHeader
           icon={Route}
           eyebrow="My roadmaps"
@@ -213,7 +213,7 @@ export const TaskManagementPage: React.FC<TaskManagementPageProps> = ({
             <ProblemPickerGrid problems={allProblems} onPick={handleAddProblem} appliedIds={appliedProblemIds} savedIds={savedProblemIds} />
           </div>
         ) : (
-          <RevealGroup className="grid grid-cols-1 lg:grid-cols-2 gap-5" stagger={0.05}>
+          <RevealGroup className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8" stagger={0.05}>
             {workingProblems.map(problem => {
               const lockedId = store.getLockedCategoryId(scopeKey, problem.id);
               const lockedCategory = categories.find(c => c.id === lockedId) || null;
@@ -333,7 +333,7 @@ export const TaskManagementPage: React.FC<TaskManagementPageProps> = ({
     const pendingCategory = categories.find(c => c.id === pendingCategoryId) || null;
     const PendingIcon = categoryIcon(pendingCategoryId);
     return (
-      <div className="space-y-6">
+      <div className="space-y-8 lg:space-y-10">
         <Breadcrumb
           items={[
             { label: 'My projects', onClick: () => setView('problems') },
@@ -365,7 +365,7 @@ export const TaskManagementPage: React.FC<TaskManagementPageProps> = ({
           />
         </Reveal>
 
-        <RevealGroup className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" stagger={0.03}>
+        <RevealGroup className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8" stagger={0.03}>
           {filteredCategories.map(cat => {
             const CatIcon = categoryIcon(cat.id);
             const stepCount = store.getSteps(cat.id).length;
@@ -452,7 +452,7 @@ export const TaskManagementPage: React.FC<TaskManagementPageProps> = ({
   const selectedStep = steps.find(s => s.id === selectedStepId) || null;
   if (view === 'step' && selectedStep && selectedCategory && selectedProblemId) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-8 lg:space-y-10">
         <Breadcrumb
           items={[
             { label: 'My projects', onClick: () => setView('problems') },
@@ -479,7 +479,7 @@ export const TaskManagementPage: React.FC<TaskManagementPageProps> = ({
 
   const RoadmapIcon = categoryIcon(selectedCategoryId);
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 lg:space-y-10">
       <Breadcrumb
         items={[
           { label: 'My projects', onClick: () => setView('problems') },
@@ -647,7 +647,7 @@ const RoadmapTrailer: React.FC<{
 
   if (view === 'problems') {
     return (
-      <div className="space-y-6">
+      <div className="space-y-8 lg:space-y-10">
         <PageHeader
           icon={Route}
           eyebrow="Roadmaps preview"
@@ -668,7 +668,7 @@ const RoadmapTrailer: React.FC<{
 
   if (view === 'categories' && selectedProblem) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-8 lg:space-y-10">
         <Breadcrumb
           items={[
             { label: 'Roadmaps', onClick: () => setView('problems') },
@@ -696,7 +696,7 @@ const RoadmapTrailer: React.FC<{
           />
         </Reveal>
 
-        <RevealGroup className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" stagger={0.03}>
+        <RevealGroup className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8" stagger={0.03}>
           {filteredCategories.map((cat) => (
             <RevealItem key={cat.id}>
               <motion.div
@@ -729,7 +729,7 @@ const RoadmapTrailer: React.FC<{
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 lg:space-y-10">
       <Breadcrumb
         items={[
           { label: 'Roadmaps', onClick: () => setView('problems') },
@@ -867,14 +867,14 @@ const ProblemPickerGrid: React.FC<{
   const otherProblems = problems.filter(p => !isPriority(p.id));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 lg:space-y-10">
       {priorityProblems.length > 0 && (
         <div>
           <p className="text-xs font-bold uppercase tracking-wider text-[var(--nxt-mint-strong)] mb-3 flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5" />
             Applied or Saved by You
           </p>
-          <RevealGroup className="grid grid-cols-1 md:grid-cols-2 gap-4" stagger={0.04}>
+          <RevealGroup className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8" stagger={0.04}>
             {priorityProblems.map(problem => (
               <RevealItem key={problem.id}>
                 <ProblemPickerCard
@@ -896,7 +896,7 @@ const ProblemPickerGrid: React.FC<{
               Other Problem Statements
             </p>
           )}
-          <RevealGroup className="grid grid-cols-1 md:grid-cols-2 gap-4" stagger={0.04}>
+          <RevealGroup className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8" stagger={0.04}>
             {otherProblems.map(problem => (
               <RevealItem key={problem.id}>
                 <ProblemPickerCard problem={problem} onPick={onPick} />

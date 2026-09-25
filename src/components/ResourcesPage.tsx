@@ -87,7 +87,7 @@ export const ResourcesPage: React.FC<ResourcesPageProps> = ({
     const category = step ? categoryById.get(step.category_id) : undefined;
     const Icon = TYPE_ICON[selectedResource.type];
     return (
-      <div className="space-y-6">
+      <div className="space-y-8 lg:space-y-10">
         <button
           onClick={() => setSelectedResource(null)}
           className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--nxt-ink-soft)] hover:text-[var(--nxt-ink)] transition-colors"
@@ -180,7 +180,7 @@ export const ResourcesPage: React.FC<ResourcesPageProps> = ({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 lg:space-y-10">
       <PageHeader
         icon={BookMarked}
         eyebrow="Resources"
@@ -240,7 +240,7 @@ export const ResourcesPage: React.FC<ResourcesPageProps> = ({
         )}
       </Reveal>
 
-      <RevealGroup className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" stagger={0.03}>
+      <RevealGroup className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8" stagger={0.03}>
         {filtered.map(({ resource, step, category }, i) => {
           const locked = !!resource.locked;
           const Icon = TYPE_ICON[resource.type];
