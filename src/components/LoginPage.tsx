@@ -176,38 +176,41 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBack, initialMode = 'log
               )}
 
               {mode === 'signup' && (
-                <div className="grid grid-cols-2 gap-3">
+                <>
+                <p className="text-xs text-[var(--nxt-ink-soft)] pt-1">Optional — helps us match you with the right problems and mentors.</p>
+                <div className="grid grid-cols-2 gap-3 items-end">
                   <div>
-                    <label className="block text-xs font-semibold text-[var(--nxt-ink-soft)] mb-1">Your background <span className="font-normal">(optional)</span></label>
+                    <label className="block text-xs font-semibold text-[var(--nxt-ink-soft)] mb-1 truncate">Background</label>
                     <select
                       id="input-signup-background"
                       value={background}
                       onChange={(e) => setBackground(e.target.value as FounderBackground)}
-                      className="w-full px-3 py-2.5 text-sm bg-[var(--nxt-bg-soft)] border border-[var(--nxt-line)] rounded-2xl text-[var(--nxt-ink)] focus:ring-2 focus:ring-[var(--nxt-mint-strong)] focus:outline-hidden"
+                      className="h-11 w-full px-3 py-2.5 text-sm bg-[var(--nxt-bg-soft)] border border-[var(--nxt-line)] rounded-2xl text-[var(--nxt-ink)] focus:ring-2 focus:ring-[var(--nxt-mint-strong)] focus:outline-hidden"
                     >
                       <option value="">Select…</option>
                       {BACKGROUND_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-[var(--nxt-ink-soft)] mb-1">How did you hear about us? <span className="font-normal">(optional)</span></label>
+                    <label className="block text-xs font-semibold text-[var(--nxt-ink-soft)] mb-1 truncate">How you found us</label>
                     <select
                       id="input-signup-source"
                       value={source}
                       onChange={(e) => setSource(e.target.value as AcquisitionSource)}
-                      className="w-full px-3 py-2.5 text-sm bg-[var(--nxt-bg-soft)] border border-[var(--nxt-line)] rounded-2xl text-[var(--nxt-ink)] focus:ring-2 focus:ring-[var(--nxt-mint-strong)] focus:outline-hidden"
+                      className="h-11 w-full px-3 py-2.5 text-sm bg-[var(--nxt-bg-soft)] border border-[var(--nxt-line)] rounded-2xl text-[var(--nxt-ink)] focus:ring-2 focus:ring-[var(--nxt-mint-strong)] focus:outline-hidden"
                     >
                       <option value="">Select…</option>
                       {SOURCE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                     </select>
                   </div>
                 </div>
+                </>
               )}
 
               {mode === 'signup' && (
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-3 items-end">
                   <div>
-                    <label className="block text-xs font-semibold text-[var(--nxt-ink-soft)] mb-1">Location <span className="font-normal text-[var(--nxt-ink-soft)]">(optional)</span></label>
+                    <label className="block text-xs font-semibold text-[var(--nxt-ink-soft)] mb-1 truncate">Location</label>
                     <div className="relative">
                       <MapPin className="w-4 h-4 text-[var(--nxt-ink-soft)] absolute left-3 top-1/2 -translate-y-1/2" />
                       <input
@@ -216,17 +219,17 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBack, initialMode = 'log
                         value={location}
                         onChange={(e) => setLocation(e.target.value)}
                         placeholder="City, State"
-                        className="w-full pl-9 pr-3 py-2.5 text-sm bg-[var(--nxt-bg-soft)] border border-[var(--nxt-line)] rounded-2xl text-[var(--nxt-ink)] focus:ring-2 focus:ring-[var(--nxt-mint-strong)] focus:outline-hidden focus:bg-[var(--nxt-surface)] transition-colors"
+                        className="h-11 w-full pl-9 pr-3 py-2.5 text-sm bg-[var(--nxt-bg-soft)] border border-[var(--nxt-line)] rounded-2xl text-[var(--nxt-ink)] focus:ring-2 focus:ring-[var(--nxt-mint-strong)] focus:outline-hidden focus:bg-[var(--nxt-surface)] transition-colors"
                       />
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-[var(--nxt-ink-soft)] mb-1">Gender <span className="font-normal text-[var(--nxt-ink-soft)]">(optional)</span></label>
+                    <label className="block text-xs font-semibold text-[var(--nxt-ink-soft)] mb-1 truncate">Gender</label>
                     <select
                       id="input-signup-gender"
                       value={gender}
                       onChange={(e) => setGender(e.target.value as Gender)}
-                      className="w-full px-3 py-2.5 text-sm bg-[var(--nxt-bg-soft)] border border-[var(--nxt-line)] rounded-2xl text-[var(--nxt-ink)] focus:ring-2 focus:ring-[var(--nxt-mint-strong)] focus:outline-hidden focus:bg-[var(--nxt-surface)] transition-colors"
+                      className="h-11 w-full px-3 py-2.5 text-sm bg-[var(--nxt-bg-soft)] border border-[var(--nxt-line)] rounded-2xl text-[var(--nxt-ink)] focus:ring-2 focus:ring-[var(--nxt-mint-strong)] focus:outline-hidden focus:bg-[var(--nxt-surface)] transition-colors"
                     >
                       <option value="">Prefer not to say</option>
                       {GENDER_OPTIONS.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
