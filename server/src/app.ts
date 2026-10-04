@@ -10,6 +10,8 @@ import { bootstrapRouter } from './routes/bootstrap.js';
 import { consultationsRouter } from './routes/consultations.js';
 import { contentRouter } from './routes/content.js';
 import { eventsRouter } from './routes/events.js';
+import { expertsRouter } from './routes/experts.js';
+import { inquiriesRouter } from './routes/inquiries.js';
 import { mentorsRouter } from './routes/mentors.js';
 import { scopeRouter } from './routes/scope.js';
 import { teamsRouter } from './routes/teams.js';
@@ -21,9 +23,10 @@ export interface AppOptions {
   verifyToken: TokenVerifier;
   allowedOrigins: string[];
   rateLimitPerMinute?: number;
+  inquiryLimitPerHour?: number;
 }
 
-export function createApp({ database, verifyToken, allowedOrigins, rateLimitPerMinute = 300 }: AppOptions) {
+export function createApp({ database, verifyToken, allowedOrigins, rateLimitPerMinute = 300, inquiryLimitPerHour = 12 }: AppOptions) {
   const app = express();
   app.set('trust proxy', 1);
   app.disable('x-powered-by');
@@ -51,6 +54,8 @@ export function createApp({ database, verifyToken, allowedOrigins, rateLimitPerM
   api.use(eventsRouter(database));
   api.use(mentorsRouter(database));
   api.use(consultationsRouter(database));
+  api.use(expertsRouter(database));
+  api.use(inquiriesRouter(database, inquiryLimitPerHour));
   app.use('/api', api);
 
   app.use('/api', (_req, res) => { res.status(404).json({ error: 'Not found.' }); });

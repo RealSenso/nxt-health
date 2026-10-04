@@ -281,8 +281,8 @@ export const ProblemStatementsList: React.FC<ProblemStatementsListProps> = ({
       <PageHeader
         icon={FileSearch}
         eyebrow="Clinical unmet needs"
-        title="Problems doctors want solved"
-        subtitle={`${problems.length} verified needs from doctors and department heads · ${fundedCount} with grant funding.`}
+        title="Problems from doctors, hospitals and pharma"
+        subtitle={`${problems.length} verified problems · ${fundedCount} already have money behind them. Problem first. Funded first.`}
         illustration="problems"
         actions={
           <>

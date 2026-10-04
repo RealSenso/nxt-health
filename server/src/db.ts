@@ -10,7 +10,7 @@ export const COLLECTIONS = [
   'applications', 'submissions', 'notifications',
   'threads', 'messages',
   'rsvps', 'bookings',
-  'mentorProfiles', 'mentorRequests', 'consultations',
+  'mentorProfiles', 'mentorRequests', 'consultations', 'inquiries',
   'resourceViews', 'stepRatings',
 ] as const;
 
@@ -59,6 +59,12 @@ export async function ensureIndexes({ col }: Database): Promise<void> {
     col('mentorRequests').createIndex({ founder_uid: 1 }),
     col('consultations').createIndex({ founder_uid: 1, created_at: -1 }),
     col('consultations').createIndex({ mentor_uid: 1, created_at: -1 }),
+    // One live booking per expert per start time (cancelled bookings free the slot).
+    col('consultations').createIndex(
+      { mentor_uid: 1, slot: 1 },
+      { unique: true, partialFilterExpression: { slot: { $exists: true }, status: { $in: ['awaiting_payment', 'paid'] } } },
+    ),
+    col('inquiries').createIndex({ created_at: -1 }),
     col('stepRatings').createIndex({ user_id: 1, step_id: 1 }, { unique: true }),
   ]);
 }

@@ -82,10 +82,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBack, initialMode = 'log
       <aside className="hidden lg:flex nxt-hero-glow border-r border-[var(--nxt-line)] flex-col justify-center px-14 xl:px-20">
         <SpotIllustration kind="login" className="w-64 mb-8" />
         <h2 className="font-display text-3xl font-extrabold text-[var(--nxt-ink)] leading-tight">
-          Build the solutions doctors are asking for.
+          Pharma has the problem. Doctors have the answer.
         </h2>
         <ul className="mt-8 space-y-4 text-base text-[var(--nxt-ink-soft)]">
-          {['Verified clinical problems from doctors', 'Non-dilutive grants tied to each problem', 'Mentors and a roadmap to a hospital pilot'].map(item => (
+          {['Funded problems from doctors, hospitals and pharma', 'Apply, get screened, get a clear answer', 'A stage-gate roadmap and matched experts, step by step'].map(item => (
             <li key={item} className="flex items-start gap-3">
               <CheckCircle2 className="w-5 h-5 text-[var(--nxt-mint-strong)] mt-0.5 shrink-0" /> {item}
             </li>

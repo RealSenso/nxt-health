@@ -12,7 +12,7 @@ import {
 import { api, ApiError } from './api';
 import { auth } from './firebase';
 
-export const PLATFORM_NAME = 'NxT Health';
+export const PLATFORM_NAME = 'NXT Health';
 
 export type ProfileUpdates = {
   name?: string;
@@ -65,7 +65,6 @@ interface BootstrapData {
   mentors?: MentorProfile[];
   mentor_requests?: MentorRequest[];
   consultations?: Consultation[];
-  consultation_rate_usd?: number;
   admin?: {
     users: RawUser[];
     teams: Team[];
@@ -887,11 +886,8 @@ class ApiStore {
     return this.data.consultations || [];
   }
 
-  public getConsultationRate(): number {
-    return this.data.consultation_rate_usd ?? 200;
-  }
-
-  public bookConsultation(input: { mentor_uid: string; hours: number; topic: string; preferred_time?: string }): Promise<Consultation> {
+  /** Books a time with an expert. Free sessions come back already confirmed with their chat open. */
+  public bookConsultation(input: { mentor_uid: string; minutes: 30 | 60; slot: string; topic?: string }): Promise<Consultation> {
     return this.write(async () => (await api.post<{ consultation: Consultation }>('/consultations', input)).consultation);
   }
 
@@ -938,6 +934,15 @@ export interface MentorProfileInput {
   availability: string;
   capacity: number;
   accepting: boolean;
+  rate_usd?: number;
+  photo_url?: string;
+  topics?: string[];
+  expert_areas?: string[];
+  fits_gates?: number[];
+  book_when?: string[];
+  session_days?: number[];
+  session_times?: string[];
+  meeting_url?: string;
 }
 
 export const store = new ApiStore();

@@ -26,7 +26,7 @@ function downloadIcs(resource: Resource, startIso: string, minutes: number) {
   const lines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//NxT Health//Events//EN',
+    'PRODID:-//NXT Health//Events//EN',
     'BEGIN:VEVENT',
     `UID:${resource.id}-${start.getTime()}@nxt-health`,
     `DTSTAMP:${toIcsDate(new Date())}`,

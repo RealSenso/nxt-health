@@ -1,7 +1,8 @@
+import logo from '../assets/nxt-health-logo.png';
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
-  Stethoscope, DollarSign, ListTodo, Shield,
+  DollarSign, ListTodo, Shield,
   CheckCircle2, Sparkles, Lock, FileQuestion, LogOut, LogIn, Users2, UserCog,
   LayoutDashboard, BookMarked, ChevronDown, Sun, Moon, Monitor, GraduationCap, MessageSquare
 } from 'lucide-react';
@@ -92,18 +93,9 @@ export const Navbar: React.FC<NavbarProps> = ({
     handleSelectMode(mode);
   };
 
-  const roleTone = !currentUser
-    ? { accent: 'bg-[var(--nxt-blue-strong)]', logoBg: 'bg-[var(--nxt-mint-strong)]', logoText: 'text-white' }
-    : store.isAdmin(currentUser)
-    ? { accent: 'bg-[var(--nxt-lavender-strong)]', logoBg: 'bg-[var(--nxt-lavender-strong)]', logoText: 'text-white' }
-    : currentUser.is_member
-    ? { accent: 'bg-[var(--nxt-mint-strong)]', logoBg: 'bg-[var(--nxt-mint-strong)]', logoText: 'text-white' }
-    : { accent: 'bg-[var(--nxt-peach-deep)]', logoBg: 'bg-[var(--nxt-mint-strong)]', logoText: 'text-white' };
-
   return (
     <>
-    <header className="sticky top-0 z-40 bg-[var(--nxt-bg)]/90 backdrop-blur-md border-b border-[var(--nxt-line)]">
-      <div className={`h-0.5 w-full ${roleTone.accent} transition-colors`} />
+    <header className="nxt-bar-dark sticky top-0 z-40 bg-[var(--nxt-bg)] border-b border-[var(--nxt-line)]">
 
       <div className="nxt-container">
         <div className="flex items-center justify-between h-16 gap-4">
@@ -114,12 +106,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               title={currentUser ? 'Problem statements' : 'Home'}
               className="flex items-center gap-2.5 shrink-0"
             >
-              <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${roleTone.logoBg} ${roleTone.logoText}`}>
-                <Stethoscope className="w-4.5 h-4.5" />
-              </div>
-              <span className="hidden sm:inline font-display font-black text-base text-[var(--nxt-ink)] tracking-tighter">
-                {platformName}
-              </span>
+              <img src={logo} alt={platformName} className="h-9 w-auto" />
             </button>
 
             <nav className="hidden md:flex items-center gap-1 min-w-0">
@@ -244,7 +231,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 onClick={onLoginClick}
                 whileHover={{ y: -1 }}
                 whileTap={{ scale: 0.98 }}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[var(--nxt-mint-strong)] hover:bg-[var(--nxt-mint-deep)] text-white text-xs font-semibold shadow-sm transition-colors"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[var(--nxt-mint-strong)] hover:opacity-90 text-white text-sm font-semibold transition-opacity"
               >
                 <LogIn className="w-3.5 h-3.5" />
                 <span>Log In / Register</span>

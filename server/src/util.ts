@@ -16,7 +16,7 @@ export function parse<T extends z.ZodType>(schema: T, data: unknown): z.infer<T>
 }
 
 export type NotificationType =
-  | 'application_status' | 'submission_review' | 'team_invite' | 'membership' | 'message' | 'mentorship' | 'event';
+  | 'application_status' | 'submission_review' | 'team_invite' | 'membership' | 'message' | 'mentorship' | 'event' | 'inquiry';
 
 export async function notify(
   database: Database,

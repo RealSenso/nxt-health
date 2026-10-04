@@ -83,7 +83,7 @@ export const MembershipModal: React.FC<MembershipModalProps> = ({
                 {status === 'active' ? "You're a member" : 'Become a member'}
               </h3>
               <p className="text-sm text-[var(--nxt-ink-soft)] mt-1.5">
-                Full access to medical problem grants, category roadmaps, and clinical hospital networks.
+                Founders join free and pay at cost once they are ready to build.
               </p>
             </div>
 
@@ -103,8 +103,8 @@ export const MembershipModal: React.FC<MembershipModalProps> = ({
                   <ListTodo className="w-3 h-3" />
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-[var(--nxt-ink)]">21 Medical Category Execution Roadmaps</p>
-                  <p className="text-xs text-[var(--nxt-ink-soft)]">Custom tailored step-by-step milestones (Market Research → Prototype → Validation → Regulatory FDA/CE → GTM).</p>
+                  <p className="text-xs font-semibold text-[var(--nxt-ink)]">Stage-gate roadmaps and resources</p>
+                  <p className="text-xs text-[var(--nxt-ink-soft)]">Steps, deadlines and evidence gates for each type of product, from market research to regulatory clearance and launch.</p>
                 </div>
               </div>
 
@@ -113,8 +113,8 @@ export const MembershipModal: React.FC<MembershipModalProps> = ({
                   <Hospital className="w-3 h-3" />
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-[var(--nxt-ink)]">Direct Hospital Validation Network</p>
-                  <p className="text-xs text-[var(--nxt-ink-soft)]">Connect with Johns Hopkins, Mayo Clinic, and Cleveland Clinic pilot programs & trialists.</p>
+                  <p className="text-xs font-semibold text-[var(--nxt-ink)]">Hospitals and matched help</p>
+                  <p className="text-xs text-[var(--nxt-ink-soft)]">Hospital partners, mentors, lawyers and incubators, recommended for the step you're on.</p>
                 </div>
               </div>
 
@@ -123,16 +123,16 @@ export const MembershipModal: React.FC<MembershipModalProps> = ({
                   <MessageSquare className="w-3 h-3" />
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-[var(--nxt-ink)]">Private Founder & Expert Slack</p>
-                  <p className="text-xs text-[var(--nxt-ink-soft)]">Peer founders, clinicians, regulatory experts and mentors.</p>
+                  <p className="text-xs font-semibold text-[var(--nxt-ink)]">Founder and co-founder workspace</p>
+                  <p className="text-xs text-[var(--nxt-ink-soft)]">Invite co-founders, share a live progress log and join the founder community.</p>
                 </div>
               </div>
             </div>
 
             <div className="border border-[var(--nxt-mint-strong)]/20 bg-[var(--nxt-mint)]/30 rounded-2xl p-4 mb-6 text-center">
               <div className="flex items-baseline justify-center gap-1">
-                <span className="font-display text-3xl font-extrabold text-[var(--nxt-ink)]">$49</span>
-                <span className="text-xs text-[var(--nxt-ink-soft)] font-medium">/ month</span>
+                <span className="font-display text-3xl font-extrabold text-[var(--nxt-ink)]">₹2,000</span>
+                <span className="text-xs text-[var(--nxt-ink-soft)] font-medium">per month · about $22 · at cost</span>
               </div>
               <p className="text-xs text-[var(--nxt-mint-strong)] mt-1 font-medium">
                 Online payment is coming soon — for now our team reviews and approves each request.

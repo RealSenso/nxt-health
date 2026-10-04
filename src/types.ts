@@ -179,7 +179,7 @@ export interface UserProgress {
 }
 
 export type NotificationType =
-  | 'application_status' | 'submission_review' | 'team_invite' | 'membership' | 'message' | 'mentorship' | 'event';
+  | 'application_status' | 'submission_review' | 'team_invite' | 'membership' | 'message' | 'mentorship' | 'event' | 'inquiry';
 
 export interface AppNotification {
   id: string;
@@ -280,6 +280,44 @@ export interface MentorProfile {
   accepting?: boolean;
   active_mentees: number;
   has_profile: boolean;
+  /** Public expert listing and paid sessions */
+  rate_usd?: number;
+  photo_url?: string;
+  topics?: string[];
+  expert_areas?: string[];
+  fits_gates?: number[];
+  book_when?: string[];
+  session_days?: number[];
+  session_times?: string[];
+  /** Private video-call link — only present on your own profile (or for admins). */
+  meeting_url?: string;
+}
+
+export interface PublicExpert {
+  id: string;
+  name: string;
+  headline: string;
+  bio: string;
+  topics: string[];
+  expert_areas: string[];
+  fits_gates: number[];
+  book_when: string[];
+  rate_usd: number;
+  photo_url: string;
+  open_slots: number;
+}
+
+export interface Inquiry {
+  id: string;
+  kind: 'lead' | 'expert';
+  role?: string;
+  name?: string;
+  email: string;
+  linkedin?: string;
+  focus?: string;
+  message: string;
+  status: 'new' | 'handled';
+  created_at: string;
 }
 
 export type MentorRequestStatus = 'pending' | 'accepted' | 'declined' | 'ended';
@@ -304,13 +342,20 @@ export interface Consultation {
   mentor_name: string;
   founder_uid: string;
   founder_name: string;
-  hours: number;
+  /** Session length. Older bookings recorded whole hours instead. */
+  minutes?: number;
+  hours?: number;
+  /** Start time (ISO, UTC) */
+  slot?: string;
   rate_usd: number;
   amount_usd: number;
+  expert_share_usd?: number;
   topic: string;
   preferred_time?: string;
   status: ConsultationStatus;
   thread_id?: string;
+  /** Video-call link, shared once the booking is paid. */
+  meeting_url?: string;
   paid_at?: string;
   created_at: string;
 }

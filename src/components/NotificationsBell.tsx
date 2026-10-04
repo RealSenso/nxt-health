@@ -17,6 +17,7 @@ const ICONS: Record<AppNotification['type'], React.ElementType> = {
   message: MessageSquare,
   mentorship: GraduationCap,
   event: CalendarCheck,
+  inquiry: MessageSquare,
 };
 
 function timeAgo(iso: string): string {

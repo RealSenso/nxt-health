@@ -1,282 +1,266 @@
 import React from 'react';
-import { motion } from 'motion/react';
-import {
-  Stethoscope, ArrowRight, FileSearch, BadgeDollarSign, Route, Hospital, UserRound, Rocket,
-  CheckCircle2, ShieldCheck, Layers,
-} from 'lucide-react';
-import { store, PLATFORM_NAME } from '../services/store';
-import { Reveal, RevealGroup, RevealItem } from './ui/Reveal';
-import { ThemeToggle } from './ThemeToggle';
-import { HeroIllustration, SpotIllustration, SpotKind } from './ui/Illustrations';
-import { departmentIcon } from '../data/icons';
+import { Link, useSearchParams } from 'react-router-dom';
+import { store } from '../services/store';
+import { PublicLayout } from './public/PublicLayout';
+import { InquiryForm, LeadRole } from './public/InquiryForm';
+import { Btn, Eyebrow, H1, H2, RuleList, Step } from './public/ui';
 
-interface HomePageProps {
-  onGetStarted: () => void;
-  onBrowseProblems: () => void;
+const JUMP_LINKS = [
+  { label: 'Founders and startups', to: '#who-founders' },
+  { label: 'Pharma companies and innovators', to: '#who-pharma' },
+  { label: 'Hospitals', to: '#who-hospitals' },
+  { label: 'Experts', to: '#who-experts' },
+  { label: 'Incubators', to: '#who-incubators' },
+  { label: 'Entering the US', to: '#who-us' },
+];
+
+interface Audience {
+  id: string;
+  who: string;
+  title: string;
+  intro: string;
+  points: string[];
+  cta: string;
+  to: string;
 }
 
-const FEATURES: { kind: SpotKind; icon: React.ElementType; title: string; description: string }[] = [
+const AUDIENCES: Audience[] = [
   {
-    kind: 'problems', icon: FileSearch, title: 'Verified clinical problems',
-    description: 'Real unmet needs brought to us by doctors and department heads, checked by our clinical team before they go live.',
+    id: 'who-founders',
+    who: 'Physician-founders and startups',
+    title: 'Know what to do next, every week.',
+    intro: 'You have the idea and the clinical know-how. What nobody gave you is the route. We give you real problems with money behind them, and a step-by-step path to market.',
+    points: ['A route built for your product and your country', "The right mentor for the step you're on", "Ask anything in private, including what you wouldn't ask out loud"],
+    cta: 'Join free',
+    to: '/signup',
   },
   {
-    kind: 'funds', icon: BadgeDollarSign, title: 'Non-dilutive grant funding',
-    description: 'Grants tied to specific problems, so your startup can build and validate a solution without giving up equity.',
+    id: 'who-pharma',
+    who: 'Pharma companies and innovators',
+    title: 'Fund a problem, not a hackathon.',
+    intro: 'Name one problem. We bring screened, doctor-led teams who work against deadlines and submit evidence at every step. You watch real progress and skip the cold decks.',
+    points: ['Start with one small grant', 'See every team move, gate by gate', 'Grow into a pipeline, with the option to co-invest'],
+    cta: 'Seed a problem',
+    to: '/?as=pharma#start',
   },
   {
-    kind: 'roadmap', icon: Route, title: 'Step-by-step roadmaps',
-    description: 'A milestone plan from first clinical interviews to regulatory clearance and launch, with every step explained.',
+    id: 'who-hospitals',
+    who: 'Hospitals',
+    title: 'Your problems solved. Your research wing paid.',
+    intro: 'List the problems your clinicians face every day. Host validation studies on the research capacity you already have, and earn new revenue from it.',
+    points: ['Doctor-led teams working on your problems', 'Studies run on capacity you already have', 'A new revenue line for your research wing'],
+    cta: 'List a problem',
+    to: '/?as=hospital#start',
   },
   {
-    kind: 'resources', icon: Hospital, title: 'Mentors & hospital partners',
-    description: 'Mentors who have done it before, plus introductions to partner hospitals for pilots, IRB fast-tracks and usability testing.',
+    id: 'who-experts',
+    who: 'Experts',
+    title: "Founders are stuck on something you've already done.",
+    intro: 'Regulatory, clinical validation, hospital pilots, selling to pharma. If you have done it, founders will book an hour with you at the exact step where they need it.',
+    points: ['Set your own rate, from free to $500 an hour', 'Get matched to founders at the step where you help most', 'Booking, video and chat are built in'],
+    cta: 'Become an expert',
+    to: '/experts/join',
+  },
+  {
+    id: 'who-incubators',
+    who: 'Incubators and accelerators',
+    title: 'You build companies. We bring the buyer forward.',
+    intro: 'Most founders meet the buyer last. Ours start with a problem that pharma or a hospital has already put money behind. We connect. You build and scale.',
+    points: ['Funded problems your founders can apply for', 'Get recommended to founders at the step where you help', 'Roadmaps and evidence gates your cohort can follow'],
+    cta: 'Partner with us',
+    to: '/?as=incubator#start',
+  },
+  {
+    id: 'who-us',
+    who: 'Entering the US',
+    title: 'Heading for the US? Follow a route, not a guess.',
+    intro: 'The same model works for market entry. Pick the roadmap for your product, follow the US steps, and book people who have dealt with the FDA and sold to US hospitals and pharma.',
+    points: ['US-specific steps on your roadmap', 'Experts on FDA routes and US go-to-market', 'Prove the demand before you pay for a launch'],
+    cta: 'Plan your US entry',
+    to: '/?as=us#start',
   },
 ];
 
-const PERSONAS = [
-  { icon: Stethoscope, tag: '01 · The problem', title: 'Doctors bring the problem', text: 'Doctors and department heads tell us the problems they face every shift — the ones no product solves yet.' },
-  { icon: ShieldCheck, tag: '02 · The match', title: 'We verify and fund it', text: 'Our clinical team checks each need, attaches grant funding, and opens it to startups ready to solve it.' },
-  { icon: Rocket, tag: '03 · The solution', title: 'Startups build the fix', featured: true, text: 'Startups pick a problem, follow a roadmap with mentors and hospital partners, and take the solution back to the doctors who asked for it.' },
+const PLATFORM = [
+  { title: 'Problem library', text: 'Funded and open problems, each with its own page.' },
+  { title: 'Funding applications', text: 'Apply, get screened, and get feedback if you need to resubmit.' },
+  { title: 'Stage-gate roadmaps', text: 'Steps, deadlines and resources for each type of product.' },
+  { title: 'Mentor matching', text: 'Recommended experts, paid bookings and built-in chat.' },
+  { title: 'Team workspace', text: 'Invite co-founders and share a live progress log.' },
+  { title: 'Progress view', text: 'Sponsors see each team move, gate by gate.' },
 ];
 
-const HOW_IT_WORKS = [
-  { icon: UserRound, title: 'Create a free account', text: 'Takes under a minute.' },
-  { icon: FileSearch, title: "Pick a doctor's problem", text: 'Browse verified needs and save the ones that fit your team.' },
-  { icon: Layers, title: 'Choose what to build', text: 'Device, digital health, diagnostic and more.' },
-  { icon: CheckCircle2, title: 'Build, fund & pilot', text: 'Work each step with mentors and take it back to the hospital.' },
-];
+const asRole = (value: string | null): LeadRole => {
+  switch (value) {
+    case 'hospital': case 'incubator': case 'us': case 'founder': case 'pharma': return value;
+    default: return 'pharma';
+  }
+};
 
-function parseAmount(text?: string): number {
-  const digits = text?.replace(/[^0-9]/g, '');
-  return digits ? Number(digits) : 0;
-}
-
-export const HomePage: React.FC<HomePageProps> = ({ onGetStarted, onBrowseProblems }) => {
-  const problems = store.getProblems();
-  const fundedCount = problems.filter(p => p.funded).length;
-  const grantPool = problems.reduce((sum, p) => sum + (p.funded ? parseAmount(p.funding_amount) : 0), 0);
-  const categoryCount = store.getCategories().length;
-  const stats = [
-    { value: problems.length, text: `${problems.length}`, label: 'verified problems' },
-    { value: grantPool || fundedCount, text: grantPool ? `$${(grantPool / 1_000_000).toFixed(1)}M` : `${fundedCount}`, label: grantPool ? 'in grant pools' : 'funded problems' },
-    { value: categoryCount, text: `${categoryCount}`, label: 'product pathways' },
-  ].filter(stat => stat.value > 0);
+export const HomePage: React.FC = () => {
+  const [params] = useSearchParams();
+  const routeCount = store.getCategories().length || 21;
+  const initialRole = asRole(params.get('as'));
 
   return (
-    <div className="min-h-screen w-full bg-[var(--nxt-bg)] text-[var(--nxt-ink)] flex flex-col">
-      <header className="sticky top-0 z-40 bg-[var(--nxt-bg)]/85 backdrop-blur-md border-b border-[var(--nxt-line)]">
-        <div className="nxt-container h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-2xl bg-[var(--nxt-mint-strong)] text-white flex items-center justify-center">
-              <Stethoscope className="w-5 h-5" />
-            </div>
-            <span className="font-display font-extrabold text-lg text-[var(--nxt-ink)] tracking-tight">{PLATFORM_NAME}</span>
+    <PublicLayout variant="home">
+      {/* Hero */}
+      <section className="nxt-container pt-16 sm:pt-24 pb-16 sm:pb-20 border-b border-[var(--nxt-line)]">
+        <Eyebrow>NXT Health · Problem first. Funded first.</Eyebrow>
+        <H1 className="mt-7">
+          Pharma has the problem.<br className="hidden sm:block" /> Doctors have the answer.
+        </H1>
+        <p className="mt-8 max-w-[34rem] text-[clamp(1.05rem,1.5vw,1.25rem)] leading-relaxed text-[var(--nxt-ink)]/80">
+          NXT Health connects funded clinical problems with the physician-founders who can solve them, then walks each one step by step to market.
+        </p>
+        <div className="mt-9 flex flex-wrap gap-3">
+          <Btn to="/#start">Seed a problem</Btn>
+          <Btn variant="outline" to="/signup">Join free as a founder</Btn>
+        </div>
+        <p className="mt-12 text-sm text-[var(--nxt-ink-soft)]">Jump to what's in it for you</p>
+        <div className="mt-3 flex flex-wrap gap-2.5">
+          {JUMP_LINKS.map(link => (
+            <a
+              key={link.label}
+              href={link.to}
+              className="rounded-full border border-[var(--nxt-ink)]/70 px-4 py-2 text-[15px] hover:bg-[var(--nxt-bg-soft)] transition-colors"
+              onClick={(e) => { e.preventDefault(); document.getElementById(link.to.slice(1))?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }}
+            >
+              {link.label}
+            </a>
+          ))}
+        </div>
+      </section>
+
+      {/* The difference */}
+      <section className="nxt-container py-20 sm:py-24 border-b border-[var(--nxt-line)]">
+        <H2 className="max-w-[24ch]">Others build companies. We connect the pieces a doctor can't reach.</H2>
+        <div className="mt-12 grid gap-6 md:grid-cols-2">
+          <div className="rounded-[18px] border border-[var(--nxt-line)] bg-[var(--nxt-surface)] p-7 sm:p-9">
+            <Eyebrow>The usual route</Eyebrow>
+            <h3 className="font-display font-bold text-2xl mt-5 tracking-[-0.02em]">Build first. Find the buyer last.</h3>
+            <p className="mt-4 text-[17px] leading-relaxed text-[var(--nxt-ink-soft)]">
+              A founder builds the product, writes the pitch deck, finds an advisor, and only then goes looking for someone to pay for it. By then the time and money are spent.
+            </p>
           </div>
-          <div className="flex items-center gap-2 sm:gap-3">
-            <ThemeToggle />
-            <button
-              id="btn-header-browse"
-              onClick={onBrowseProblems}
-              className="hidden sm:inline-flex px-4 py-2 rounded-full text-sm font-semibold text-[var(--nxt-ink)] hover:bg-[var(--nxt-bg-soft)] transition-colors"
-            >
-              Browse problems
-            </button>
-            <button
-              id="btn-header-login"
-              onClick={onGetStarted}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[var(--nxt-mint-strong)] hover:bg-[var(--nxt-mint-deep)] text-white text-sm font-semibold shadow-sm transition-colors"
-            >
-              Log in / Sign up
-            </button>
+          <div className="rounded-[18px] bg-[#111] text-white p-7 sm:p-9 border border-white/10">
+            <p className="text-[12px] sm:text-[13px] uppercase tracking-[0.14em] text-white/60">The NXT route</p>
+            <h3 className="font-display font-bold text-2xl mt-5 tracking-[-0.02em]">Start with a problem someone will pay to solve.</h3>
+            <p className="mt-4 text-[17px] leading-relaxed text-white/80">
+              Pharma companies and hospitals name the problem and put money behind it. Then we connect a physician-founder to the capital, hospitals and commercial help needed to solve it.
+            </p>
           </div>
         </div>
-      </header>
+        <p className="mt-10 font-semibold text-lg">Problem first. Funded first. Then we build it with the doctor.</p>
+      </section>
 
-      <main className="flex-1">
-        <section className="nxt-container pt-10 sm:pt-16 lg:pt-20 pb-12 lg:pb-20">
-          <Reveal className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--nxt-mint)] text-[var(--nxt-mint-deep)] text-sm font-semibold mb-5">
-            <Stethoscope className="w-4 h-4" />
-            Problems from doctors, solved by startups
-          </Reveal>
-          <Reveal delay={0.05} as="h1" className="font-display text-4xl sm:text-5xl xl:text-[clamp(3rem,4vw,5rem)] xl:whitespace-nowrap font-extrabold leading-[1.08] tracking-tight text-[var(--nxt-ink)]">
-            They see the problem every shift.
-            <span className="block text-[var(--nxt-mint-strong)]">Help them build the fix.</span>
-          </Reveal>
-          <div className="grid lg:grid-cols-2 gap-10 xl:gap-20 items-center">
+      {/* 1 in 5 */}
+      <section className="nxt-container py-16 sm:py-20 border-b border-[var(--nxt-line)]">
+        <div className="grid gap-6 md:grid-cols-[auto_1fr] md:gap-14 items-center">
+          <p className="font-display font-bold text-[clamp(4rem,10vw,8rem)] leading-none tracking-[-0.05em]">1 in 5</p>
+          <div className="max-w-3xl">
+            <p className="text-[clamp(1.15rem,1.9vw,1.6rem)] leading-snug">
+              physicians we speak with has an idea they want to build. Most never start, because they don't know where to begin.
+            </p>
+            <p className="mt-3 text-[var(--nxt-ink-soft)]">We help them check the idea against what the market wants, before they spend the time and the money.</p>
+          </div>
+        </div>
+      </section>
+
+      {/* How it works */}
+      <section id="how-it-works" className="nxt-container py-20 sm:py-24 border-b border-[var(--nxt-line)] scroll-mt-20">
+        <Eyebrow>How it works</Eyebrow>
+        <H2 className="mt-5">From problem to market, one gate at a time.</H2>
+        <div className="mt-12 grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-5">
+          <Step n="01" title="Find a problem">Problems come from doctors, hospitals and pharma. Some already have money behind them. Some are open.</Step>
+          <Step n="02" title="Apply for funding">Each fund screens in its own way. You get a yes, a no, or a clear ask for more.</Step>
+          <Step n="03" title="Pick a roadmap">{routeCount} routes to market, from devices to apps to AI, each with the steps for your country.</Step>
+          <Step n="04" title="Clear each gate">Every step has a deadline and needs evidence. Clear it, and the next one opens.</Step>
+          <Step n="05" title="Get matched help">Mentors, hospitals, lawyers and incubators, recommended for the step you're on.</Step>
+        </div>
+      </section>
+
+      {/* Who it's for */}
+      <section id="who-its-for" className="nxt-container py-20 sm:py-24 border-b border-[var(--nxt-line)] scroll-mt-20">
+        <Eyebrow>Who it's for</Eyebrow>
+        <H2 className="mt-5">Each side gets something different.</H2>
+        <div className="mt-12 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          {AUDIENCES.map(a => (
+            <article key={a.id} id={a.id} className="rounded-[18px] border border-[var(--nxt-line)] bg-[var(--nxt-surface)] p-7 flex flex-col scroll-mt-28">
+              <p className="text-[15px] text-[var(--nxt-ink-soft)]">{a.who}</p>
+              <h3 className="font-display font-bold text-[1.65rem] leading-[1.1] mt-4 tracking-[-0.025em]">{a.title}</h3>
+              <p className="mt-4 text-[15px] leading-relaxed text-[var(--nxt-ink-soft)]">{a.intro}</p>
+              <RuleList items={a.points} className="mt-5 mb-7" />
+              <Btn to={a.to} full className="mt-auto">{a.cta}</Btn>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      {/* What's inside */}
+      <section className="nxt-container py-20 sm:py-24 border-b border-[var(--nxt-line)]">
+        <H2>What's inside the platform</H2>
+        <div className="mt-12 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+          {PLATFORM.map(item => (
+            <div key={item.title} className="border-t border-[var(--nxt-ink)] pt-4">
+              <h3 className="font-bold text-lg">{item.title}</h3>
+              <p className="mt-2 text-[15px] text-[var(--nxt-ink-soft)] leading-relaxed">{item.text}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Pricing */}
+      <section id="pricing" className="nxt-container py-20 sm:py-24 scroll-mt-20">
+        <Eyebrow>Pricing</Eyebrow>
+        <H2 className="mt-5">Free to start. At cost to build.</H2>
+        <p className="mt-4 text-lg text-[var(--nxt-ink-soft)]">Founders join free and pay at cost once they are ready to build.</p>
+        <div className="mt-10 grid gap-6 lg:grid-cols-3">
+          <PriceCard label="Community" price="Free" note="always" points={['Problem headlines', 'Community and podcasts', 'Monthly founder town hall', 'Starter templates']} cta="Join free" to="/signup" outline />
+          <PriceCard label="Founder member" price="₹2,000" note="per month · about $22 · at cost" points={['Full problem statements', 'Apply for funded problems', 'Stage-gate roadmaps and resources', 'Founder and co-founder workspace']} cta="Become a member" to="/signup" featured />
+          <PriceCard label="Add-ons" price="₹22,500" note="per month · about $250 · project coordinator" points={['A coordinator who keeps you on track', 'Mentor sessions, priced by the mentor', 'From free to $500 an hour']} cta="Find an expert" to="/experts" outline />
+        </div>
+
+        <div className="mt-20">
+          <Eyebrow>For pharma and hospitals</Eyebrow>
+          <h3 className="font-display font-bold text-[clamp(1.5rem,2.6vw,2.25rem)] tracking-[-0.03em] mt-4">Start with one problem. Grow into a pipeline.</h3>
+          <div className="mt-10 grid gap-6 lg:grid-cols-3">
+            <PriceCard label="Seed a problem" price="₹5–10 lakh" note="one grant · about $6–11K · plus 15% management fee" points={['One funded problem statement', 'Screened applicants', 'A gate-by-gate progress view']} cta="Seed a problem" to="/?as=pharma#start" featured />
+            <PriceCard label="Sponsor" price="₹45 lakh" note="per year · about $50K" points={['Two funded problems a year', "Validation at your site or a partner's", 'Quarterly pipeline briefings', 'Speaking slot at the founder town hall']} cta="Talk to us" to="/?as=pharma#start" outline />
+            <PriceCard label="Co-invest" price="₹90 lakh" note="per year · about $100K" points={['Everything in Sponsor', 'Pro-rata rights in cohort companies', 'Entry on pre-agreed terms']} cta="Talk to us" to="/?as=pharma#start" outline />
+          </div>
+        </div>
+      </section>
+
+      {/* Start */}
+      <section id="start" className="bg-[#111] text-white scroll-mt-16">
+        <div className="nxt-container py-20 sm:py-24 grid gap-12 lg:grid-cols-2 lg:gap-24 items-start">
           <div>
-            <Reveal delay={0.1} as="p" className="text-base sm:text-lg text-[var(--nxt-ink-soft)] leading-relaxed mt-5 max-w-xl">
-              Doctors bring us the problems they face every day. {PLATFORM_NAME} verifies them and matches
-              them with startups that build the solution — with grant funding, a step-by-step roadmap and a path to a hospital pilot.
-            </Reveal>
-            <Reveal delay={0.15} className="flex flex-col sm:flex-row gap-3 mt-8">
-              <motion.button
-                id="btn-hero-get-started"
-                whileHover={{ y: -2 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={onGetStarted}
-                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-[var(--nxt-mint-strong)] hover:bg-[var(--nxt-mint-deep)] text-white text-base font-semibold shadow-lg shadow-[var(--nxt-mint-strong)]/25 transition-colors"
-              >
-                Start building — it's free <ArrowRight className="w-4 h-4" />
-              </motion.button>
-              <button
-                id="btn-hero-browse"
-                onClick={onBrowseProblems}
-                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full border border-[var(--nxt-line)] bg-[var(--nxt-surface)] hover:bg-[var(--nxt-bg-soft)] text-[var(--nxt-ink)] text-base font-semibold transition-colors"
-              >
-                Browse problems
-              </button>
-            </Reveal>
-            {stats.length > 0 && (
-              <Reveal delay={0.2} className="flex gap-10 mt-10 pt-6 border-t border-[var(--nxt-line)] max-w-lg">
-                {stats.map(stat => (
-                  <div key={stat.label}>
-                    <p className="font-display text-2xl sm:text-3xl font-extrabold text-[var(--nxt-ink)]">{stat.text}</p>
-                    <p className="text-sm text-[var(--nxt-ink-soft)]">{stat.label}</p>
-                  </div>
-                ))}
-              </Reveal>
-            )}
+            <H2 className="max-w-[14ch]">Name the problem. We'll bring the doctor.</H2>
+            <p className="mt-6 text-xl leading-relaxed text-white/85 max-w-xl">
+              Seed one funded problem and watch physician-founders take it through each gate. Or join free and find a problem worth solving.
+            </p>
+            <p className="mt-6 text-white/60">
+              Already a founder? <Link to="/signup" className="underline underline-offset-2 text-white">Create a free account</Link>.
+            </p>
           </div>
-          <Reveal delay={0.1} className="relative">
-            <HeroIllustration className="w-full max-w-xl mx-auto" />
-          </Reveal>
-          </div>
-        </section>
-
-        <section className="bg-[var(--nxt-surface)] border-y border-[var(--nxt-line)]">
-          <div className="nxt-container py-20">
-            <Reveal className="text-center">
-              <h2 className="font-display text-2xl sm:text-3xl font-bold lg:whitespace-nowrap">Doctors bring the problems. Startups build the solutions.</h2>
-              <p className="text-base text-[var(--nxt-ink-soft)] mt-3 lg:whitespace-nowrap">{PLATFORM_NAME} sits in the middle — verifying each need, funding the work and connecting both sides until it reaches a pilot.</p>
-            </Reveal>
-            <RevealGroup className="grid md:grid-cols-3 gap-6 lg:gap-8 mt-12" stagger={0.06}>
-              {PERSONAS.map(p => (
-                <RevealItem key={p.title}>
-                  <div className={`h-full rounded-3xl border p-6 ${p.featured ? 'bg-[var(--nxt-mint)] border-[var(--nxt-mint-strong)]/40' : 'bg-[var(--nxt-bg)] border-[var(--nxt-line)]'}`}>
-                    <div className="flex items-center justify-between mb-4">
-                      <span className={`w-12 h-12 rounded-2xl flex items-center justify-center ${p.featured ? 'bg-[var(--nxt-mint-strong)] text-white' : 'bg-[var(--nxt-mint)] text-[var(--nxt-mint-strong)]'}`}>
-                        <p.icon className="w-6 h-6" />
-                      </span>
-                      <span className={`text-xs font-bold uppercase tracking-wider ${p.featured ? 'text-[var(--nxt-mint-deep)]' : 'text-[var(--nxt-ink-soft)]'}`}>{p.tag}</span>
-                    </div>
-                    <h3 className="font-display text-lg font-bold">{p.title}</h3>
-                    <p className="text-sm text-[var(--nxt-ink-soft)] leading-relaxed mt-2">{p.text}</p>
-                  </div>
-                </RevealItem>
-              ))}
-            </RevealGroup>
-          </div>
-        </section>
-
-        <section className="nxt-container py-20 lg:py-24">
-          <Reveal>
-            <p className="text-sm font-bold uppercase tracking-wider text-[var(--nxt-mint-strong)]">What you get</p>
-            <h2 className="font-display text-2xl sm:text-3xl font-bold mt-2 lg:whitespace-nowrap">Everything you need to solve a real clinical problem</h2>
-          </Reveal>
-          <RevealGroup className="grid sm:grid-cols-2 2xl:grid-cols-4 gap-6 lg:gap-8 mt-10" stagger={0.06}>
-            {FEATURES.map(f => (
-              <RevealItem key={f.title}>
-                <div className="h-full rounded-3xl bg-[var(--nxt-surface)] border border-[var(--nxt-line)] p-6 flex 2xl:flex-col gap-5 items-center 2xl:items-start hover:shadow-md transition-shadow">
-                  <SpotIllustration kind={f.kind} className="w-28 sm:w-32 shrink-0" />
-                  <div>
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <f.icon className="w-5 h-5 text-[var(--nxt-mint-strong)]" />
-                      <h3 className="font-display text-lg font-bold">{f.title}</h3>
-                    </div>
-                    <p className="text-sm text-[var(--nxt-ink-soft)] leading-relaxed">{f.description}</p>
-                  </div>
-                </div>
-              </RevealItem>
-            ))}
-          </RevealGroup>
-        </section>
-
-        <section className="nxt-container pb-20 lg:pb-24">
-          <Reveal className="rounded-3xl bg-[var(--nxt-ink-fixed)] border border-white/10 text-white p-8 sm:p-12">
-            <h2 className="font-display text-2xl sm:text-3xl font-bold">How it works</h2>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
-              {HOW_IT_WORKS.map((step, i) => (
-                <div key={step.title}>
-                  <div className="flex items-center gap-3">
-                    <span className="w-12 h-12 rounded-2xl bg-white/10 text-[var(--nxt-mint-strong)] flex items-center justify-center">
-                      <step.icon className="w-6 h-6" />
-                    </span>
-                    <span className="font-display text-sm font-bold text-white/40">0{i + 1}</span>
-                  </div>
-                  <h3 className="font-display text-lg font-bold mt-4">{step.title}</h3>
-                  <p className="text-sm text-white/65 mt-1">{step.text}</p>
-                </div>
-              ))}
-            </div>
-          </Reveal>
-        </section>
-
-        <section className="nxt-container pb-20 lg:pb-24">
-          <div className="flex items-end justify-between gap-4 mb-8">
-            <Reveal>
-              <p className="text-sm font-bold uppercase tracking-wider text-[var(--nxt-mint-strong)]">Open right now</p>
-              <h2 className="font-display text-2xl sm:text-3xl font-bold mt-2">Problems doctors want solved</h2>
-            </Reveal>
-            <button onClick={onBrowseProblems} className="hidden sm:inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--nxt-mint-strong)] hover:underline">
-              See all {problems.length} <ArrowRight className="w-4 h-4" />
-            </button>
-          </div>
-          <RevealGroup className="grid md:grid-cols-3 gap-6 lg:gap-8" stagger={0.06}>
-            {problems.slice(0, 3).map(p => {
-              const DeptIcon = departmentIcon(p.department);
-              return (
-                <RevealItem key={p.id}>
-                  <button
-                    onClick={onBrowseProblems}
-                    className="w-full h-full text-left rounded-3xl bg-[var(--nxt-surface)] border border-[var(--nxt-line)] p-6 hover:shadow-md hover:-translate-y-0.5 transition-all"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="w-11 h-11 rounded-2xl bg-[var(--nxt-mint)] text-[var(--nxt-mint-strong)] flex items-center justify-center">
-                        <DeptIcon className="w-5 h-5" />
-                      </span>
-                      {p.funded && (
-                        <span className="inline-flex items-center gap-1 text-xs font-bold text-[var(--nxt-mint-deep)] bg-[var(--nxt-mint)] px-2.5 py-1 rounded-full">
-                          <BadgeDollarSign className="w-3.5 h-3.5" /> Funded
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs font-semibold text-[var(--nxt-ink-soft)] mt-4">{p.department}</p>
-                    <h3 className="font-display text-base font-bold leading-snug mt-1">{p.title}</h3>
-                  </button>
-                </RevealItem>
-              );
-            })}
-          </RevealGroup>
-        </section>
-
-        <section className="nxt-container pb-24">
-          <Reveal className="nxt-hero-glow rounded-3xl border border-[var(--nxt-line)] p-8 sm:p-12 flex flex-col md:flex-row items-center gap-8">
-            <div className="flex-1 text-center md:text-left">
-              <h2 className="font-display text-2xl sm:text-3xl font-bold">Ready to build what doctors are asking for?</h2>
-              <p className="text-base text-[var(--nxt-ink-soft)] mt-3 max-w-lg">
-                Browsing is free. Members unlock full roadmaps, mentors, resources and grant applications.
-              </p>
-              <button
-                onClick={onGetStarted}
-                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 mt-6 rounded-full bg-[var(--nxt-mint-strong)] hover:bg-[var(--nxt-mint-deep)] text-white font-semibold transition-colors"
-              >
-                Create free account <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-          </Reveal>
-        </section>
-      </main>
-
-      <footer className="border-t border-[var(--nxt-line)] bg-[var(--nxt-surface)]">
-        <div className="nxt-container py-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-[var(--nxt-ink-soft)]">
-          <p><span className="font-display font-bold text-[var(--nxt-ink)]">{PLATFORM_NAME}</span> · From a doctor's problem to a hospital pilot.</p>
-          <div className="flex items-center gap-5">
-            <button onClick={onBrowseProblems} className="hover:text-[var(--nxt-ink)] transition-colors">Browse problems</button>
-            <button onClick={onGetStarted} className="font-semibold text-[var(--nxt-mint-strong)] hover:underline">Log in / Sign up</button>
+          <div className="rounded-[18px] bg-white p-6 sm:p-8">
+            <InquiryForm kind="lead" initialRole={initialRole} />
           </div>
         </div>
-      </footer>
-    </div>
+      </section>
+    </PublicLayout>
   );
 };
+
+const PriceCard: React.FC<{
+  label: string; price: string; note: string; points: string[]; cta: string; to: string; featured?: boolean; outline?: boolean;
+}> = ({ label, price, note, points, cta, to, featured, outline }) => (
+  <article className={`rounded-[18px] border bg-[var(--nxt-surface)] p-7 flex flex-col ${featured ? 'border-[var(--nxt-ink)]' : 'border-[var(--nxt-line)]'}`}>
+    <Eyebrow>{label}</Eyebrow>
+    <p className="font-display font-bold text-[2.5rem] leading-none tracking-[-0.04em] mt-6">{price}</p>
+    <p className="mt-2 text-sm text-[var(--nxt-ink-soft)]">{note}</p>
+    <RuleList items={points} className="mt-6 mb-8" />
+    <Btn to={to} variant={outline ? 'outline' : 'solid'} full className="mt-auto">{cta}</Btn>
+  </article>
+);

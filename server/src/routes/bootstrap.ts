@@ -3,11 +3,17 @@ import { isAdmin, scopeKeyOf, UserDoc } from '../auth.js';
 import type { Database } from '../db.js';
 import { out, outAll } from '../db.js';
 import { threadQueryFor } from './threads.js';
-import { CONSULTATION_RATE_USD } from './consultations.js';
 
 const DEFAULT_SLACK_URL = 'https://join.slack.com/';
 export const PREVIEW_STEPS = 3;
 export const PREVIEW_RESOURCES = 6;
+
+/** The private video-call link is only for the expert themselves and admins; everyone else gets it with a paid booking. */
+function withoutPrivate<T extends Record<string, unknown>>(profile: T, keep: boolean): Omit<T, 'meeting_url'> | T {
+  if (keep) return profile;
+  const { meeting_url: _link, ...rest } = profile;
+  return rest;
+}
 
 export function bootstrapRouter(database: Database): Router {
   const r = Router();
@@ -122,12 +128,11 @@ export function bootstrapRouter(database: Database): Router {
       mentors: canSeeMentors
         ? mentorUsers.map(m => {
           const profile = mentorProfiles.find(p => p._id === m._id);
-          return { ...(profile ? out(profile) : {}), id: m._id, name: m.name, user_background: m.background, active_mentees: acceptedCounts[m._id] || 0, has_profile: !!profile };
+          return { ...(profile ? withoutPrivate(out(profile)!, admin || m._id === user._id) : {}), id: m._id, name: m.name, user_background: m.background, active_mentees: acceptedCounts[m._id] || 0, has_profile: !!profile };
         })
         : [],
       mentor_requests: outAll(mentorRequests),
       consultations: outAll(consultations),
-      consultation_rate_usd: CONSULTATION_RATE_USD,
     });
 
     if (admin) {

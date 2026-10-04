@@ -97,6 +97,87 @@ const USERS: DemoUser[] = [
 ];
 
 interface JourneyStep { step: string; status: 'done' | 'in_progress' | 'blocked'; started: number; completed?: number; done: number; blocker?: string; log?: string[] }
+const EXPERT_USERS: DemoUser[] = [
+  ['ravi', 'Ravi Menon', 'Mumbai, India'],
+  ['elena', 'Elena Petrova', 'London, UK'],
+  ['omar', 'Omar Haddad', 'Dubai, UAE'],
+  ['grace', 'Grace Lindqvist', 'Stockholm, Sweden'],
+  ['tomas', 'Tomás Reyes', 'Madrid, Spain'],
+  ['nadia', 'Nadia Iqbal', 'Pune, India'],
+].map(([key, name, location]) => ({
+  key, email: `${key}@example.com`, name, membership: 'none' as Membership,
+  profile: { location, created_at: daysAgo(120), last_active_at: daysAgo(2), background: 'clinical' },
+}));
+USERS.push(...EXPERT_USERS);
+
+const WEEKDAYS_ALL = [1, 2, 3, 4, 5];
+/** Fictional experts for the public directory; roles mirror the kinds of people the directory is meant to hold. */
+const EXPERTS: Record<string, Record<string, unknown>> = {
+  hannah: {
+    headline: 'Took a Class II device from prototype to EU & US clearance',
+    bio: 'Second-time founder (SteriVue). Happy to help with hospital pilots, regulatory strategy and first fundraising rounds.',
+    topics: ['US FDA 510(k)', 'CE Mark', 'First fundraising round'],
+    expert_areas: ['Medical devices', 'Regulatory', 'Market access'],
+    fits_gates: [3, 4], rate_usd: 200, session_times: ['10:00', '11:30', '15:00', '17:30'],
+    expertise_stages: ['Regulatory', 'Clinical Validation', 'Commercialization'], category_ids: ['cat-1'], background: 'business', availability: '2 calls a month',
+    book_when: ['Plan the evidence a regulator will ask for', 'Choose between the EU and US route first', 'Prepare a first fundraising conversation'],
+  },
+  ravi: {
+    headline: 'Medical device regulatory lead',
+    bio: 'Medical device regulatory lead. Has taken devices through CDSCO, the US FDA and CE Mark, from classification to final submission.',
+    topics: ['CDSCO', 'US FDA', 'CE Mark'],
+    expert_areas: ['Medical devices', 'Regulatory'],
+    fits_gates: [3, 4], rate_usd: 150, session_times: ['10:00', '11:30', '15:00', '17:30'],
+    expertise_stages: ['Regulatory'], category_ids: ['cat-1'], background: 'science', availability: 'Weekday mornings',
+    book_when: ['Work out your device class and the route that follows from it', 'Plan the evidence a regulator will ask for', 'Check a regulatory file before you submit it', 'Decide whether India, the GCC or the US comes first'],
+  },
+  elena: {
+    headline: 'Clinical validation and study design',
+    bio: 'Clinical validation and study design. Has run hospital pilots and built the evidence packages that buyers ask for.',
+    topics: ['Hospital pilots', 'Evidence generation', 'KOL engagement'],
+    expert_areas: ['Clinical validation', 'Hospital pilots'],
+    fits_gates: [3, 4], rate_usd: 180, session_times: ['09:30', '14:00', '16:30'],
+    expertise_stages: ['Clinical Validation'], category_ids: ['cat-1', 'cat-2'], background: 'clinical', availability: 'Weekdays',
+    book_when: ['Design a pilot a hospital will actually sign', 'Choose endpoints and a sample size', 'Line up a clinical champion'],
+  },
+  omar: {
+    headline: 'Grants and non-dilutive funding',
+    bio: 'Grants and non-dilutive funding. Knows which international grants are open to Indian teams and what reviewers look for.',
+    topics: ['International grants open to India', 'Applications'],
+    expert_areas: ['Funding and grants'],
+    fits_gates: [2], rate_usd: 0, session_times: ['11:00', '15:30'],
+    expertise_stages: ['Discovery'], category_ids: ['cat-1'], background: 'business', availability: 'Two sessions a week',
+    book_when: ['Pick the right grant for your stage', 'Review an application before you submit', 'Plan a resubmission after feedback'],
+  },
+  grace: {
+    headline: 'UK and EU market entry',
+    bio: 'UK and EU market entry. Has validated products in India and won first contracts abroad.',
+    topics: ['Validation in India', 'First contracts abroad'],
+    expert_areas: ['Market access', 'Medical devices'],
+    fits_gates: [3, 5], rate_usd: 120, session_times: ['12:00', '17:00'],
+    expertise_stages: ['Commercialization'], category_ids: ['cat-1'], background: 'business', availability: 'Weekday afternoons',
+    book_when: ['Choose your first overseas market', 'Find a launch partner', 'Plan UK and EU registration'],
+  },
+  tomas: {
+    headline: 'AI and digital health product',
+    bio: 'AI and digital health product. Specialises in taking software to market as a medical device.',
+    topics: ['Software as a medical device', 'Clinical AI'],
+    expert_areas: ['AI and digital health', 'Regulatory'],
+    fits_gates: [3, 4], rate_usd: 220, session_times: ['10:30', '14:30', '18:00'],
+    expertise_stages: ['Software Engineering', 'Regulatory'], category_ids: ['cat-2'], background: 'engineering', availability: 'Weekdays',
+    book_when: ['Decide whether your software is a medical device', 'Plan clinical validation for an AI model', 'Choose a data and privacy approach'],
+  },
+  nadia: {
+    headline: 'Hospital operator and innovation lead',
+    bio: 'Hospital operator and innovation lead. Knows how pilots, procurement and vendor onboarding really work inside a hospital.',
+    topics: ['Pilots', 'Procurement', 'Vendor onboarding'],
+    expert_areas: ['Hospital pilots', 'Market access'],
+    fits_gates: [4, 5], rate_usd: 100, session_times: ['09:00', '13:00', '16:00'],
+    expertise_stages: ['Commercialization'], category_ids: ['cat-1', 'cat-2'], background: 'clinical', availability: 'Weekdays',
+    book_when: ['Get a pilot approved inside a hospital', 'Understand how procurement decides', 'Prepare for vendor onboarding'],
+  },
+};
+
 const JOURNEYS: { user: string; problem: string; category: string; steps: JourneyStep[] }[] = [
   { user: 'marcus', problem: 'prob-1', category: 'cat-1', steps: [
     { step: 'step-dev-1', status: 'done', started: 185, completed: 140, done: 5 },
@@ -206,7 +287,7 @@ for (const u of USERS) {
     name: u.name,
     role: u.admin ? 'admin' : 'member',
     membership_status: u.membership,
-    is_mentor: u.key === 'hannah',
+    is_mentor: u.key in EXPERTS,
     team_id: null,
     saved_problem_ids: [],
     demo: true,
@@ -336,19 +417,16 @@ await col('stepRatings').insertMany(RATINGS.map(([who, step, score, comment, d],
 })));
 await col('resourceViews').insertMany(VIEWS.map(([who, res, d], i) => ({ _id: `view-demo-${i + 1}`, user_id: uid[who], resource_id: res, viewed_at: daysAgo(d) })));
 
-await col('mentorProfiles').insertOne({
-  _id: uid.hannah,
-  headline: 'Took a Class II device from prototype to EU & US clearance',
-  bio: 'Second-time founder (SteriVue). Happy to help with hospital pilots, regulatory strategy and first fundraising rounds.',
-  expertise_stages: ['Regulatory', 'Clinical Validation', 'Commercialization'],
-  category_ids: ['cat-1'],
-  background: 'business',
-  availability: '2 calls a month',
+await col('mentorProfiles').insertMany(Object.entries(EXPERTS).map(([key, profile]) => ({
+  _id: uid[key],
   capacity: 3,
   accepting: true,
+  session_days: WEEKDAYS_ALL,
+  meeting_url: 'https://meet.example.com/nxt-demo',
   updated_at: daysAgo(30),
-});
-console.log('✓ ratings, resource views and a mentor (Hannah Berg)');
+  ...profile,
+})));
+console.log(`✓ ratings, resource views and ${Object.keys(EXPERTS).length} experts for the public directory`);
 
 await client.close();
 
@@ -356,6 +434,6 @@ console.log('\nDemo accounts (email already verified):');
 console.log(`  Admin     admin@example.com  /  ${ADMIN_PASSWORD}`);
 console.log(`  Members   password for all:  ${MEMBER_PASSWORD}`);
 for (const u of USERS.filter(u => !u.admin)) {
-  const label = u.membership === 'active' ? (u.key === 'hannah' ? 'member + mentor' : 'member') : u.membership === 'requested' ? 'awaiting approval' : 'free (not a member)';
+  const label = u.key in EXPERTS && u.membership !== 'active' ? 'expert (free account)' : u.membership === 'active' ? (u.key in EXPERTS ? 'member + expert' : 'member') : u.membership === 'requested' ? 'awaiting approval' : 'free (not a member)';
   console.log(`    ${u.email.padEnd(20)} ${u.name.padEnd(16)} ${label}`);
 }

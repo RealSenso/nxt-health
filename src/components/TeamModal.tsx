@@ -51,7 +51,7 @@ export const TeamModal: React.FC<TeamModalProps> = ({ isOpen, onClose, currentUs
       setError(result.error);
     } else {
       setSuccess(result.registered
-        ? `Invitation sent. ${inviteEmail} will see it next time they open NxT Health.`
+        ? `Invitation sent. ${inviteEmail} will see it next time they open NXT Health.`
         : `Invitation saved. ${inviteEmail} will see it as soon as they sign up with that email.`);
       setInviteEmail('');
     }
@@ -192,7 +192,7 @@ export const TeamModal: React.FC<TeamModalProps> = ({ isOpen, onClose, currentUs
               </button>
             </div>
             <p className="text-[11px] text-[var(--nxt-ink-soft)] mt-1.5">
-              They'll see the invitation in NxT Health and can accept or decline. If they haven't signed up yet, it waits for them.
+              They'll see the invitation in NXT Health and can accept or decline. If they haven't signed up yet, it waits for them.
             </p>
           </form>
 

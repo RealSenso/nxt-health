@@ -127,7 +127,7 @@ const ThreadView: React.FC<{ threadId: string; currentUser: User; onBack: () => 
         </button>
         <div className="min-w-0">
           <h2 className="font-display text-base font-bold text-[var(--nxt-ink)] truncate">{thread?.subject || 'Conversation'}</h2>
-          {thread?.admin_visible && <p className="text-xs text-[var(--nxt-ink-soft)]">Visible to your team and the NxT Health review team</p>}
+          {thread?.admin_visible && <p className="text-xs text-[var(--nxt-ink-soft)]">Visible to your team and the NXT Health review team</p>}
         </div>
       </header>
 
@@ -141,7 +141,7 @@ const ThreadView: React.FC<{ threadId: string; currentUser: User; onBack: () => 
                 {!mine && (
                   <p className="text-xs font-bold mb-0.5 flex items-center gap-1">
                     {m.author_name}
-                    {m.author_is_admin && <ShieldCheck className="w-3 h-3 text-[var(--nxt-mint-strong)]" aria-label="NxT Health team" />}
+                    {m.author_is_admin && <ShieldCheck className="w-3 h-3 text-[var(--nxt-mint-strong)]" aria-label="NXT Health team" />}
                   </p>
                 )}
                 <p className="text-sm whitespace-pre-wrap break-words">{m.body}</p>

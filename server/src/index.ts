@@ -16,4 +16,4 @@ const app = createApp({
 });
 
 const port = Number(process.env.PORT) || 8080;
-app.listen(port, () => console.log(`NxT Health API listening on :${port}`));
+app.listen(port, () => console.log(`NXT Health API listening on :${port}`));

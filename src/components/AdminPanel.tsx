@@ -5,7 +5,7 @@ import {
   Shield, Plus, Trash2, Edit, Check, X, Clock, CheckCircle2,
   XCircle, ListFilter, AlertCircle, Hospital,
   Users, FolderPlus, FileText, ChevronDown, Layers,
-  BarChart3, TrendingUp, Paperclip, Download, MessageSquareWarning, RefreshCw
+  BarChart3, TrendingUp, Paperclip, Download, MessageSquareWarning, RefreshCw, Inbox
 } from 'lucide-react';
 import {
   ProblemStatement, FundingApplication, Category, Step, Resource,
@@ -16,6 +16,7 @@ import { store } from '../services/store';
 import { SimpleBarChart, SimpleLineChart, HBarList } from './ui/Charts';
 import { BusinessAnalytics } from './admin/BusinessAnalytics';
 import { AdminMembers } from './admin/AdminMembers';
+import { AdminInquiries } from './admin/AdminInquiries';
 import { DiscussButton } from './ui/DiscussButton';
 
 interface AdminPanelProps {
@@ -24,11 +25,11 @@ interface AdminPanelProps {
 
 const TAB_TO_SECTION: Record<AdminTab, string> = {
   applications: 'funding', problems: 'problems', categories: 'categories', steps: 'steps',
-  resources: 'resources', submissions: 'evidence', users: 'members', analytics: 'analytics',
+  resources: 'resources', submissions: 'evidence', users: 'members', analytics: 'analytics', inquiries: 'inquiries',
 };
 const SECTION_TO_TAB = Object.fromEntries(Object.entries(TAB_TO_SECTION).map(([tab, section]) => [section, tab])) as Record<string, AdminTab>;
 
-type AdminTab = 'applications' | 'problems' | 'categories' | 'steps' | 'resources' | 'users' | 'analytics' | 'submissions';
+type AdminTab = 'applications' | 'problems' | 'categories' | 'steps' | 'resources' | 'users' | 'analytics' | 'submissions' | 'inquiries';
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser }) => {
   const navigate = useNavigate();
@@ -226,6 +227,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser }) => {
     { id: 'submissions', label: `Step Submissions (${allSubmissions.filter(s => s.status === 'Submitted').length} Pending)`, icon: Paperclip },
     { id: 'users', label: `Members (${allUsers.filter(u => u.membership_status === 'requested').length} requests)`, icon: Users },
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+    { id: 'inquiries', label: 'Enquiries', icon: Inbox },
   ];
 
   return (
@@ -1236,6 +1238,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser }) => {
       )}
 
       {adminTab === 'users' && <AdminMembers currentUser={currentUser} />}
+
+      {adminTab === 'inquiries' && <AdminInquiries />}
 
       {adminTab === 'submissions' && (
         <div className="space-y-4">

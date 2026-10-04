@@ -6,7 +6,15 @@ import { out } from '../db.js';
 import { newId, notify, now, parse } from '../util.js';
 import { createThread } from './threads.js';
 
-const profileSchema = z.object({
+export const EXPERT_AREAS = [
+  'Medical devices', 'Clinical validation', 'Regulatory', 'Hospital pilots', 'Market access', 'Funding and grants', 'AI and digital health',
+] as const;
+
+/** Only https links: these end up in <a href> and <img src>. */
+const httpsUrl = z.string().trim().max(500).refine(u => /^https:\/\/[^\s]+$/i.test(u), 'must be an https:// link').or(z.literal(''));
+const clockTime = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'use HH:MM');
+
+export const profileSchema = z.object({
   headline: z.string().trim().max(140),
   bio: z.string().trim().max(2000),
   expertise_stages: z.array(z.string().max(60)).max(20),
@@ -15,6 +23,17 @@ const profileSchema = z.object({
   availability: z.string().trim().max(200),
   capacity: z.number().int().min(1).max(50),
   accepting: z.boolean(),
+  // Public expert listing and paid sessions
+  rate_usd: z.number().min(0).max(500).optional(),
+  photo_url: httpsUrl.optional(),
+  topics: z.array(z.string().trim().min(1).max(40)).max(8).optional(),
+  expert_areas: z.array(z.enum(EXPERT_AREAS)).max(EXPERT_AREAS.length).optional(),
+  fits_gates: z.array(z.number().int().min(1).max(5)).max(5).optional(),
+  book_when: z.array(z.string().trim().min(1).max(160)).max(6).optional(),
+  session_days: z.array(z.number().int().min(0).max(6)).max(7).optional(),
+  session_times: z.array(clockTime).max(8).optional(),
+  /** Private: only shared with a founder once they have paid for a session. */
+  meeting_url: httpsUrl.optional(),
 }).strict();
 
 export function mentorsRouter(database: Database): Router {

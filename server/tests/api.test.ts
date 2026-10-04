@@ -218,35 +218,133 @@ describe('uploads and profiles', () => {
     await request(app).get(`/api/threads/${accepted.body.request.thread_id}/messages`).set('Authorization', token('boss')).expect(404);
   });
 
-  it('opens a consultation chat only after the founder pays, at a price set by the server', async () => {
-    await admin('boss');
-    await member('mentor');
-    await member('founder');
-    await member('other');
-    await signup('freeloader');
-    await request(app).patch('/api/admin/users/mentor').set('Authorization', token('boss')).send({ is_mentor: true }).expect(200);
+  describe('expert sessions', () => {
+    const profile = (extra: Record<string, unknown> = {}) => ({
+      headline: 'Regulatory lead', bio: 'CDSCO, FDA and CE.', expertise_stages: ['Regulatory'], category_ids: ['cat-1'],
+      availability: 'Weekdays', capacity: 3, accepting: true, rate_usd: 200, expert_areas: ['Regulatory'],
+      session_days: [0, 1, 2, 3, 4, 5, 6], session_times: ['10:00', '15:00'], meeting_url: 'https://meet.example.com/abc', ...extra,
+    });
 
-    await request(app).post('/api/consultations').set('Authorization', token('freeloader')).send({ mentor_uid: 'mentor', hours: 1, topic: 'Hi' }).expect(403);
-    await request(app).post('/api/consultations').set('Authorization', token('founder')).send({ mentor_uid: 'other', hours: 1, topic: 'Hi' }).expect(400);
-    await request(app).post('/api/consultations').set('Authorization', token('founder')).send({ mentor_uid: 'mentor', hours: 9, topic: 'Hi' }).expect(400);
+    async function setupExpert(uid = 'mentor', extra: Record<string, unknown> = {}) {
+      await request(app).patch(`/api/admin/users/${uid}`).set('Authorization', token('boss')).send({ is_mentor: true }).expect(200);
+      await request(app).put('/api/mentor/profile').set('Authorization', token(uid)).send(profile(extra)).expect(200);
+    }
 
-    const booked = await request(app).post('/api/consultations').set('Authorization', token('founder'))
-      .send({ mentor_uid: 'mentor', hours: 2, topic: 'Pre-Sub strategy', amount_usd: 1, status: 'paid' }).expect(201);
-    expect(booked.body.consultation).toMatchObject({ status: 'awaiting_payment', amount_usd: 400 });
-    expect(booked.body.consultation.thread_id).toBeUndefined();
-    const id = booked.body.consultation.id;
+    const firstSlot = async (uid = 'mentor') => (await request(app).get(`/api/public/experts/${uid}`).expect(200)).body.slots[0] as string;
 
-    await request(app).post(`/api/consultations/${id}/pay`).set('Authorization', token('other')).expect(404);
-    const paid = await request(app).post(`/api/consultations/${id}/pay`).set('Authorization', token('founder')).expect(200);
-    expect(paid.body.consultation.status).toBe('paid');
-    const threadId = paid.body.consultation.thread_id;
-    await request(app).get(`/api/threads/${threadId}/messages`).set('Authorization', token('mentor')).expect(200);
-    await request(app).get(`/api/threads/${threadId}/messages`).set('Authorization', token('other')).expect(404);
+    it('lists experts publicly without leaking the private call link, and only while they take bookings', async () => {
+      await admin('boss');
+      await member('mentor');
+      await setupExpert();
+      const list = await request(app).get('/api/public/experts').expect(200);
+      expect(list.body.experts).toHaveLength(1);
+      expect(list.body.experts[0]).toMatchObject({ id: 'mentor', rate_usd: 200, open_slots: expect.any(Number) });
+      expect(JSON.stringify(list.body)).not.toContain('meet.example.com');
+      const detail = await request(app).get('/api/public/experts/mentor').expect(200);
+      expect(detail.body.slots.length).toBeGreaterThan(0);
+      expect(JSON.stringify(detail.body)).not.toContain('meet.example.com');
 
-    const again = await request(app).post(`/api/consultations/${id}/pay`).set('Authorization', token('founder')).expect(200);
-    expect(again.body.consultation.thread_id).toBe(threadId);
-    await request(app).post(`/api/consultations/${id}/cancel`).set('Authorization', token('founder')).expect(400);
-    const mentorView = await request(app).get('/api/bootstrap').set('Authorization', token('mentor')).expect(200);
-    expect(mentorView.body.consultations).toHaveLength(1);
+      // Members see mentor data in their bootstrap, but never another mentor's call link.
+      await member('other');
+      const other = await request(app).get('/api/bootstrap').set('Authorization', token('other')).expect(200);
+      expect(JSON.stringify(other.body.mentors)).not.toContain('meet.example.com');
+      const own = await request(app).get('/api/bootstrap').set('Authorization', token('mentor')).expect(200);
+      expect(JSON.stringify(own.body.mentors)).toContain('meet.example.com');
+
+      await request(app).put('/api/mentor/profile').set('Authorization', token('mentor')).send(profile({ accepting: false })).expect(200);
+      expect((await request(app).get('/api/public/experts').expect(200)).body.experts).toHaveLength(0);
+      await request(app).get('/api/public/experts/mentor').expect(404);
+    });
+
+    it('rejects unsafe links and out-of-range rates on an expert profile', async () => {
+      await admin('boss');
+      await member('mentor');
+      await request(app).patch('/api/admin/users/mentor').set('Authorization', token('boss')).send({ is_mentor: true }).expect(200);
+      await request(app).put('/api/mentor/profile').set('Authorization', token('mentor')).send(profile({ meeting_url: 'javascript:alert(1)' })).expect(400);
+      await request(app).put('/api/mentor/profile').set('Authorization', token('mentor')).send(profile({ photo_url: 'http://insecure.example.com/a.jpg' })).expect(400);
+      await request(app).put('/api/mentor/profile').set('Authorization', token('mentor')).send(profile({ rate_usd: 900 })).expect(400);
+      await request(app).put('/api/mentor/profile').set('Authorization', token('mentor')).send(profile({ session_times: ['25:99'] })).expect(400);
+    });
+
+    it('opens the chat only after the founder pays, at a price set by the expert', async () => {
+      await admin('boss');
+      await member('mentor');
+      await signup('founder'); // a free, verified account is enough to book
+      await member('other');
+      await setupExpert();
+      const slot = await firstSlot();
+
+      await request(app).post('/api/consultations').set('Authorization', token('founder', false)).send({ mentor_uid: 'mentor', minutes: 30, slot }).expect(403);
+      await request(app).post('/api/consultations').set('Authorization', token('mentor')).send({ mentor_uid: 'mentor', minutes: 30, slot }).expect(400);
+      await request(app).post('/api/consultations').set('Authorization', token('founder')).send({ mentor_uid: 'mentor', minutes: 45, slot }).expect(400);
+      await request(app).post('/api/consultations').set('Authorization', token('founder')).send({ mentor_uid: 'mentor', minutes: 30, slot: '2020-01-01T10:00:00.000Z' }).expect(409);
+
+      const booked = await request(app).post('/api/consultations').set('Authorization', token('founder'))
+        .send({ mentor_uid: 'mentor', minutes: 30, slot, amount_usd: 1, status: 'paid' }).expect(201);
+      expect(booked.body.consultation).toMatchObject({ status: 'awaiting_payment', amount_usd: 100, expert_share_usd: 80, minutes: 30 });
+      expect(booked.body.consultation.thread_id).toBeUndefined();
+      expect(booked.body.consultation.meeting_url).toBeUndefined();
+      const id = booked.body.consultation.id;
+
+      await request(app).post(`/api/consultations/${id}/pay`).set('Authorization', token('other')).expect(404);
+      const paid = await request(app).post(`/api/consultations/${id}/pay`).set('Authorization', token('founder')).expect(200);
+      expect(paid.body.consultation).toMatchObject({ status: 'paid', meeting_url: 'https://meet.example.com/abc' });
+      const threadId = paid.body.consultation.thread_id;
+      await request(app).get(`/api/threads/${threadId}/messages`).set('Authorization', token('mentor')).expect(200);
+      await request(app).get(`/api/threads/${threadId}/messages`).set('Authorization', token('other')).expect(404);
+
+      const again = await request(app).post(`/api/consultations/${id}/pay`).set('Authorization', token('founder')).expect(200);
+      expect(again.body.consultation.thread_id).toBe(threadId);
+      await request(app).post(`/api/consultations/${id}/cancel`).set('Authorization', token('founder')).expect(400);
+      const mentorView = await request(app).get('/api/bootstrap').set('Authorization', token('mentor')).expect(200);
+      expect(mentorView.body.consultations).toHaveLength(1);
+    });
+
+    it('never double-books a time, and a cancelled booking frees it', async () => {
+      await admin('boss');
+      await member('mentor');
+      await signup('a');
+      await signup('b');
+      await setupExpert();
+      const slot = await firstSlot();
+      const first = await request(app).post('/api/consultations').set('Authorization', token('a')).send({ mentor_uid: 'mentor', minutes: 60, slot }).expect(201);
+      expect((await request(app).get('/api/public/experts/mentor').expect(200)).body.slots).not.toContain(slot);
+      await request(app).post('/api/consultations').set('Authorization', token('b')).send({ mentor_uid: 'mentor', minutes: 30, slot }).expect(409);
+      await request(app).post(`/api/consultations/${first.body.consultation.id}/cancel`).set('Authorization', token('a')).expect(200);
+      await request(app).post('/api/consultations').set('Authorization', token('b')).send({ mentor_uid: 'mentor', minutes: 30, slot }).expect(201);
+    });
+
+    it('confirms free sessions straight away', async () => {
+      await admin('boss');
+      await member('mentor');
+      await signup('founder');
+      await setupExpert('mentor', { rate_usd: 0 });
+      const slot = await firstSlot();
+      const booked = await request(app).post('/api/consultations').set('Authorization', token('founder')).send({ mentor_uid: 'mentor', minutes: 60, slot }).expect(201);
+      expect(booked.body.consultation).toMatchObject({ status: 'paid', amount_usd: 0 });
+      await request(app).get(`/api/threads/${booked.body.consultation.thread_id}/messages`).set('Authorization', token('mentor')).expect(200);
+    });
+  });
+
+  describe('enquiries', () => {
+    it('accepts public enquiries, ignores bots, and shows them only to admins', async () => {
+      await admin('boss');
+      await member('someone');
+      await request(app).post('/api/public/inquiries').send({ kind: 'lead', role: 'Pharma company with a problem to fund', email: 'Buyer@Pharma.com', message: 'Sepsis alerts in the ICU' }).expect(201);
+      await request(app).post('/api/public/inquiries').send({ kind: 'lead', email: 'not-an-email', message: 'x' }).expect(400);
+      await request(app).post('/api/public/inquiries').send({ kind: 'lead', email: 'bot@spam.com', message: 'buy now', website: 'http://spam' }).expect(400);
+      await request(app).post('/api/public/inquiries').send({ kind: 'expert', email: 'e@x.com', message: 'FDA lead' }).expect(400);
+      await request(app).post('/api/public/inquiries').send({ kind: 'expert', name: 'Dr E', email: 'e@x.com', focus: 'Regulatory', message: 'FDA lead' }).expect(201);
+
+      await request(app).get('/api/admin/inquiries').expect(401);
+      await request(app).get('/api/admin/inquiries').set('Authorization', token('someone')).expect(403);
+      const list = await request(app).get('/api/admin/inquiries').set('Authorization', token('boss')).expect(200);
+      expect(list.body.inquiries).toHaveLength(2);
+      expect(list.body.inquiries.map((i: { email: string }) => i.email)).toContain('buyer@pharma.com');
+      const done = await request(app).patch(`/api/admin/inquiries/${list.body.inquiries[0].id}`).set('Authorization', token('boss')).send({ status: 'handled' }).expect(200);
+      expect(done.body.inquiry.status).toBe('handled');
+      const note = await request(app).get('/api/bootstrap').set('Authorization', token('boss')).expect(200);
+      expect(note.body.notifications.some((n: { type: string }) => n.type === 'inquiry')).toBe(true);
+    });
   });
 });

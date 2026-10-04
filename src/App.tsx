@@ -1,10 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Navigate, Outlet, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
+import { Link, Navigate, Outlet, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import { AlertCircle, Bell, BookMarked, GraduationCap, ListTodo, MailWarning, Stethoscope, X } from 'lucide-react';
 import { store, PLATFORM_NAME } from './services/store';
 import { Navbar } from './components/Navbar';
 import { HomePage } from './components/HomePage';
+import { ExpertsPage } from './components/public/ExpertsPage';
+import { ExpertDetailPage } from './components/public/ExpertDetailPage';
+import { BecomeExpertPage } from './components/public/BecomeExpertPage';
 import { LoginPage } from './components/LoginPage';
 import { ProblemStatementsList } from './components/ProblemStatementsList';
 import { FundsPage } from './components/FundsPage';
@@ -105,9 +108,10 @@ export default function App() {
   return (
     <>
       <Routes>
-        <Route path="/" element={isAuthenticated ? <Navigate to="/problems" replace /> : (
-          <HomePage onGetStarted={() => navigate('/signup')} onBrowseProblems={() => navigate('/problems')} />
-        )} />
+        <Route path="/" element={isAuthenticated ? <Navigate to="/problems" replace /> : <HomePage />} />
+        <Route path="/experts" element={<ExpertsPage />} />
+        <Route path="/experts/join" element={<BecomeExpertPage />} />
+        <Route path="/experts/:expertId" element={<ExpertDetailPage />} />
         {(['login', 'signup', 'reset-password'] as const).map(path => (
           <React.Fragment key={path}><Route
             path={`/${path}`}
@@ -271,16 +275,9 @@ function Shell({ currentUser, modals }: { currentUser: User | null; modals: Moda
 
       <footer className="hidden md:block border-t border-[var(--nxt-line)] bg-[var(--nxt-surface)]">
         <div className="nxt-container py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <span className="w-9 h-9 rounded-xl bg-[var(--nxt-mint-strong)] text-white flex items-center justify-center">
-              <Stethoscope className="w-4 h-4" />
-            </span>
-            <div>
-              <p className="font-display font-bold text-[var(--nxt-ink)] text-sm">{PLATFORM_NAME}</p>
-              <p className="text-xs text-[var(--nxt-ink-soft)]">From clinical problem to hospital pilot.</p>
-            </div>
-          </div>
+          <p className="text-sm text-[var(--nxt-ink-soft)]">{PLATFORM_NAME} · nxthealth.ai · India</p>
           <div className="flex items-center gap-5 text-sm text-[var(--nxt-ink-soft)]">
+            <Link to="/experts" className="underline underline-offset-2 hover:text-[var(--nxt-ink)] transition-colors">Find an expert</Link>
             <button onClick={modals.openSlack} className="hover:text-[var(--nxt-ink)] transition-colors">Community Slack</button>
             {currentUser ? (
               <button onClick={modals.openMembership} className="hover:text-[var(--nxt-ink)] transition-colors">
