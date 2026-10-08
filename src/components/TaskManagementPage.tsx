@@ -1,3 +1,5 @@
+import { RoadmapNote, RoadmapPlaybook } from './RoadmapPlaybook';
+import { CategoryGrid } from './CategoryGrid';
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
@@ -365,35 +367,7 @@ export const TaskManagementPage: React.FC<TaskManagementPageProps> = ({
           />
         </Reveal>
 
-        <RevealGroup className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8" stagger={0.03}>
-          {filteredCategories.map(cat => {
-            const CatIcon = categoryIcon(cat.id);
-            const stepCount = store.getSteps(cat.id).length;
-            return (
-              <RevealItem key={cat.id}>
-                <motion.button
-                  id={`category-card-${cat.id}`}
-                  whileHover={{ y: -3 }}
-                  transition={{ duration: 0.2 }}
-                  onClick={() => setPendingCategoryId(cat.id)}
-                  className="w-full text-left bg-[var(--nxt-surface)] rounded-3xl border border-[var(--nxt-line)] p-5 shadow-sm hover:shadow-md hover:border-[var(--nxt-mint-strong)]/40 transition-shadow h-full flex flex-col"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <span className="w-12 h-12 rounded-2xl bg-[var(--nxt-mint)] text-[var(--nxt-mint-strong)] flex items-center justify-center">
-                      <CatIcon className="w-6 h-6" />
-                    </span>
-                    <span className="text-xs font-semibold text-[var(--nxt-ink-soft)]">#{cat.order}</span>
-                  </div>
-                  <h3 className="font-display text-base font-bold text-[var(--nxt-ink)] leading-snug mt-4">{cat.name}</h3>
-                  <p className="text-sm text-[var(--nxt-ink-soft)] mt-1 line-clamp-2">{cat.description}</p>
-                  <p className="mt-auto pt-4 text-xs font-semibold text-[var(--nxt-ink-soft)]">
-                    {stepCount > 0 ? `${stepCount}-step roadmap` : 'Roadmap coming soon'}
-                  </p>
-                </motion.button>
-              </RevealItem>
-            );
-          })}
-        </RevealGroup>
+        <CategoryGrid categories={filteredCategories} onPick={(cat) => setPendingCategoryId(cat.id)} />
 
         {filteredCategories.length === 0 && (
           <p className="text-sm text-[var(--nxt-ink-soft)] text-center py-6">No categories matched your search.</p>
@@ -513,6 +487,8 @@ export const TaskManagementPage: React.FC<TaskManagementPageProps> = ({
         </div>
       </PageHeader>
 
+      <RoadmapNote category={selectedCategory} />
+
       {steps.length === 0 ? (
         <div className="bg-[var(--nxt-surface)] rounded-3xl border border-dashed border-[var(--nxt-line)] p-10 text-center">
           <Layers className="w-10 h-10 text-[var(--nxt-ink-soft)] mx-auto mb-3" />
@@ -577,7 +553,10 @@ export const TaskManagementPage: React.FC<TaskManagementPageProps> = ({
                     </h3>
                     <p className="text-sm text-[var(--nxt-ink-soft)] mt-1 line-clamp-2">{step.description}</p>
                     <div className="flex flex-wrap items-center gap-x-5 gap-y-1 mt-3 text-sm text-[var(--nxt-ink-soft)]">
-                      {workspace && workspace.checklist.length > 0 && <span>{tasksDone}/{workspace.checklist.length} tasks</span>}
+                      {workspace && workspace.checklist.length > 0
+                        ? <span>{tasksDone}/{workspace.checklist.length} tasks</span>
+                        : step.tasks && step.tasks.length > 0 && <span>{step.tasks.length} tasks</span>}
+                      {step.typical_duration && <span>{step.typical_duration}</span>}
                       {stepResources.length > 0 && <span>{stepResources.length} resource{stepResources.length === 1 ? '' : 's'}</span>}
                       {hospitalCount > 0 && <span className="inline-flex items-center gap-1"><Hospital className="w-3.5 h-3.5" /> {hospitalCount} hospital partner{hospitalCount === 1 ? '' : 's'}</span>}
                       <span className="ml-auto inline-flex items-center gap-1 font-semibold text-[var(--nxt-mint-strong)]">
@@ -591,6 +570,8 @@ export const TaskManagementPage: React.FC<TaskManagementPageProps> = ({
           })}
         </RevealGroup>
       )}
+
+      <RoadmapPlaybook category={selectedCategory} />
 
       {settingsModal}
     </div>
@@ -689,41 +670,14 @@ const RoadmapTrailer: React.FC<{
           <Search className="w-3.5 h-3.5 text-[var(--nxt-ink-soft)] absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder="Search 21 categories..."
+            placeholder={`Search ${categories.length} categories...`}
             value={categorySearch}
             onChange={(e) => setCategorySearch(e.target.value)}
             className="w-full pl-9 pr-3 py-2 text-xs bg-[var(--nxt-surface)] border border-[var(--nxt-line)] rounded-full text-[var(--nxt-ink)] placeholder:text-[var(--nxt-ink-soft)] focus:outline-hidden focus:ring-2 focus:ring-[var(--nxt-blue-strong)] transition-all shadow-sm"
           />
         </Reveal>
 
-        <RevealGroup className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8" stagger={0.03}>
-          {filteredCategories.map((cat) => (
-            <RevealItem key={cat.id}>
-              <motion.div
-                whileHover={{ y: -2 }}
-                onClick={() => { setSelectedCategoryId(cat.id); setView('roadmap'); }}
-                className="cursor-pointer bg-[var(--nxt-surface)] rounded-3xl border border-[var(--nxt-line)] p-5 shadow-sm hover:shadow-md hover:border-[var(--nxt-blue-strong)]/30 transition-shadow h-full flex flex-col justify-between"
-              >
-                <div>
-                  {(() => { const CatIcon = categoryIcon(cat.id); return (
-                    <span className="w-11 h-11 rounded-2xl bg-[var(--nxt-mint)] text-[var(--nxt-mint-strong)] flex items-center justify-center mb-3">
-                      <CatIcon className="w-5 h-5" />
-                    </span>
-                  ); })()}
-                  <h3 className="font-display text-base font-bold text-[var(--nxt-ink)] leading-snug mt-1">
-                    {cat.name}
-                  </h3>
-                  <p className="text-xs text-[var(--nxt-ink-soft)] mt-1 line-clamp-2">
-                    {cat.description}
-                  </p>
-                </div>
-                <div className="mt-3 flex items-center justify-end text-[var(--nxt-blue-strong)]">
-                  <ChevronRight className="w-4 h-4" />
-                </div>
-              </motion.div>
-            </RevealItem>
-          ))}
-        </RevealGroup>
+        <CategoryGrid categories={filteredCategories} idPrefix="preview-category" onPick={(cat) => { setSelectedCategoryId(cat.id); setView('roadmap'); }} />
       </div>
     );
   }

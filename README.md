@@ -59,3 +59,10 @@ The site is black and white, set in Helvetica Neue. The colours live in `src/ind
 - `/` — home page for visitors; its "Name the problem" form and `/experts/join` post to `POST /api/public/inquiries` (rate-limited, with a honeypot). Admins read them under **Admin console → Enquiries**.
 - `/experts`, `/experts/:id` — the public expert directory and booking page. Experts are users an admin has marked as mentors whose profile is "accepting"; rate, topics, weekly days and IST start times come from the mentor profile. Booked sessions are paid with a **demo** payment step (no card is charged) and open a private chat.
 
+## Categories, roadmaps and problem statements
+
+- **Categories** (25 solution types, 6 open and 19 "coming soon") and the **problem statements** come from the NXT Platform sheets and are in `server/src/starterContent.ts`. In the admin console, **Categories → Update starter content** loads or refreshes them (it is safe to repeat).
+- **Roadmaps** are built from a checklist file — each phase becomes a step, each row a task with its details. The checklist is the product's core content and this repository is public, so it is **not committed**: it lives in `server/content/marketplace-roadmap.json` (git-ignored) and is loaded with **Categories → Import roadmap file** in the admin console. The format is defined in `server/src/roadmapTypes.ts`.
+- Every open category currently gets the Marketplace checklist (the only one supplied so far). Add a category-specific file later and import it the same way.
+- `npm --prefix server run seed-demo` also reads `server/content/marketplace-roadmap.json` (or `$ROADMAP_FILE`).
+

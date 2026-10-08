@@ -326,6 +326,117 @@ describe('uploads and profiles', () => {
     });
   });
 
+  describe('starter content and roadmap import', () => {
+    /** A tiny stand-in checklist: five phases of two tasks each (the real checklist is not in the repository). */
+    const fixture = {
+      phases: ['Strategy', 'Market', 'Network', 'Technology', 'Launch'].map((name, no) => ({
+        no,
+        name,
+        sub_stages: ['Stage A', 'Stage B'],
+        tasks: [1, 2].map(n => ({
+          id: `t${no}-${n}`, label: `${name} task ${n}`, detail: 'Do the thing', sub_stage: 'Stage A', experts: 'founder; lawyer',
+          resources: 'tools', deliverable: `${name} deliverable ${n}`, depends_on: '', duration: n === 1 ? '1–2 weeks' : '3–5 days',
+          ...(n === 2 ? { gate: 'GO / NO-GO' } : {}), owner: 'Founder',
+        })),
+      })),
+      playbook: { model: [{ component: 'Problem', question: 'What?', output: 'Validated problem' }], cost_inputs: [], how_to_use: ['Start at the top.'] },
+    };
+    const importRoadmap = (uid: string, body: unknown = fixture) =>
+      request(app).post('/api/admin/roadmap-import').set('Authorization', token(uid)).send(body as object);
+    const content = async (uid?: string) => {
+      const req = request(app).get('/api/bootstrap');
+      return (await (uid ? req.set('Authorization', token(uid)) : req).expect(200)).body.content;
+    };
+
+    it('loads 25 categories (6 open) and the problem statements, and can be re-run safely', async () => {
+      await admin('boss');
+      const first = await request(app).post('/api/admin/starter-content').set('Authorization', token('boss')).expect(201);
+      // The test fixtures already contain cat-1 (replaced) and prob-1 (kept), so one old category goes and seven problems are new.
+      expect(first.body).toMatchObject({ categories: 25, steps: 0, problems_added: 7, removed_categories: 1 });
+
+      const loaded = await content('boss');
+      expect(loaded.categories).toHaveLength(25);
+      expect(loaded.categories.filter((c: { coming_soon: boolean }) => !c.coming_soon).map((c: { name: string }) => c.name)).toEqual([
+        'Marketplace / Network', 'Healthcare Services', 'Patient Education / Engagement',
+        'Workflow / Operational Tech', 'Training / Simulation', 'Clinical Infrastructure / Platform',
+      ]);
+      expect(loaded.problems.map((p: { title: string }) => p.title).slice(0, 2)).toEqual(['In women, what is “psychological” and what is not?', 'Solve Migraine']);
+
+      const second = await request(app).post('/api/admin/starter-content').set('Authorization', token('boss')).expect(201);
+      expect(second.body).toMatchObject({ categories: 25, problems_added: 0, removed_categories: 0 });
+      expect((await content('boss')).categories).toHaveLength(25);
+    });
+
+    it('builds a roadmap for every open category from an imported checklist, and keeps it across refreshes', async () => {
+      await admin('boss');
+      await request(app).post('/api/admin/starter-content').set('Authorization', token('boss')).expect(201);
+      const res = await importRoadmap('boss').expect(201);
+      expect(res.body.steps).toBe(30); // 6 open categories × 5 phases
+
+      const imported = await content('boss');
+      const steps = imported.steps.filter((st: { category_id: string }) => st.category_id === 'cat-marketplace-network');
+      expect(steps.map((st: { name: string }) => st.name)).toEqual(['Strategy', 'Market', 'Network', 'Technology', 'Launch']);
+      expect(steps[0]).toMatchObject({ stage_tag: 'Strategy', typical_duration: 'about 2–3 weeks of work' });
+      expect(steps[0].tasks).toHaveLength(2);
+      expect(imported.steps.some((st: { category_id: string }) => st.category_id === 'cat-medical-device')).toBe(false);
+      const marketplace = imported.categories.find((c: { id: string }) => c.id === 'cat-marketplace-network');
+      expect(marketplace.playbook.how_to_use).toEqual(['Start at the top.']);
+
+      // Refreshing the category list afterwards keeps the roadmap and the playbook.
+      await request(app).post('/api/admin/starter-content').set('Authorization', token('boss')).expect(201);
+      const refreshed = await content('boss');
+      expect(refreshed.steps).toHaveLength(30);
+      expect(refreshed.categories.find((c: { id: string }) => c.id === 'cat-marketplace-network').playbook).toBeTruthy();
+      expect((await importRoadmap('boss').expect(201)).body.steps).toBe(30);
+      expect((await content('boss')).steps).toHaveLength(30);
+    });
+
+    it('only lets admins import, and rejects malformed files', async () => {
+      await admin('boss');
+      await member('founder');
+      await importRoadmap('founder').expect(403);
+      await request(app).post('/api/admin/roadmap-import').send(fixture).expect(401);
+      await importRoadmap('boss', { phases: [] }).expect(400);
+      await importRoadmap('boss', { phases: [{ no: 0, name: 'X', sub_stages: [], tasks: [{ id: 'a' }] }] }).expect(400);
+      await importRoadmap('boss', { not: 'a roadmap' }).expect(400);
+    });
+
+    it('replaces the first-generation starter categories and clears locks that pointed at them', async () => {
+      await admin('boss');
+      await member('founder');
+      await database.col('categories').insertOne({ _id: 'cat-77', name: 'Device Product', description: '', order: 1 });
+      await database.col('steps').insertOne({ _id: 'step-dev-77', category_id: 'cat-77', name: 'Old', description: '', order: 1 });
+      await database.col('scopes').insertOne({ _id: 'founder', working_problem_ids: ['prob-1'], category_locks: { 'prob-1': 'cat-77', 'prob-2': 'cat-x' } });
+      const res = await request(app).post('/api/admin/starter-content').set('Authorization', token('boss')).expect(201);
+      expect(res.body.removed_categories).toBe(2); // the fixture cat-1 and this test's cat-77
+      expect(await database.col('categories').findOne({ _id: 'cat-77' })).toBeNull();
+      expect(await database.col('steps').findOne({ _id: 'step-dev-77' })).toBeNull();
+      expect((await database.col('scopes').findOne({ _id: 'founder' }))?.category_locks).toEqual({ 'prob-2': 'cat-x' });
+      await request(app).post('/api/admin/starter-content').set('Authorization', token('founder')).expect(403);
+    });
+
+    it('lets founders pick an open category but not one that is coming soon', async () => {
+      await admin('boss');
+      await member('founder');
+      await request(app).post('/api/admin/starter-content').set('Authorization', token('boss')).expect(201);
+      const blocked = await request(app).put('/api/scope/locks/prob-1').set('Authorization', token('founder')).send({ category_id: 'cat-medical-device' }).expect(409);
+      expect(blocked.body.error).toMatch(/coming soon/i);
+      await request(app).put('/api/scope/locks/prob-1').set('Authorization', token('founder')).send({ category_id: 'cat-marketplace-network' }).expect(200);
+    });
+
+    it('shows task details only on preview steps to people without a membership', async () => {
+      await admin('boss');
+      await signup('visitor');
+      await request(app).post('/api/admin/starter-content').set('Authorization', token('boss')).expect(201);
+      await importRoadmap('boss').expect(201);
+      for (const viewer of [undefined, 'visitor']) {
+        const steps = (await content(viewer)).steps.filter((st: { category_id: string }) => st.category_id === 'cat-marketplace-network');
+        expect(steps.slice(0, 3).every((st: { tasks: unknown[] }) => st.tasks.length > 0)).toBe(true);
+        expect(steps.slice(3).every((st: { tasks: unknown[]; locked?: boolean }) => st.tasks.length === 0 && st.locked)).toBe(true);
+      }
+    });
+  });
+
   describe('enquiries', () => {
     it('accepts public enquiries, ignores bots, and shows them only to admins', async () => {
       await admin('boss');

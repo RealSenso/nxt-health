@@ -1,3 +1,5 @@
+import type { StepTask } from '../types';
+
 export interface StepGuide {
   typicalDuration: string;
   whyItMatters: string;
@@ -188,8 +190,45 @@ const FALLBACK: StepGuide = {
   whoToTalkTo: ['Your clinical champion', 'Platform mentors'],
 };
 
-export const STAGE_TAGS = Object.keys(GUIDES);
+/** The roadmap phases a mentor can claim expertise in (they match the step names of every roadmap). */
+export const STAGE_TAGS = [
+  'Strategy', 'Market', 'Network', 'Technology', 'Legal & Compliance', 'Revenue', 'Operations', 'Marketplace Validation', 'Launch', 'Scale',
+];
 
 export function getStepGuide(stageTag?: string): StepGuide {
   return (stageTag && GUIDES[stageTag]) || FALLBACK;
+}
+
+export interface ResolvedStepGuide extends StepGuide {
+  /** Ids of the suggested tasks, in order, when the step carries its own checklist. */
+  taskIds?: string[];
+}
+
+const unique = (items: string[]) => {
+  const seen = new Set<string>();
+  return items.filter(item => item && !seen.has(item.toLowerCase()) && seen.add(item.toLowerCase()));
+};
+const capitalise = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
+
+/**
+ * The guidance shown on a step page. Steps that carry their own checklist (the roadmaps built from the
+ * NXT sheets) are described by that checklist; older steps fall back to the generic guide for their stage.
+ */
+export function resolveStepGuide(step: { stage_tag?: string; tasks?: StepTask[]; typical_duration?: string }): ResolvedStepGuide {
+  const tasks = step.tasks || [];
+  if (!tasks.length) return getStepGuide(step.stage_tag);
+  const subStages = unique(tasks.map(t => t.sub_stage));
+  const gates = tasks.filter(t => t.gate);
+  return {
+    typicalDuration: step.typical_duration || '',
+    whyItMatters: `${tasks.length} tasks across ${subStages.join(', ')}. Work through them in order — each one shows what to do, who can help, and what you should have at the end.`,
+    deliverables: tasks.map(t => t.label),
+    taskIds: tasks.map(t => t.id),
+    exitCriteria: unique([
+      ...tasks.map(t => t.deliverable),
+      ...gates.map(t => `${t.gate} decision made: ${t.label}`),
+    ]),
+    pitfalls: [],
+    whoToTalkTo: unique(tasks.flatMap(t => t.experts.split(';').map(e => capitalise(e.trim())))),
+  };
 }

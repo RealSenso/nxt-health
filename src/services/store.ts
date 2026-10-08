@@ -418,6 +418,11 @@ class ApiStore {
     return this.data.content.categories.length === 0;
   }
 
+  /** Builds the roadmap steps for every open category from a checklist file (see server/src/roadmapTypes.ts). */
+  public importRoadmap(roadmap: unknown): Promise<{ steps: number }> {
+    return this.write(() => api.post<{ steps: number }>('/admin/roadmap-import', roadmap));
+  }
+
   public loadStarterContent(): Promise<void> {
     return this.write(() => api.post('/admin/starter-content'));
   }

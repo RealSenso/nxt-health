@@ -41,7 +41,7 @@ export function bootstrapRouter(database: Database): Router {
     });
     const visibleSteps = fullAccess
       ? outAll(steps)
-      : outAll(steps).map(st => (stepRank.get(st.id)! < PREVIEW_STEPS ? st : { ...st, description: '', locked: true }));
+      : outAll(steps).map(st => (stepRank.get(st.id)! < PREVIEW_STEPS ? st : { ...st, description: '', tasks: [], typical_duration: '', locked: true }));
     const visibleResources = fullAccess
       ? outAll(resources)
       : outAll(resources).map((res, i) => (i < PREVIEW_RESOURCES

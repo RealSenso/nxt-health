@@ -2,12 +2,12 @@ import React, { useRef, useState } from 'react';
 import {
   Check, CheckCircle, Hospital, Sparkles, ArrowRight, ArrowLeft, Paperclip, Upload, Download,
   AlertCircle, Clock, MessageSquareWarning, X, Plus, Trash2, Target, AlertTriangle, Users,
-  NotebookPen, ListChecks, Flag, Lightbulb, Star, Pencil, RotateCcw, MessageSquare
+  NotebookPen, ListChecks, Flag, Lightbulb, Star, Pencil, RotateCcw, MessageSquare, ChevronDown
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { Step, User, Category, StepWorkspace, StepWorkStatus } from '../types';
+import { Step, StepTask, User, Category, StepWorkspace, StepWorkStatus } from '../types';
 import { store } from '../services/store';
-import { getStepGuide } from '../data/stepGuides';
+import { resolveStepGuide } from '../data/stepGuides';
 import { Reveal } from './ui/Reveal';
 
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
@@ -55,10 +55,14 @@ export const StepPage: React.FC<StepPageProps> = ({
   const [editingLabel, setEditingLabel] = useState('');
   const cancelEditRef = useRef(false);
 
-  const guide = getStepGuide(step.stage_tag);
+  const guide = resolveStepGuide(step);
+  const suggestedTasks = guide.deliverables.map((label, i) => ({ id: guide.taskIds?.[i] ?? `g-${i}`, label }));
+  const taskDetails = new Map<string, StepTask>((step.tasks || []).map(t => [t.id, t] as const));
+  const [openTasks, setOpenTasks] = useState<Set<string>>(new Set());
+  const toggleOpen = (id: string) => setOpenTasks(prev => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; });
   const workspace: StepWorkspace = store.getStepWorkspace(scopeKey, problemId, step.id) || {
     status: 'not_started',
-    checklist: guide.deliverables.map((label, i) => ({ id: `g-${i}`, label, done: false, custom: false })),
+    checklist: suggestedTasks.map(task => ({ ...task, done: false, custom: false })),
     log: [],
     updated_at: new Date().toISOString(),
   };
@@ -108,9 +112,7 @@ export const StepPage: React.FC<StepPageProps> = ({
     setEditingTaskId(null);
   };
 
-  const missingSuggestions = guide.deliverables
-    .map((label, i) => ({ id: `g-${i}`, label }))
-    .filter(g => !workspace.checklist.some(t => t.id === g.id));
+  const missingSuggestions = suggestedTasks.filter(g => !workspace.checklist.some(t => t.id === g.id));
 
   const handleRestoreSuggestions = () => {
     save({ checklist: [...workspace.checklist, ...missingSuggestions.map(g => ({ ...g, done: false, custom: false }))] });
@@ -197,7 +199,7 @@ export const StepPage: React.FC<StepPageProps> = ({
           </Meta>
           <Meta label="Time on step">
             <span className="font-semibold text-[var(--nxt-ink)]">{daysActive === null ? '—' : `${daysActive} day${daysActive === 1 ? '' : 's'}`}</span>
-            <span className="text-xs">(typical {guide.typicalDuration})</span>
+            {guide.typicalDuration && <span className="text-xs">({guide.typicalDuration.startsWith('about') ? '' : 'typical '}{guide.typicalDuration})</span>}
           </Meta>
           <Meta label="Target">
             <input
@@ -232,10 +234,11 @@ export const StepPage: React.FC<StepPageProps> = ({
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         <div className="lg:col-span-2 space-y-8">
-          <Section icon={ListChecks} title="Deliverables" aside={`${taskPct}% done`}>
+          <Section icon={ListChecks} title={step.tasks?.length ? 'Tasks' : 'Deliverables'} aside={`${taskPct}% done`}>
             <ul className="space-y-1.5">
               {workspace.checklist.map(item => (
-                <li key={item.id} className="group flex items-start gap-2.5 rounded-xl px-2 py-1.5 hover:bg-[var(--nxt-bg-soft)] transition-colors">
+                <li key={item.id} className="rounded-xl hover:bg-[var(--nxt-bg-soft)] transition-colors">
+                  <div className="group flex items-start gap-2.5 px-2 py-1.5">
                   <button
                     onClick={() => save({ checklist: workspace.checklist.map(t => t.id === item.id ? { ...t, done: !t.done } : t) })}
                     title={item.done ? 'Mark not done' : 'Mark done'}
@@ -267,6 +270,22 @@ export const StepPage: React.FC<StepPageProps> = ({
                       {item.label}
                     </span>
                   )}
+                  {taskDetails.get(item.id) && editingTaskId !== item.id && (
+                    <span className="hidden sm:flex items-center gap-1.5 shrink-0 text-xs text-[var(--nxt-ink-soft)] mt-0.5">
+                      {taskDetails.get(item.id)!.gate && <span className="px-2 py-0.5 rounded-full bg-[var(--nxt-mint-strong)] text-white font-bold text-[11px]">{taskDetails.get(item.id)!.gate}</span>}
+                      {taskDetails.get(item.id)!.duration}
+                    </span>
+                  )}
+                  {taskDetails.get(item.id) && editingTaskId !== item.id && (
+                    <button
+                      onClick={() => toggleOpen(item.id)}
+                      aria-expanded={openTasks.has(item.id)}
+                      title={openTasks.has(item.id) ? 'Hide details' : 'Show details'}
+                      className="p-1 rounded-md text-[var(--nxt-ink-soft)] hover:text-[var(--nxt-ink)] hover:bg-[var(--nxt-surface)]"
+                    >
+                      <ChevronDown className={`w-4 h-4 transition-transform ${openTasks.has(item.id) ? 'rotate-180' : ''}`} />
+                    </button>
+                  )}
                   {editingTaskId !== item.id && (
                     <span className="flex items-center gap-1 md:opacity-0 md:group-hover:opacity-100 md:focus-within:opacity-100 transition-opacity">
                       <button
@@ -285,6 +304,8 @@ export const StepPage: React.FC<StepPageProps> = ({
                       </button>
                     </span>
                   )}
+                  </div>
+                  {openTasks.has(item.id) && taskDetails.get(item.id) && <TaskDetails task={taskDetails.get(item.id)!} />}
                 </li>
               ))}
               {workspace.checklist.length === 0 && (
@@ -325,7 +346,7 @@ export const StepPage: React.FC<StepPageProps> = ({
               rows={3}
               value={newLogEntry}
               onChange={(e) => setNewLogEntry(e.target.value)}
-              placeholder="e.g. Met Dr. Patel's cardiology team — they'll share de-identified waveform data once the DUA is signed."
+              placeholder="e.g. Met two hospital operations heads — both want a pilot once the contract is signed."
               className="w-full text-sm bg-[var(--nxt-bg-soft)] border border-[var(--nxt-line)] rounded-2xl p-3 text-[var(--nxt-ink)] focus:outline-hidden focus:ring-2 focus:ring-[var(--nxt-mint-strong)]"
             />
             <div className="flex justify-end mt-2">
@@ -370,15 +391,21 @@ export const StepPage: React.FC<StepPageProps> = ({
         <aside className="space-y-8">
           <Section icon={Lightbulb} title="Step guide">
             <p className="text-sm text-[var(--nxt-ink-soft)] leading-relaxed">{guide.whyItMatters}</p>
-            <GuidePart icon={Flag} title="Ready to move on when">
-              <BulletList items={guide.exitCriteria} />
-            </GuidePart>
-            <GuidePart icon={AlertTriangle} title="Common pitfalls">
-              <BulletList items={guide.pitfalls} />
-            </GuidePart>
-            <GuidePart icon={Users} title="Who to talk to">
-              <p className="text-xs text-[var(--nxt-ink-soft)] leading-relaxed">{guide.whoToTalkTo.join(' · ')}</p>
-            </GuidePart>
+            {guide.exitCriteria.length > 0 && (
+              <GuidePart icon={Flag} title={step.tasks?.length ? 'You should end up with' : 'Ready to move on when'}>
+                <BulletList items={guide.exitCriteria} />
+              </GuidePart>
+            )}
+            {guide.pitfalls.length > 0 && (
+              <GuidePart icon={AlertTriangle} title="Common pitfalls">
+                <BulletList items={guide.pitfalls} />
+              </GuidePart>
+            )}
+            {guide.whoToTalkTo.length > 0 && (
+              <GuidePart icon={Users} title="Who to talk to">
+                <p className="text-xs text-[var(--nxt-ink-soft)] leading-relaxed">{guide.whoToTalkTo.join(' · ')}</p>
+              </GuidePart>
+            )}
           </Section>
 
           <Section icon={Sparkles} title="Resources" aside={`${stepResources.length}`}>
@@ -470,6 +497,32 @@ const StepRatingPanel: React.FC<{ stepId: string; userId: string }> = ({ stepId,
     </Section>
   );
 };
+
+const DETAIL_ROWS: { key: 'detail' | 'deliverable' | 'experts' | 'resources' | 'depends_on' | 'owner'; label: string }[] = [
+  { key: 'detail', label: 'What to do' },
+  { key: 'deliverable', label: 'You end up with' },
+  { key: 'experts', label: 'Experts and team' },
+  { key: 'resources', label: 'Resources and external support' },
+  { key: 'depends_on', label: 'Comes after' },
+  { key: 'owner', label: 'Owner' },
+];
+
+/** The checklist details for one task: what to do, who helps, and what it produces. */
+const TaskDetails: React.FC<{ task: StepTask }> = ({ task }) => (
+  <dl className="mx-2 mb-3 ml-9 rounded-xl border border-[var(--nxt-line)] bg-[var(--nxt-surface)] p-4 grid gap-x-6 gap-y-3 sm:grid-cols-2 text-sm">
+    {DETAIL_ROWS.filter(row => task[row.key]).map(row => (
+      <div key={row.key} className={row.key === 'detail' ? 'sm:col-span-2' : ''}>
+        <dt className="text-[11px] font-bold uppercase tracking-wider text-[var(--nxt-ink-soft)]">{row.label}</dt>
+        <dd className="mt-0.5 text-[var(--nxt-ink)] leading-snug">{task[row.key]}</dd>
+      </div>
+    ))}
+    <div className="sm:col-span-2 flex flex-wrap items-center gap-2 pt-1">
+      <span className="text-xs px-2.5 py-1 rounded-full bg-[var(--nxt-bg-soft)] text-[var(--nxt-ink-soft)]">{task.sub_stage}</span>
+      <span className="text-xs px-2.5 py-1 rounded-full bg-[var(--nxt-bg-soft)] text-[var(--nxt-ink-soft)]">{task.duration}</span>
+      {task.gate && <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-[var(--nxt-mint-strong)] text-white">{task.gate} decision</span>}
+    </div>
+  </dl>
+);
 
 const Meta: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
   <div className="flex items-center gap-2 min-w-0">
@@ -598,7 +651,7 @@ const EvidencePanel: React.FC<{ step: Step; category: Category; currentUser: Use
   return (
     <Section icon={Paperclip} title="Evidence for review" aside={submissions.length ? `${submissions.length} submitted` : undefined}>
       <p className="text-xs text-[var(--nxt-ink-soft)] mb-3">
-        Attach documents proving this milestone (IRB approval, test reports, prototype photos) for admin review.
+        Attach documents proving this milestone (signed agreements, reports, screenshots, data exports) for admin review.
         Submitting doesn't block your progress.
       </p>
 

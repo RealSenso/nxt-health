@@ -1,7 +1,42 @@
-// Starting content loaded once by an admin via POST /api/admin/starter-content.
+// Starting content, loaded or refreshed by an admin via POST /api/admin/starter-content.
+// The categories come from the NXT Platform "Categories" sheet in Google Drive. Roadmap steps are built
+// from a checklist that is imported separately (see roadmapTypes.ts) and is deliberately not in this repository.
+import type { RoadmapContent } from './roadmapTypes.js';
+
 type Doc = Record<string, unknown> & { id: string };
 
 export const STARTER_PROBLEMS: Doc[] = [
+  {
+    id: 'prob-womens-psychological',
+    title: 'In women, what is “psychological” and what is not?',
+    description: [
+      'I am a 9-to-5 professional. I love movies, travel, life and, most of all, my wife. I love my mom too, and of course, my sisters.',
+      'Over the years, I have noticed something that bothers me.',
+      'Women are often told that what they are experiencing is “psychological”. Sometimes by others. Sometimes, after hearing it enough times, they start believing it themselves.',
+      'And the problem is that by the time many women finally seek medical help, they may have already suffered for far too long.',
+      'So I have a question: Can we solve this?',
+      'If you are working on a solution to help women recognise what is actually happening to them and get the right help at the right time, I would genuinely be happy!',
+      'I can offer (only when I am free) my perspective, ask questions, give feedback, review what you are building or simply help as a husband, son, brother and fellow human being.',
+      '— Ashwath',
+    ].join('\n\n'),
+    department: "Women's Health",
+    funded: false,
+  },
+  {
+    id: 'prob-migraine',
+    title: 'Solve Migraine',
+    description: [
+      'I have lived with migraine for most of my life.',
+      'I know the medicines are available. I also know the long list of things friends and family will tell you to do: stay in the dark, drink coffee, drink water, hydrate, eat a proper meal, sleep.',
+      'And yes, medicines can work. But when a migraine attack hits, trust me, nothing else really works. You just want it to stop.',
+      'So here’s my question: is it possible to create a truly foolproof solution for migraine, something that works every single time? Maybe a device, sunglasses, a cap!',
+      'Ideally, something non-invasive. Because not everyone wants to keep reaching for medication every time an attack happens.',
+      'I am a creative professional. I can help with the brand, communication, user perspective or simply give you feedback from someone who has lived with migraine for years.',
+      '— Vinit Singh',
+    ].join('\n\n'),
+    department: 'Neurology',
+    funded: false,
+  },
   {
     id: 'prob-1',
     title: 'Early Detection of Post-Operative ICU Sepsis via Real-time Hemodynamics',
@@ -64,271 +99,116 @@ export const STARTER_PROBLEMS: Doc[] = [
   }
 ];
 
-export const STARTER_CATEGORIES: Doc[] = [
-  { id: 'cat-1', name: 'Device Product', description: 'Class I, II, & III physical medical hardware, surgical instruments, and therapeutic tools', order: 1 },
-  { id: 'cat-2', name: 'Digital Health App', description: 'Software as a Medical Device (SaMD), clinical workflows, patient-facing digital therapeutics', order: 2 },
-  { id: 'cat-3', name: 'Diagnostic Tool', description: 'In-vitro diagnostics (IVD), point-of-care assays, and molecular detection platforms', order: 3 },
-  { id: 'cat-4', name: 'Surgical Instrument & Hardware', description: 'Ergonomic surgical tools, powered cutting/stapling devices, and laparoscopic robotics', order: 4 },
-  { id: 'cat-5', name: 'Telehealth & Remote Patient Monitoring', description: 'Continuous at-home vitals acquisition, cellular-connected hubs, and clinical dashboards', order: 5 },
-  { id: 'cat-6', name: 'Point-of-Care Testing (POCT)', description: 'Rapid benchtop and lateral-flow clinical testing units for bedside and clinic use', order: 6 },
-  { id: 'cat-7', name: 'AI/ML Clinical Decision Support', description: 'Diagnostic radiology models, triage algorithms, and EHR predictive analytics', order: 7 },
-  { id: 'cat-8', name: 'Wearable Biometric Sensor', description: 'Continuous skin patches, ambulatory ECG monitors, and smart fabric wearables', order: 8 },
-  { id: 'cat-9', name: 'Rehabilitation & Physical Therapy Tech', description: 'Exoskeletons, robotic gait trainers, and sensor-guided musculoskeletal recovery', order: 9 },
-  { id: 'cat-10', name: 'Hospital Workflow & EHR Optimization', description: 'Bedside documentation assistants, automated nursing shift handoffs, and asset tracking', order: 10 },
-  { id: 'cat-11', name: 'Drug Delivery System', description: 'Microneedle transdermal patches, smart auto-injectors, and targeted aerosol nebulizers', order: 11 },
-  { id: 'cat-12', name: 'Therapeutic Biomaterials & Implants', description: 'Bioabsorbable orthopedic fixation, hydrogel scaffolds, and biocompatible grafts', order: 12 },
-  { id: 'cat-13', name: 'Pathology & Imaging Informatics', description: 'Digital whole-slide histology analysis, stain normalization, and cloud PACS pipelines', order: 13 },
-  { id: 'cat-14', name: 'Neonatal & Pediatric Care Innovation', description: 'NICU infant monitoring, specialized pediatric vascular access, and congenital care', order: 14 },
-  { id: 'cat-15', name: 'Oncology Precision Screening', description: 'Liquid biopsy circulating tumor DNA assays and optical early-stage mucosal screening', order: 15 },
-  { id: 'cat-16', name: 'Mental & Behavioral Health Platform', description: 'Evidence-based cognitive behavioral therapy tools and neuropsychiatric trackers', order: 16 },
-  { id: 'cat-17', name: 'Emergency & Trauma Care Solution', description: 'Pre-hospital tourniquets, field ultrasound, and rapid hemorrhagic shock stabilization', order: 17 },
-  { id: 'cat-18', name: 'Genomic & Molecular Diagnostics', description: 'Targeted next-generation sequencing assays and rare disease variant interpretation', order: 18 },
-  { id: 'cat-19', name: 'Infection Control & Hospital Hygiene', description: 'UV-C disinfection robots, automated hand hygiene compliance, and catheter coatings', order: 19 },
-  { id: 'cat-20', name: 'Elder Care & Assistive Health Tech', description: 'Fall impact mitigation airbags, cognitive assistance prompts, and mobility robotics', order: 20 },
-  { id: 'cat-21', name: 'Ophthalmic & Vision Diagnostics', description: 'Smartphone-adapted retinal cameras, anterior segment OCT, and glaucoma tonometry', order: 21 },
+
+type Complexity = 'low' | 'moderate' | 'high' | 'very_high';
+
+interface CategoryDef {
+  slug: string;
+  name: string;
+  /** What the startup builds. */
+  description: string;
+  example: string;
+  complexity?: Complexity;
+  complexity_note?: string;
+}
+
+/**
+ * The 25 solution types. The first six (the "green" priority list) are open to founders;
+ * the rest are listed as coming soon, ordered from lowest to highest complexity.
+ */
+const CATEGORY_DEFS: CategoryDef[] = [
+  { slug: 'marketplace-network', name: 'Marketplace / Network', description: 'Connects healthcare participants', example: 'Specialist network, doctor-startup network', complexity: 'low', complexity_note: 'Low regulatory burden; mainly business, technology, contracts and operations' },
+  { slug: 'healthcare-services', name: 'Healthcare Services', description: 'Solves problem through people/process rather than technology', example: 'Specialty care management, home healthcare', complexity: 'low', complexity_note: 'Primarily service design, clinical governance, staffing and operations' },
+  { slug: 'patient-education', name: 'Patient Education / Engagement', description: 'Improves understanding/adherence/behaviour', example: 'Regional-language disease education', complexity: 'low', complexity_note: 'Usually low regulatory complexity unless making medical claims' },
+  { slug: 'workflow-ops-tech', name: 'Workflow / Operational Tech', description: 'Removes inefficiency from healthcare operations', example: 'Bed management, OT scheduling, inventory optimisation', complexity: 'low', complexity_note: 'Usually non-medical software; focus is integration, security, procurement' },
+  { slug: 'training-simulation', name: 'Training / Simulation', description: 'Improves clinician capability', example: 'VR surgical training, simulation systems', complexity: 'low', complexity_note: 'Relatively straightforward unless making clinical/diagnostic claims' },
+  { slug: 'clinical-infrastructure', name: 'Clinical Infrastructure / Platform', description: 'Infrastructure enabling healthcare delivery', example: 'Clinical trial platform, hospital integration platform', complexity: 'low', complexity_note: 'More technical/integration complexity, but generally limited medical-device regulation' },
+
+  { slug: 'preventive-consumer', name: 'Preventive / Consumer Health', description: 'Addresses health before it becomes a clinical problem', example: 'Screening, risk assessment, lifestyle platform', complexity: 'moderate', complexity_note: 'Depends heavily on claims' },
+  { slug: 'interoperability', name: 'Interoperability / Infrastructure', description: 'Makes different healthcare systems communicate', example: 'HL7/FHIR integration, health-data exchange', complexity: 'moderate', complexity_note: 'Technically complex, regulatory burden usually moderate' },
+  { slug: 'data-intelligence', name: 'Data / Intelligence Platform', description: 'Converts healthcare data into usable intelligence', example: 'Population health analytics, clinical intelligence', complexity: 'moderate', complexity_note: 'Data governance, privacy, validation become important' },
+  { slug: 'digital-health', name: 'Digital Health / HealthTech', description: 'Software that improves healthcare delivery', example: 'Patient management platform, hospital workflow software', complexity: 'moderate', complexity_note: 'Depends on whether it crosses into medical function' },
+
+  { slug: 'remote-monitoring', name: 'Remote Patient Monitoring', description: 'Continuous/periodic collection of patient data outside hospital', example: 'Wearable monitoring BP, ECG, SpO₂', complexity: 'high', complexity_note: 'Hardware + software + clinical monitoring + potentially device regulation' },
+  { slug: 'wearables', name: 'Wearables', description: 'Sensors worn on or attached to the body', example: 'CGM, smart patch, cardiac monitor', complexity: 'high', complexity_note: 'Hardware, sensors, validation; regulatory status varies' },
+  { slug: 'ai-decision-support', name: 'AI for Clinical Decision Support', description: 'AI assists clinicians without necessarily making the final decision', example: 'Treatment recommendation, risk prediction', complexity: 'high', complexity_note: 'Evidence, clinical validation and potentially SaMD/device regulation' },
+  { slug: 'digital-therapeutics', name: 'Digital Therapeutics', description: 'Software delivers an evidence-based therapeutic intervention', example: 'Digital CBT, diabetes management programme', complexity: 'high', complexity_note: 'Clinical evidence becomes much more important' },
+  { slug: 'diagnostics-service', name: 'Diagnostics-as-a-Service', description: 'Provides diagnostic capability as a service', example: 'Mobile diagnostic screening', complexity: 'high', complexity_note: 'Diagnostic equipment + trained personnel + quality/regulatory requirements' },
+  { slug: 'clinical-trial-tech', name: 'Research / Clinical Trial Tech', description: 'Makes research faster/cheaper', example: 'Patient recruitment, trial data platform, decentralised trials', complexity: 'high', complexity_note: 'GxP/clinical-trial requirements depending on function' },
+
+  { slug: 'medical-device', name: 'Medical Device', description: 'Physical device used for diagnosis, monitoring or treatment', example: 'Portable ECG, infusion device, surgical device', complexity: 'very_high', complexity_note: 'Design controls, testing, QMS, regulatory approval, manufacturing' },
+  { slug: 'samd', name: 'SaMD', description: 'Software that itself performs a medical function', example: 'AI radiology diagnosis, clinical decision support', complexity: 'very_high', complexity_note: 'Software lifecycle + clinical evidence + cybersecurity + regulation' },
+  { slug: 'ivd', name: 'IVD / Diagnostic Test', description: 'Tests a biological sample to diagnose/monitor disease', example: 'Blood test, molecular diagnostic, biomarker test', complexity: 'very_high', complexity_note: 'Analytical + clinical performance + regulatory + manufacturing' },
+  { slug: 'ai-ml-device', name: 'AI/ML in Medical Device', description: 'AI embedded into a device or medical software', example: 'AI detecting diabetic retinopathy from retinal images', complexity: 'very_high', complexity_note: 'Device regulation + AI validation/data/model lifecycle' },
+  { slug: 'robotics', name: 'Robotics / Automation', description: 'Automates or augments clinical procedures', example: 'Surgical robot, rehabilitation robot', complexity: 'very_high', complexity_note: 'Hardware + software + safety + clinical validation' },
+  { slug: 'biomaterials', name: 'Biomaterials / Advanced Materials', description: 'New material solves a clinical problem', example: 'Bioadhesive, wound dressing, implant material', complexity: 'very_high', complexity_note: 'Materials science + biocompatibility + manufacturing + clinical evidence' },
+  { slug: 'drug-device', name: 'Drug-Device Combination', description: 'Drug + device work together', example: 'Drug-eluting stent, inhaler + drug', complexity: 'very_high', complexity_note: 'Multiple regulatory domains' },
+  { slug: 'therapeutics-biotech', name: 'Therapeutics / Biotech', description: 'Develops a biological/pharmaceutical intervention', example: 'Cell therapy, gene therapy, biologic', complexity: 'very_high', complexity_note: 'Discovery → preclinical → clinical trials → manufacturing → regulatory' },
+
+  // Listed in the categories sheet but not yet rated on the complexity sheet.
+  { slug: 'care-service', name: 'Care-as-a-Service', description: 'Delivers an entire care pathway', example: 'Chronic disease management' },
 ];
 
-export const STARTER_STEPS: Doc[] = [
-  {
-    id: 'step-dev-1',
-    category_id: 'cat-1',
-    name: 'Market Research & Clinical Unmet Need',
-    description: 'Perform clinician ethnographic shadowing, surgeon voice-of-customer interviews, existing standard-of-care cost analysis, and freedom-to-operate patent landscaping.',
-    order: 1,
-    stage_tag: 'Discovery',
-  },
-  {
-    id: 'step-dev-2',
-    category_id: 'cat-1',
-    name: 'Feasibility & Low-Fidelity Prototype (MVP)',
-    description: 'Design benchtop proof-of-concept models using 3D printing and biocompatible rapid prototyping to prove core mechanical and electrical feasibility.',
-    order: 2,
-    stage_tag: 'Engineering',
-  },
-  {
-    id: 'step-dev-3',
-    category_id: 'cat-1',
-    name: 'Clinical Validation & Usability Testing',
-    description: 'Conduct human factors evaluations, simulated surgical dry-lab studies, and formal hospital pilot protocols to validate clinical ergonomics and efficacy.',
-    order: 3,
-    stage_tag: 'Clinical Validation',
-  },
-  {
-    id: 'step-dev-4',
-    category_id: 'cat-1',
-    name: 'Regulatory Clearance (FDA 510(k) / CE Mark / ISO 13485)',
-    description: 'Assemble design history files (DHF), biocompatibility testing (ISO 10993), electrical safety (IEC 60601), and submit FDA pre-submission Q-Sub or 510(k).',
-    order: 4,
-    stage_tag: 'Regulatory',
-  },
-  {
-    id: 'step-dev-5',
-    category_id: 'cat-1',
-    name: 'Go-To-Market (GTM) & Hospital Value Analysis (VAC)',
-    description: 'Prepare Value Analysis Committee dossiers, CPT reimbursement pathway coding, distributor channel strategy, and initial Key Opinion Leader (KOL) partnerships.',
-    order: 5,
-    stage_tag: 'Commercialization',
-  },
-  {
-    id: 'step-dev-6',
-    category_id: 'cat-1',
-    name: 'Scaling & Contract Manufacturing (CMO)',
-    description: 'Lock cleanroom production lines, transfer tooling to ISO 13485 certified medical device contract manufacturers, and institute lot release sampling.',
-    order: 6,
-    stage_tag: 'Manufacturing',
-  },
-  {
-    id: 'step-dev-7',
-    category_id: 'cat-1',
-    name: 'Other Market Access & International Expansion',
-    description: 'Establish European MDR conformity assessments, PMDA Japan clearances, and health economics & outcomes research (HEOR) registries for regional coverage.',
-    order: 7,
-    stage_tag: 'Global Access',
-  },
+/** How many categories are open to founders today (the six priority "green" categories). */
+export const LIVE_CATEGORY_COUNT = 6;
 
-  {
-    id: 'step-dh-1',
-    category_id: 'cat-2',
-    name: 'Clinical Workflow Definition & Patient Journey Mapping',
-    description: 'Establish clinical protocols, identify trigger moments in the EHR workflow, and detail patient adherence barriers.',
-    order: 1,
-    stage_tag: 'Discovery',
-  },
-  {
-    id: 'step-dh-2',
-    category_id: 'cat-2',
-    name: 'HIPAA Architecture, SOC2 & Software MVP Prototype',
-    description: 'Build end-to-end encrypted infrastructure, OAuth2/SMART on FHIR endpoints, and user-tested clinical interface.',
-    order: 2,
-    stage_tag: 'Software Engineering',
-  },
-  {
-    id: 'step-dh-3',
-    category_id: 'cat-2',
-    name: 'Clinical Validation & Health System Pilot',
-    description: 'Deploy sandbox integration with partner clinic, measure primary clinical outcome endpoints against standard-of-care.',
-    order: 3,
-    stage_tag: 'Clinical Validation',
-  },
-  {
-    id: 'step-dh-4',
-    category_id: 'cat-2',
-    name: 'SaMD Regulatory Classification & Cyber Security Audit',
-    description: 'Determine FDA enforcement discretion vs. 510(k) De Novo pathway, execute FDA cybersecurity BOM (SBOM) documentation.',
-    order: 4,
-    stage_tag: 'Regulatory',
-  },
-  {
-    id: 'step-dh-5',
-    category_id: 'cat-2',
-    name: 'Provider Integration & Remote Reimbursement (CPT Codes)',
-    description: 'Integrate Epic App Orchard / Cerner Millennium marketplace and activate Remote Patient Monitoring CPT 99453/99454 billing.',
-    order: 5,
-    stage_tag: 'Reimbursement',
-  },
+const categoryId = (slug: string) => `cat-${slug}`;
 
-  {
-    id: 'step-diag-1',
-    category_id: 'cat-3',
-    name: 'Biomarker Assay Proof & Analytical Sensitivity',
-    description: 'Characterize limit of detection (LoD), cross-reactivity, precision, and coefficient of variation with spiked clinical samples.',
-    order: 1,
-    stage_tag: 'Assay Dev',
-  },
-  {
-    id: 'step-diag-2',
-    category_id: 'cat-3',
-    name: 'Cartridge Instrumentation & Reader MVP',
-    description: 'Develop microfluidic cartridge architecture, optical/electrochemical detection sensor, and companion reader unit.',
-    order: 2,
-    stage_tag: 'Hardware MVP',
-  },
-  {
-    id: 'step-diag-3',
-    category_id: 'cat-3',
-    name: 'Clinical Validation with Patient Specimen Biobanks',
-    description: 'Execute blinded prospective specimen study comparing diagnostic sensitivity and specificity against gold-standard PCR/ELISA.',
-    order: 3,
-    stage_tag: 'Clinical Validation',
-  },
-  {
-    id: 'step-diag-4',
-    category_id: 'cat-3',
-    name: 'CLIA Waiver Strategy & IVD FDA Clearance',
-    description: 'Formulate CLIA waiver protocol demonstrating simple usability by untrained operators and submission of FDA 510(k) IVD.',
-    order: 4,
-    stage_tag: 'Regulatory',
-  },
-  {
-    id: 'step-diag-5',
-    category_id: 'cat-3',
-    name: 'Lab Information System (LIS) & Distribution Network',
-    description: 'Interface with HL7/ASTM laboratory analyzers and establish cold-chain distribution channels for reagent shelf life.',
-    order: 5,
-    stage_tag: 'Commercialization',
-  }
-];
+export const STARTER_CATEGORIES: Doc[] = CATEGORY_DEFS.map((def, index) => {
+  const live = index < LIVE_CATEGORY_COUNT;
+  return {
+    id: categoryId(def.slug),
+    name: def.name,
+    description: def.description,
+    example: def.example,
+    order: index + 1,
+    coming_soon: !live,
+    ...(live ? { priority: index + 1 } : {}),
+    ...(def.complexity ? { complexity: def.complexity, complexity_note: def.complexity_note } : {}),
+    ...(live && index > 0
+      ? { roadmap_note: 'This starter roadmap is built from the Marketplace checklist. A checklist written for this category is coming.' }
+      : {}),
+  };
+});
 
-export const STARTER_RESOURCES: Doc[] = [
-  {
-    id: 'res-hosp-1',
-    step_id: 'step-dev-3',
-    type: 'hospital_connection',
-    title: 'Johns Hopkins Medical Device Pilot & Simulation Center',
-    description: 'Collaborative testbed offering access to mock surgical suites, biomechanical testing labs, and 45+ credentialed surgical faculty for usability evaluations.',
-    hospital_name: 'The Johns Hopkins Hospital',
-    clinical_department: 'Department of Surgery & Medical Device Innovation Center',
-    contact_person: 'Dr. Katherine Miller, MD (Director of Clinical Technology Assessment)',
-    contact_email: 'kmiller@jhmi.edu.pilot',
-    pilot_status: 'Accepting Device Validation Cohort Applications'
-  },
-  {
-    id: 'res-hosp-2',
-    step_id: 'step-dev-3',
-    type: 'hospital_connection',
-    title: 'Mayo Clinic Center for Innovation & Cardiac Tech Testbed',
-    description: 'Specialized clinical research unit for electrophysiology and cardiovascular hardware testing. Equipped with hemodynamic simulators and IRB fast-track protocols.',
-    hospital_name: 'Mayo Clinic Rochester',
-    clinical_department: 'Division of Cardiovascular Diseases & Biomechanics Testing',
-    contact_person: 'Marcus Sterling, PhD (Head of MedTech Industry Alliances)',
-    contact_email: 'msterling@mayoclinic.org.alliances',
-    pilot_status: 'Active Partnership Window Open'
-  },
-  {
-    id: 'res-hosp-3',
-    step_id: 'step-dev-3',
-    type: 'hospital_connection',
-    title: 'Cleveland Clinic Lerner Research Institute Clinical Liaison',
-    description: 'Comprehensive preclinical and clinical validation pathway with on-site biomedical engineering workshops, animal model facilities, and patient cohort access.',
-    hospital_name: 'Cleveland Clinic Main Campus',
-    clinical_department: 'Biomedical Engineering & General Surgery Collaborative',
-    contact_person: 'Elena Rostova, RN, MBA (Clinical Trial Operations Manager)',
-    contact_email: 'erostova@ccf.org.trials',
-    pilot_status: 'Reviewing Q2 MedTech Pilots'
-  },
-  {
-    id: 'res-gen-1',
-    step_id: 'step-dev-3',
-    type: 'session',
-    title: '1-on-1 Clinical Trial Protocol Design with Dr. Raymond Vance',
-    description: 'A 45-minute structured clinic review focusing on formulating IRB-compliant sample size calculations and clinical safety endpoints.',
-    date: 'Every Thursday, 2:00 PM EST',
-    host_or_speaker: 'Dr. Raymond Vance, MD, FACC (Clinical Trialist)',
-    link: 'https://meet.medplatform.org/clinical-review-vance'
-  },
-  {
-    id: 'res-gen-2',
-    step_id: 'step-dev-3',
-    type: 'webinar',
-    title: 'Usability & Human Factors Engineering (ANSI/AAMI HE75 & IEC 62366)',
-    description: 'Masterclass on conducting formative and summative usability studies that satisfy FDA human factors requirements for surgical and patient-worn devices.',
-    date: 'March 26, 2025 • 1:00 PM EST',
-    host_or_speaker: 'Claire Dupont (Lead Human Factors Scientist, MedTech Quality)',
-    link: 'https://webinars.medplatform.org/human-factors-62366'
-  },
+/**
+ * Parses a checklist duration such as "1–2 weeks", "3–5 days" or "1 week" into [min, max] working weeks.
+ * "Ongoing" and anything unrecognised returns null.
+ */
+export function durationInWeeks(text: string): [number, number] | null {
+  const match = text.match(/^(\d+)(?:[–-](\d+))?\s*(day|week)s?$/i);
+  if (!match) return null;
+  const unit = match[3].toLowerCase() === 'day' ? 1 / 5 : 1;
+  const low = Number(match[1]) * unit;
+  return [low, Number(match[2] ?? match[1]) * unit];
+}
 
-  {
-    id: 'res-mr-1',
-    step_id: 'step-dev-1',
-    type: 'seminar',
-    title: 'Clinical Unmet Need & Hospital Procurement Economics Seminar',
-    description: 'How hospital Value Analysis Committees (VAC) decide what devices to approve and how to calculate hospital ROI and length-of-stay reduction.',
-    date: 'April 4, 2025 • 3:00 PM EST',
-    host_or_speaker: 'Gregory Bell, FACHE (Former VP of Hospital Supply Chain)',
-    link: 'https://seminars.medplatform.org/hospital-economics'
-  },
-  {
-    id: 'res-mr-2',
-    step_id: 'step-dev-1',
-    type: 'session',
-    title: 'Freedom-to-Operate (FTO) & Prior Art IP Office Hours',
-    description: 'Review your provisional patent scope with registered medical device patent attorneys.',
-    date: 'Every Tuesday, 11:00 AM EST',
-    host_or_speaker: 'Alistair Vance, Esq. (Partner, Life Science IP)',
-    link: 'https://meet.medplatform.org/ip-office-hours'
-  },
+/** Id of the category whose checklist the roadmap content is written for. */
+export const ROADMAP_SOURCE_CATEGORY = 'cat-marketplace-network';
 
-  {
-    id: 'res-reg-1',
-    step_id: 'step-dev-4',
-    type: 'webinar',
-    title: 'De-mystifying the FDA 510(k) Pre-Submission (Q-Sub) Program',
-    description: 'Step-by-step tactics to get written binding feedback from FDA CDRH reviewers without committing to an expensive trial prematurely.',
-    date: 'April 18, 2025 • 2:00 PM EST',
-    host_or_speaker: 'Theresa Wong, RAC (Former FDA Senior Reviewer)',
-    link: 'https://webinars.medplatform.org/fda-qsub-tactics'
-  },
+/** One roadmap step per checklist phase, for every open category. */
+export function buildRoadmapSteps(roadmap: RoadmapContent): Doc[] {
+  return STARTER_CATEGORIES.filter(c => !c.coming_soon).flatMap(category =>
+    roadmap.phases.map(phase => {
+      const weeks = phase.tasks.map(t => durationInWeeks(t.duration)).filter((w): w is [number, number] => !!w);
+      const low = Math.max(1, Math.round(weeks.reduce((n, w) => n + w[0], 0)));
+      const high = Math.max(low, Math.round(weeks.reduce((n, w) => n + w[1], 0)));
+      return {
+        id: `step-${String(category.id).replace(/^cat-/, '')}-${phase.no}`,
+        category_id: category.id,
+        name: phase.name,
+        description: `${phase.tasks.length} tasks · ${phase.sub_stages.join(' · ')}`,
+        order: phase.no + 1,
+        stage_tag: phase.name,
+        typical_duration: low === high ? `about ${low} week${low === 1 ? '' : 's'} of work` : `about ${low}–${high} weeks of work`,
+        tasks: phase.tasks,
+      };
+    }),
+  );
+}
 
-  {
-    id: 'res-dh-hosp-1',
-    step_id: 'step-dh-3',
-    type: 'hospital_connection',
-    title: 'Mount Sinai Digital Health Innovation Sandbox',
-    description: 'Direct testing sandbox integrating SMART-on-FHIR apps within live ambulatory clinics for hypertension and diabetic remote care cohorts.',
-    hospital_name: 'Mount Sinai Health System, New York',
-    clinical_department: 'Department of Digital Health & Ambulatory Medicine',
-    contact_person: 'Dr. Nikhil Patel (Digital Clinical Director)',
-    contact_email: 'npatel@mountsinai.org.pilot',
-    pilot_status: 'Accepting SaMD Digital Health Pilots'
-  }
-];
+/** The sheets include no events or hospital partners yet, so there are no starter resources. */
+export const STARTER_RESOURCES: Doc[] = [];
+
+/** Ids from earlier starter content that the current content replaces. */
+export const OBSOLETE_CATEGORY_ID = /^cat-\d+$/;

@@ -109,11 +109,44 @@ export interface FundingApplication {
   scope_key?: string;
 }
 
+export type Complexity = 'low' | 'moderate' | 'high' | 'very_high';
+
+export interface CategoryPlaybook {
+  model: { component: string; question: string; output: string }[];
+  cost_inputs: { category: string; input: string; why: string; approach: string }[];
+  how_to_use: string[];
+}
+
 export interface Category {
   id: string;
   name: string;
+  /** What a startup in this category builds. */
   description: string;
+  example?: string;
   order: number;
+  /** Listed for founders to see, but not open to start yet. */
+  coming_soon?: boolean;
+  /** 1–6 for the categories open today. */
+  priority?: number;
+  complexity?: Complexity;
+  complexity_note?: string;
+  roadmap_note?: string;
+  playbook?: CategoryPlaybook;
+}
+
+/** One row of a roadmap checklist. */
+export interface StepTask {
+  id: string;
+  label: string;
+  detail: string;
+  sub_stage: string;
+  experts: string;
+  resources: string;
+  deliverable: string;
+  depends_on: string;
+  duration: string;
+  gate?: string;
+  owner: string;
 }
 
 export interface Step {
@@ -123,6 +156,9 @@ export interface Step {
   description: string;
   order: number;
   stage_tag?: string;
+  /** Planned work for the step; when present it replaces the generic checklist. */
+  tasks?: StepTask[];
+  typical_duration?: string;
   locked?: boolean;
 }
 

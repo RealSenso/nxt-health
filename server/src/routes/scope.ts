@@ -43,7 +43,9 @@ export function scopeRouter(database: Database): Router {
   r.put('/scope/locks/:problemId', async (req, res) => {
     const key = scopeKeyOf(requireMember(req));
     const { category_id } = parse(z.object({ category_id: id }), req.body);
-    if (!(await database.col('categories').findOne({ _id: category_id }))) throw new HttpError(404, 'Category not found.');
+    const category = await database.col('categories').findOne({ _id: category_id });
+    if (!category) throw new HttpError(404, 'Category not found.');
+    if (category.coming_soon) throw new HttpError(409, `${category.name} is coming soon — it isn't open yet.`);
     await scopes.updateOne({ _id: key }, { $set: { [`category_locks.${param(req.params.problemId)}`]: category_id } }, { upsert: true });
     res.json({ ok: true });
   });

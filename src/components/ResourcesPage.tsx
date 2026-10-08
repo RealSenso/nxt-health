@@ -54,7 +54,7 @@ export const ResourcesPage: React.FC<ResourcesPageProps> = ({
   };
 
   const isMember = !!currentUser?.is_member;
-  const categories = store.getCategories();
+  const categories = store.getCategories().filter(c => !c.coming_soon);
   const allSteps = store.getSteps();
   const resources = store.getResources();
 

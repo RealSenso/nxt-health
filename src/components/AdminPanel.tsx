@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import {
@@ -40,7 +40,29 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser }) => {
   const [resetSuccess, setResetSuccess] = useState(false);
   const [loadingStarter, setLoadingStarter] = useState(false);
 
-  const handleLoadStarterContent = async () => {
+  const roadmapFileRef = useRef<HTMLInputElement>(null);
+  const [importMessage, setImportMessage] = useState<{ ok: boolean; text: string } | null>(null);
+
+  const handleImportRoadmap = async (file: File | undefined) => {
+    if (!file) return;
+    if (!window.confirm(`Import "${file.name}"?\n\nThis builds the roadmap steps for every open category from the file. Steps with the same ids are overwritten — any edits you made to them are lost.`)) return;
+    setLoadingStarter(true);
+    setImportMessage(null);
+    try {
+      const result = await store.importRoadmap(JSON.parse(await file.text()));
+      setImportMessage({ ok: true, text: `Roadmap imported — ${result.steps} steps built.` });
+    } catch (e) {
+      setImportMessage({ ok: false, text: e instanceof SyntaxError ? "That file isn't valid JSON." : e instanceof Error ? e.message : 'Could not import that file.' });
+    } finally {
+      setLoadingStarter(false);
+      if (roadmapFileRef.current) roadmapFileRef.current.value = '';
+    }
+  };
+
+  const handleLoadStarterContent = async (confirmFirst = false) => {
+    if (confirmFirst && !window.confirm(
+      'Update the starter content?\n\nThis refreshes the 25 starter categories (any edits you made to them are overwritten), removes the older starter categories, and adds any missing starter problem statements. Problems you have edited are kept. Roadmap steps are loaded separately with "Import roadmap file".',
+    )) return;
     setLoadingStarter(true);
     try {
       await store.loadStarterContent();
@@ -120,10 +142,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser }) => {
     e.preventDefault();
     if (!editingCategory?.name) return;
     store.saveCategory({
+      ...editingCategory,
       id: editingCategory.id,
       name: editingCategory.name,
       description: editingCategory.description || '',
       order: Number(editingCategory.order || (categories.length + 1)),
+      coming_soon: !!editingCategory.coming_soon,
     });
     setEditingCategory(null);
   };
@@ -241,7 +265,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser }) => {
         actions={store.isContentEmpty() ? (
           <button
             id="btn-admin-load-starter"
-            onClick={handleLoadStarterContent}
+            onClick={() => handleLoadStarterContent()}
             disabled={loadingStarter}
             className="px-4 py-2.5 bg-[var(--nxt-mint-strong)] hover:bg-[var(--nxt-mint-deep)] disabled:opacity-60 text-white rounded-full text-sm font-semibold flex items-center gap-1.5 transition-colors"
           >
@@ -252,7 +276,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser }) => {
 
       {store.isContentEmpty() && !resetSuccess && (
         <div className="p-4 bg-[var(--nxt-blue)] border border-[var(--nxt-blue-strong)]/20 text-[var(--nxt-blue-deep)] text-sm rounded-2xl">
-          The database has no categories or problem statements yet. Click <strong>Load starter content</strong> to add the 21 categories, roadmap steps, resources and sample problem statements — you can edit or delete any of them afterwards.
+          The database has no categories or problem statements yet. Click <strong>Load starter content</strong> to add the 25 categories (6 open, 19 coming soon), the roadmap and the problem statements — you can edit or delete any of them afterwards.
         </div>
       )}
 
@@ -633,9 +657,29 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser }) => {
         <div className="space-y-4">
           <div className="flex items-center justify-between bg-[var(--nxt-surface)] p-4 rounded-xl border border-[var(--nxt-line)] shadow-sm">
             <div>
-              <h3 className="font-display text-sm font-bold text-[var(--nxt-ink)]">Healthcare Startup Categories ({categories.length})</h3>
-              <p className="text-xs text-[var(--nxt-ink-soft)]">Admin configurable list of 21 domains. Add, rename, or reorder categories.</p>
+              <h3 className="font-display text-sm font-bold text-[var(--nxt-ink)]">Healthcare Startup Categories ({categories.length} · {categories.filter(c => !c.coming_soon).length} open)</h3>
+              <p className="text-xs text-[var(--nxt-ink-soft)]">Categories marked "coming soon" are visible to founders but can't be started yet.</p>
             </div>
+            <div className="flex flex-wrap items-center justify-end gap-2">
+            <input ref={roadmapFileRef} type="file" accept="application/json,.json" className="hidden" onChange={(e) => void handleImportRoadmap(e.target.files?.[0])} />
+            <button
+              id="btn-import-roadmap"
+              onClick={() => roadmapFileRef.current?.click()}
+              disabled={loadingStarter}
+              className="px-3 py-1.5 border border-[var(--nxt-line)] hover:bg-[var(--nxt-bg-soft)] disabled:opacity-60 rounded-full text-xs font-semibold flex items-center gap-1"
+            >
+              <Paperclip className="w-3.5 h-3.5" />
+              <span>Import roadmap file</span>
+            </button>
+            <button
+              id="btn-update-starter-content"
+              onClick={() => handleLoadStarterContent(true)}
+              disabled={loadingStarter}
+              className="px-3 py-1.5 border border-[var(--nxt-line)] hover:bg-[var(--nxt-bg-soft)] disabled:opacity-60 rounded-full text-xs font-semibold flex items-center gap-1"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${loadingStarter ? 'animate-spin' : ''}`} />
+              <span>{loadingStarter ? 'Updating…' : 'Update starter content'}</span>
+            </button>
             <button
               onClick={() => setEditingCategory({ name: '', description: '', order: categories.length + 1 })}
               className="px-3 py-1.5 bg-[var(--nxt-mint-strong)] hover:bg-[var(--nxt-mint-deep)] text-white rounded-full text-xs font-semibold flex items-center gap-1 shadow-sm"
@@ -643,7 +687,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser }) => {
               <Plus className="w-3.5 h-3.5" />
               <span>Add Category</span>
             </button>
+            </div>
           </div>
+
+          {importMessage && (
+            <p role="status" className={`text-xs font-semibold px-4 py-2.5 rounded-xl border ${importMessage.ok ? 'border-[var(--nxt-line)] bg-[var(--nxt-bg-soft)] text-[var(--nxt-ink)]' : 'border-[var(--nxt-peach-deep)]/30 bg-[var(--nxt-peach)] text-[var(--nxt-peach-deep)]'}`}>
+              {importMessage.text}
+            </p>
+          )}
 
           {editingCategory && (
             <form onSubmit={handleSaveCategory} className="bg-[var(--nxt-bg-soft)] border border-[var(--nxt-mint-strong)]/20 rounded-xl p-4 space-y-3">
@@ -685,6 +736,27 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser }) => {
                 />
               </div>
 
+              <div>
+                <label className="block text-xs font-semibold text-[var(--nxt-ink-soft)] mb-1">Example</label>
+                <input
+                  type="text"
+                  value={editingCategory.example || ''}
+                  onChange={(e) => setEditingCategory({ ...editingCategory, example: e.target.value })}
+                  className="w-full text-xs bg-[var(--nxt-surface)] border border-[var(--nxt-line)] rounded-lg p-2"
+                  placeholder="e.g. Specialist network, doctor-startup network"
+                />
+              </div>
+
+              <label className="flex items-center gap-2 text-xs font-semibold text-[var(--nxt-ink)] cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={!!editingCategory.coming_soon}
+                  onChange={(e) => setEditingCategory({ ...editingCategory, coming_soon: e.target.checked })}
+                  className="w-4 h-4 accent-[var(--nxt-mint-strong)]"
+                />
+                Coming soon — show it, but don't let founders start it yet
+              </label>
+
               <div className="flex items-center gap-2 pt-1">
                 <button type="submit" className="px-4 py-1.5 bg-[var(--nxt-mint-strong)] text-white rounded-full text-xs font-semibold hover:bg-[var(--nxt-mint-deep)]">
                   Save Category
@@ -713,6 +785,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser }) => {
                     <td className="py-2.5 px-4 font-bold text-[var(--nxt-ink-soft)]">{c.order}</td>
                     <td className="py-2.5 px-4 font-bold text-[var(--nxt-ink)]">
                       {c.name}
+                      {c.coming_soon && <span className="ml-2 text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full border border-[var(--nxt-line)] text-[var(--nxt-ink-soft)]">Coming soon</span>}
                       <p className="sm:hidden text-[11px] text-[var(--nxt-ink-soft)] font-normal">{c.description}</p>
                     </td>
                     <td className="py-2.5 px-4 text-[var(--nxt-ink-soft)] hidden sm:table-cell">{c.description}</td>

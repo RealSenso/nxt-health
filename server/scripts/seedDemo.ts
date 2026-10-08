@@ -19,8 +19,8 @@ import { ObjectId } from 'mongodb';
 import { cert, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { connect } from '../src/db.js';
-import { STARTER_CATEGORIES, STARTER_PROBLEMS, STARTER_RESOURCES, STARTER_STEPS } from '../src/starterContent.js';
-import { getStepGuide } from '../../src/data/stepGuides.js';
+import { roadmapContentSchema } from '../src/roadmapTypes.js';
+import { syncStarterContent } from '../src/syncContent.js';
 
 const uri = process.env.MONGODB_URI;
 const keyPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH;
@@ -119,7 +119,7 @@ const EXPERTS: Record<string, Record<string, unknown>> = {
     topics: ['US FDA 510(k)', 'CE Mark', 'First fundraising round'],
     expert_areas: ['Medical devices', 'Regulatory', 'Market access'],
     fits_gates: [3, 4], rate_usd: 200, session_times: ['10:00', '11:30', '15:00', '17:30'],
-    expertise_stages: ['Regulatory', 'Clinical Validation', 'Commercialization'], category_ids: ['cat-1'], background: 'business', availability: '2 calls a month',
+    expertise_stages: ['Legal & Compliance', 'Revenue', 'Launch'], category_ids: ['cat-marketplace-network'], background: 'business', availability: '2 calls a month',
     book_when: ['Plan the evidence a regulator will ask for', 'Choose between the EU and US route first', 'Prepare a first fundraising conversation'],
   },
   ravi: {
@@ -128,7 +128,7 @@ const EXPERTS: Record<string, Record<string, unknown>> = {
     topics: ['CDSCO', 'US FDA', 'CE Mark'],
     expert_areas: ['Medical devices', 'Regulatory'],
     fits_gates: [3, 4], rate_usd: 150, session_times: ['10:00', '11:30', '15:00', '17:30'],
-    expertise_stages: ['Regulatory'], category_ids: ['cat-1'], background: 'science', availability: 'Weekday mornings',
+    expertise_stages: ['Legal & Compliance'], category_ids: ['cat-marketplace-network', 'cat-healthcare-services'], background: 'science', availability: 'Weekday mornings',
     book_when: ['Work out your device class and the route that follows from it', 'Plan the evidence a regulator will ask for', 'Check a regulatory file before you submit it', 'Decide whether India, the GCC or the US comes first'],
   },
   elena: {
@@ -137,7 +137,7 @@ const EXPERTS: Record<string, Record<string, unknown>> = {
     topics: ['Hospital pilots', 'Evidence generation', 'KOL engagement'],
     expert_areas: ['Clinical validation', 'Hospital pilots'],
     fits_gates: [3, 4], rate_usd: 180, session_times: ['09:30', '14:00', '16:30'],
-    expertise_stages: ['Clinical Validation'], category_ids: ['cat-1', 'cat-2'], background: 'clinical', availability: 'Weekdays',
+    expertise_stages: ['Strategy', 'Marketplace Validation'], category_ids: ['cat-healthcare-services', 'cat-clinical-infrastructure'], background: 'clinical', availability: 'Weekdays',
     book_when: ['Design a pilot a hospital will actually sign', 'Choose endpoints and a sample size', 'Line up a clinical champion'],
   },
   omar: {
@@ -146,7 +146,7 @@ const EXPERTS: Record<string, Record<string, unknown>> = {
     topics: ['International grants open to India', 'Applications'],
     expert_areas: ['Funding and grants'],
     fits_gates: [2], rate_usd: 0, session_times: ['11:00', '15:30'],
-    expertise_stages: ['Discovery'], category_ids: ['cat-1'], background: 'business', availability: 'Two sessions a week',
+    expertise_stages: ['Revenue'], category_ids: ['cat-marketplace-network'], background: 'business', availability: 'Two sessions a week',
     book_when: ['Pick the right grant for your stage', 'Review an application before you submit', 'Plan a resubmission after feedback'],
   },
   grace: {
@@ -155,7 +155,7 @@ const EXPERTS: Record<string, Record<string, unknown>> = {
     topics: ['Validation in India', 'First contracts abroad'],
     expert_areas: ['Market access', 'Medical devices'],
     fits_gates: [3, 5], rate_usd: 120, session_times: ['12:00', '17:00'],
-    expertise_stages: ['Commercialization'], category_ids: ['cat-1'], background: 'business', availability: 'Weekday afternoons',
+    expertise_stages: ['Market', 'Scale'], category_ids: ['cat-marketplace-network'], background: 'business', availability: 'Weekday afternoons',
     book_when: ['Choose your first overseas market', 'Find a launch partner', 'Plan UK and EU registration'],
   },
   tomas: {
@@ -164,7 +164,7 @@ const EXPERTS: Record<string, Record<string, unknown>> = {
     topics: ['Software as a medical device', 'Clinical AI'],
     expert_areas: ['AI and digital health', 'Regulatory'],
     fits_gates: [3, 4], rate_usd: 220, session_times: ['10:30', '14:30', '18:00'],
-    expertise_stages: ['Software Engineering', 'Regulatory'], category_ids: ['cat-2'], background: 'engineering', availability: 'Weekdays',
+    expertise_stages: ['Technology', 'Legal & Compliance'], category_ids: ['cat-workflow-ops-tech', 'cat-clinical-infrastructure'], background: 'engineering', availability: 'Weekdays',
     book_when: ['Decide whether your software is a medical device', 'Plan clinical validation for an AI model', 'Choose a data and privacy approach'],
   },
   nadia: {
@@ -173,47 +173,66 @@ const EXPERTS: Record<string, Record<string, unknown>> = {
     topics: ['Pilots', 'Procurement', 'Vendor onboarding'],
     expert_areas: ['Hospital pilots', 'Market access'],
     fits_gates: [4, 5], rate_usd: 100, session_times: ['09:00', '13:00', '16:00'],
-    expertise_stages: ['Commercialization'], category_ids: ['cat-1', 'cat-2'], background: 'clinical', availability: 'Weekdays',
+    expertise_stages: ['Operations', 'Marketplace Validation'], category_ids: ['cat-healthcare-services', 'cat-workflow-ops-tech'], background: 'clinical', availability: 'Weekdays',
     book_when: ['Get a pilot approved inside a hospital', 'Understand how procurement decides', 'Prepare for vendor onboarding'],
   },
 };
 
+/** Roadmap step ids are `step-<category slug>-<phase number>`; phases 0–9 are Strategy … Scale. */
+const J = (user: string, problem: string, slug: string, steps: JourneyStep[]) =>
+  ({ user, problem, category: `cat-${slug}`, steps: steps.map(st => ({ ...st, step: `step-${slug}-${st.step}` })) });
+
 const JOURNEYS: { user: string; problem: string; category: string; steps: JourneyStep[] }[] = [
-  { user: 'marcus', problem: 'prob-1', category: 'cat-1', steps: [
-    { step: 'step-dev-1', status: 'done', started: 185, completed: 140, done: 5 },
-    { step: 'step-dev-2', status: 'done', started: 140, completed: 60, done: 5 },
-    { step: 'step-dev-3', status: 'in_progress', started: 60, done: 2, log: ['Protocol draft shared with Dr. Lin for feedback.'] },
-  ] },
-  { user: 'priya', problem: 'prob-4', category: 'cat-2', steps: [
-    { step: 'step-dh-1', status: 'done', started: 145, completed: 120, done: 3 },
-    { step: 'step-dh-2', status: 'done', started: 120, completed: 75, done: 5 },
-    { step: 'step-dh-3', status: 'done', started: 75, completed: 30, done: 6 },
-    { step: 'step-dh-4', status: 'blocked', started: 30, done: 1, blocker: 'Waiting on payer medical director meeting' },
-  ] },
-  { user: 'james', problem: 'prob-2', category: 'cat-1', steps: [
-    { step: 'step-dev-1', status: 'done', started: 105, completed: 75, done: 5 },
-    { step: 'step-dev-2', status: 'in_progress', started: 75, done: 1 },
-  ] },
-  { user: 'diego', problem: 'prob-6', category: 'cat-3', steps: [
-    { step: 'step-diag-1', status: 'done', started: 88, completed: 70, done: 3 },
-    { step: 'step-diag-2', status: 'done', started: 70, completed: 35, done: 4 },
-    { step: 'step-diag-3', status: 'blocked', started: 35, done: 2, blocker: 'Waiting on biobank specimen access' },
-  ] },
-  { user: 'sofia', problem: 'prob-3', category: 'cat-1', steps: [
-    { step: 'step-dev-1', status: 'done', started: 70, completed: 40, done: 5 },
-    { step: 'step-dev-2', status: 'in_progress', started: 40, done: 3 },
-  ] },
-  { user: 'rahul', problem: 'prob-5', category: 'cat-2', steps: [{ step: 'step-dh-1', status: 'in_progress', started: 25, done: 1 }] },
-  { user: 'hannah', problem: 'prob-2', category: 'cat-1', steps: [
-    { step: 'step-dev-1', status: 'done', started: 165, completed: 150, done: 5 },
-    { step: 'step-dev-2', status: 'done', started: 150, completed: 110, done: 5 },
-    { step: 'step-dev-3', status: 'done', started: 110, completed: 55, done: 6 },
-    { step: 'step-dev-4', status: 'done', started: 55, completed: 12, done: 5 },
-    { step: 'step-dev-5', status: 'in_progress', started: 12, done: 1 },
-  ] },
-  { user: 'lucia', problem: 'prob-6', category: 'cat-3', steps: [
-    { step: 'step-diag-1', status: 'blocked', started: 22, done: 1, blocker: 'Waiting on biobank specimen access' },
-  ] },
+  J('marcus', 'prob-womens-psychological', 'marketplace-network', [
+    { step: '0', status: 'done', started: 185, completed: 140, done: 5 },
+    { step: '1', status: 'done', started: 140, completed: 60, done: 7 },
+    { step: '2', status: 'in_progress', started: 60, done: 3, log: ['Participation rules drafted with Dr. Lin for feedback.'] },
+  ]),
+  J('priya', 'prob-4', 'workflow-ops-tech', [
+    { step: '0', status: 'done', started: 145, completed: 120, done: 5 },
+    { step: '1', status: 'done', started: 120, completed: 75, done: 7 },
+    { step: '2', status: 'done', started: 75, completed: 30, done: 10 },
+    { step: '3', status: 'blocked', started: 30, done: 1, blocker: 'Waiting on the hospital IT security review' },
+  ]),
+  J('james', 'prob-2', 'healthcare-services', [
+    { step: '0', status: 'done', started: 105, completed: 75, done: 5 },
+    { step: '1', status: 'in_progress', started: 75, done: 2 },
+  ]),
+  J('diego', 'prob-6', 'clinical-infrastructure', [
+    { step: '0', status: 'done', started: 88, completed: 70, done: 5 },
+    { step: '1', status: 'done', started: 70, completed: 35, done: 7 },
+    { step: '2', status: 'blocked', started: 35, done: 2, blocker: 'Waiting on a data-sharing agreement with the partner hospital' },
+  ]),
+  J('sofia', 'prob-3', 'patient-education', [
+    { step: '0', status: 'done', started: 70, completed: 40, done: 5 },
+    { step: '1', status: 'in_progress', started: 40, done: 3 },
+  ]),
+  J('rahul', 'prob-5', 'training-simulation', [{ step: '0', status: 'in_progress', started: 25, done: 2 }]),
+  J('hannah', 'prob-migraine', 'marketplace-network', [
+    { step: '0', status: 'done', started: 165, completed: 150, done: 5 },
+    { step: '1', status: 'done', started: 150, completed: 110, done: 7 },
+    { step: '2', status: 'done', started: 110, completed: 55, done: 10 },
+    { step: '3', status: 'done', started: 55, completed: 12, done: 5 },
+    { step: '4', status: 'in_progress', started: 12, done: 2 },
+  ]),
+  J('lucia', 'prob-6', 'clinical-infrastructure', [
+    { step: '0', status: 'blocked', started: 22, done: 1, blocker: 'Waiting on access to a partner hospital' },
+  ]),
+];
+
+/** Old sample evidence/ratings name steps as "...-N" (1-based); this points them at the user's own roadmap. */
+const stepFor = (who: string, oldStep: string) => {
+  const journey = JOURNEYS.find(j => j.user === who)!;
+  return `step-${journey.category.replace(/^cat-/, '')}-${Number(oldStep.match(/(\d+)$/)![1]) - 1}`;
+};
+
+/** Sample events for the demo; they hang off the Marketplace roadmap. */
+const inDays = (n: number, hour = 10) => { const d = new Date(Date.now() + n * DAY); d.setUTCHours(hour, 0, 0, 0); return d.toISOString(); };
+const DEMO_RESOURCES = [
+  { id: 'res-demo-1', step_id: 'step-marketplace-network-1', type: 'seminar', title: 'Sizing a healthcare market: TAM, SAM and a realistic SOM', description: 'A working session on estimating the market for a healthcare network before you build it.', host_or_speaker: 'NXT Health team', starts_at: inDays(7, 10), date: 'In a week, 3:30 PM IST', capacity: 40 },
+  { id: 'res-demo-2', step_id: 'step-marketplace-network-4', type: 'webinar', title: 'Contracts and terms for healthcare platforms', description: 'What a platform needs in its terms of use and its provider and customer agreements.', host_or_speaker: 'NXT Health team', starts_at: inDays(14, 11), date: 'In two weeks, 4:30 PM IST', capacity: 100 },
+  { id: 'res-demo-3', step_id: 'step-marketplace-network-0', type: 'session', title: '1-on-1: validate your problem', description: 'A short call to pressure-test your problem statement and your first interviews.', host_or_speaker: 'NXT Health team', slots: [inDays(3, 9), inDays(3, 11), inDays(4, 9)], slot_minutes: 30 },
+  { id: 'res-demo-4', step_id: 'step-marketplace-network-7', type: 'hospital_connection', title: 'Pilot desk at a partner hospital', description: 'A named contact who can help you run real transactions inside a hospital.', hospital_name: 'Demo City Hospital', clinical_department: 'Innovation office', contact_person: 'Demo contact', pilot_status: 'Accepting pilots' },
 ];
 
 const APPLICATIONS: [string, string, string, number, 'Pending' | 'Approved' | 'Rejected', number, number?][] = [
@@ -254,10 +273,10 @@ const RATINGS: [string, string, number, string | undefined, number][] = [
 ];
 
 const VIEWS: [string, string, number][] = [
-  ['marcus', 'res-mr-1', 180], ['marcus', 'res-mr-2', 178], ['marcus', 'res-hosp-1', 55], ['marcus', 'res-gen-1', 50],
-  ['james', 'res-mr-1', 100], ['sofia', 'res-mr-1', 68], ['sofia', 'res-mr-2', 66], ['hannah', 'res-mr-1', 160],
-  ['hannah', 'res-hosp-2', 100], ['hannah', 'res-hosp-1', 98], ['hannah', 'res-reg-1', 50], ['hannah', 'res-gen-2', 95],
-  ['priya', 'res-dh-hosp-1', 70], ['alex', 'res-mr-1', 38], ['amara', 'res-mr-2', 6], ['kwame', 'res-mr-1', 3],
+  ['marcus', 'res-demo-1', 180], ['marcus', 'res-demo-3', 178], ['marcus', 'res-demo-4', 55], ['marcus', 'res-demo-2', 50],
+  ['james', 'res-demo-1', 100], ['sofia', 'res-demo-1', 68], ['sofia', 'res-demo-3', 66], ['hannah', 'res-demo-1', 160],
+  ['hannah', 'res-demo-4', 100], ['hannah', 'res-demo-2', 98], ['hannah', 'res-demo-3', 95],
+  ['priya', 'res-demo-2', 70], ['alex', 'res-demo-1', 38], ['amara', 'res-demo-3', 6], ['kwame', 'res-demo-1', 3],
 ];
 
 // ---------------------------------------------------------------------------
@@ -296,20 +315,22 @@ for (const u of USERS) {
 }
 console.log(`✓ ${USERS.length} accounts`);
 
-const resetContent = process.argv.includes('--reset-content');
-if (resetContent) {
+// The categories, roadmaps and problem statements. Existing site content is refreshed in place;
+// --reset-content wipes it first (this discards anything admins added or edited).
+if (process.argv.includes('--reset-content')) {
   await Promise.all(['categories', 'steps', 'resources', 'problems'].map(name => col(name as 'steps').deleteMany({})));
 }
-if (!(await col('categories').countDocuments({}, { limit: 1 }))) {
-  const toDocs = (items: Record<string, unknown>[]) => items.map(({ id, ...rest }) => ({ _id: id as string, ...rest }));
-  await col('categories').insertMany(toDocs(STARTER_CATEGORIES));
-  await col('steps').insertMany(toDocs(STARTER_STEPS));
-  await col('resources').insertMany(toDocs(STARTER_RESOURCES).map(r => ({ ...r, rsvp_count: 0 })));
-  await col('problems').insertMany(toDocs(STARTER_PROBLEMS).map(p => ({ ...p, created_by_admin: uid.admin, created_at: daysAgo(300) })));
-  console.log(`✓ starter content (problems, roadmaps, resources)${resetContent ? ' — reset' : ''}`);
-} else {
-  console.log('• content already present — left as is');
+// The roadmap checklist is not in the repository: it lives in server/content/ (git-ignored) or at $ROADMAP_FILE.
+const roadmapPath = process.env.ROADMAP_FILE || new URL('../content/marketplace-roadmap.json', import.meta.url).pathname;
+let roadmap;
+try {
+  roadmap = roadmapContentSchema.parse(JSON.parse(readFileSync(roadmapPath, 'utf8')));
+} catch {
+  console.error(`Could not read the roadmap file at ${roadmapPath}.\nThe demo journeys need it — put the roadmap JSON there, or set ROADMAP_FILE=/path/to/file.json.`);
+  process.exit(1);
 }
+const synced = await syncStarterContent(database, uid.admin, roadmap);
+console.log(`✓ starter content: ${synced.categories} categories, ${synced.steps} roadmap steps, ${synced.problems_added} new problems${synced.removed_categories ? `, ${synced.removed_categories} older categories removed` : ''}`);
 
 // Wipe everything earlier demo sessions created, so each run starts from the same state.
 // Include demo users from earlier runs whose login was recreated (their uid changed).
@@ -361,7 +382,7 @@ await Promise.all([
 ]);
 
 const steps = await col('steps').find({}).toArray();
-const stageOf = (stepId: string) => steps.find(s => s._id === stepId)?.stage_tag as string | undefined;
+const tasksOf = (stepId: string) => (steps.find(s => s._id === stepId)?.tasks as { id: string; label: string }[] | undefined) || [];
 const nameOf = (key: string) => USERS.find(u => u.key === key)!.name;
 const problems = await col('problems').find({}).toArray();
 const titleOf = (id: string) => (problems.find(p => p._id === id)?.title as string) || id;
@@ -373,14 +394,14 @@ for (const j of JOURNEYS) {
     if (s.status === 'done') {
       await col('progress').insertOne({ _id: `${key}:${j.category}:${s.step}`, user_id: key, category_id: j.category, step_id: s.step, completed: true, updated_at: daysAgo(s.completed ?? 0) });
     }
-    const deliverables = getStepGuide(stageOf(s.step)).deliverables;
+    const tasks = tasksOf(s.step);
     await col('workspaces').insertOne({
       _id: `${key}::${j.problem}::${s.step}`,
       scope_key: key, problem_id: j.problem, step_id: s.step,
       status: s.status,
       started_at: daysAgo(s.started),
       ...(s.blocker ? { blocker: s.blocker } : {}),
-      checklist: deliverables.map((label, i) => ({ id: `g-${i}`, label, done: i < s.done, custom: false })),
+      checklist: tasks.map((task, i) => ({ id: task.id, label: task.label, done: i < s.done, custom: false })),
       log: (s.log || []).map((text, i) => ({ id: `l-demo-${i}`, text, author_name: nameOf(j.user), created_at: daysAgo(Math.max(1, s.started - 5)) })),
       updated_at: daysAgo(s.completed ?? Math.min(s.started, 7)),
     });
@@ -404,7 +425,7 @@ const categoryOfStep = (stepId: string) => steps.find(s => s._id === stepId)?.ca
 const problemOf = (who: string) => JOURNEYS.find(j => j.user === who)!.problem;
 await col('submissions').insertMany(SUBMISSIONS.map(([who, step, status, submitted, reviewed], i) => ({
   _id: `sub-demo-${i + 1}`,
-  step_id: step, category_id: categoryOfStep(step), problem_id: problemOf(who),
+  step_id: stepFor(who, step), category_id: categoryOfStep(stepFor(who, step)), problem_id: problemOf(who),
   note: 'Evidence attached.', files: [],
   user_id: uid[who], scope_key: uid[who], submitted_by_name: nameOf(who),
   status, submitted_at: daysAgo(submitted),
@@ -413,8 +434,10 @@ await col('submissions').insertMany(SUBMISSIONS.map(([who, step, status, submitt
 console.log(`✓ ${SUBMISSIONS.length} evidence submissions`);
 
 await col('stepRatings').insertMany(RATINGS.map(([who, step, score, comment, d], i) => ({
-  _id: `rating-demo-${i + 1}`, user_id: uid[who], step_id: step, score, ...(comment ? { comment } : {}), created_at: daysAgo(d),
+  _id: `rating-demo-${i + 1}`, user_id: uid[who], step_id: stepFor(who, step), score, ...(comment ? { comment } : {}), created_at: daysAgo(d),
 })));
+await col('resources').deleteMany({ _id: { $regex: '^res-demo-' } });
+await col('resources').insertMany(DEMO_RESOURCES.map(({ id, ...rest }) => ({ _id: id, rsvp_count: 0, ...rest })));
 await col('resourceViews').insertMany(VIEWS.map(([who, res, d], i) => ({ _id: `view-demo-${i + 1}`, user_id: uid[who], resource_id: res, viewed_at: daysAgo(d) })));
 
 await col('mentorProfiles').insertMany(Object.entries(EXPERTS).map(([key, profile]) => ({

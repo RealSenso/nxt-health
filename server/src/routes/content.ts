@@ -3,7 +3,8 @@ import { z } from 'zod';
 import { HttpError, requireAdmin, requireUser } from '../auth.js';
 import type { CollectionName, Database } from '../db.js';
 import { out } from '../db.js';
-import { STARTER_CATEGORIES, STARTER_PROBLEMS, STARTER_RESOURCES, STARTER_STEPS } from '../starterContent.js';
+import { roadmapTaskSchema, playbookSchema, roadmapContentSchema } from '../roadmapTypes.js';
+import { syncStarterContent } from '../syncContent.js';
 import { newId, now, parse } from '../util.js';
 
 const text = (max: number) => z.string().trim().max(max);
@@ -17,13 +18,27 @@ const schemas = {
     funded: z.boolean(),
     funding_amount: text(200).optional(),
   }),
-  categories: z.object({ name: text(200).min(1), description: text(2000), order: z.number().int().min(0).max(10000) }),
+  categories: z.object({
+    name: text(200).min(1),
+    description: text(2000),
+    order: z.number().int().min(0).max(10000),
+    /** Shown to founders but not open yet. */
+    coming_soon: z.boolean().optional(),
+    priority: z.number().int().min(1).max(100).optional(),
+    example: text(300).optional(),
+    complexity: z.enum(['low', 'moderate', 'high', 'very_high']).optional(),
+    complexity_note: text(300).optional(),
+    roadmap_note: text(500).optional(),
+    playbook: playbookSchema.optional(),
+  }),
   steps: z.object({
     category_id: z.string().min(1),
     name: text(300).min(1),
     description: text(5000),
     order: z.number().int().min(0).max(10000),
     stage_tag: text(80).optional(),
+    typical_duration: text(100).optional(),
+    tasks: z.array(roadmapTaskSchema).max(100).optional(),
   }),
   resources: z.object({
     step_id: z.string().min(1),
@@ -107,19 +122,17 @@ export function contentRouter(database: Database): Router {
     res.json({ ok: true });
   });
 
+  /** Loads the starter categories and problem statements, or refreshes them on a site that already has some. */
   r.post('/admin/starter-content', async (req, res) => {
     const admin = requireAdmin(req);
-    if (await database.col('categories').countDocuments({}, { limit: 1 })) {
-      throw new HttpError(409, 'Content already exists — starter content can only be loaded into an empty database.');
-    }
-    const toDocs = (items: Record<string, unknown>[]) => items.map(({ id, ...rest }) => ({ _id: id as string, ...rest }));
-    await database.col('categories').insertMany(toDocs(STARTER_CATEGORIES));
-    await database.col('steps').insertMany(toDocs(STARTER_STEPS));
-    await database.col('resources').insertMany(toDocs(STARTER_RESOURCES).map(r => ({ ...r, rsvp_count: 0 })));
-    await database.col('problems').insertMany(
-      toDocs(STARTER_PROBLEMS).map(p => ({ ...p, created_by_admin: admin._id, created_at: now() })),
-    );
-    res.status(201).json({ ok: true });
+    res.status(201).json({ ok: true, ...(await syncStarterContent(database, admin._id)) });
+  });
+
+  /** Imports a roadmap checklist (the JSON file an admin chooses) and builds the roadmap for every open category. */
+  r.post('/admin/roadmap-import', async (req, res) => {
+    const admin = requireAdmin(req);
+    const roadmap = parse(roadmapContentSchema, req.body);
+    res.status(201).json({ ok: true, ...(await syncStarterContent(database, admin._id, roadmap)) });
   });
 
   r.post('/notifications/:id/read', async (req, res) => {

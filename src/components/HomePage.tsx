@@ -99,7 +99,9 @@ const asRole = (value: string | null): LeadRole => {
 
 export const HomePage: React.FC = () => {
   const [params] = useSearchParams();
-  const routeCount = store.getCategories().length || 21;
+  const categories = store.getCategories();
+  const routeCount = categories.length || 25;
+  const openCount = categories.filter(c => !c.coming_soon).length;
   const initialRole = asRole(params.get('as'));
 
   return (
@@ -174,7 +176,7 @@ export const HomePage: React.FC = () => {
         <div className="mt-12 grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-5">
           <Step n="01" title="Find a problem">Problems come from doctors, hospitals and pharma. Some already have money behind them. Some are open.</Step>
           <Step n="02" title="Apply for funding">Each fund screens in its own way. You get a yes, a no, or a clear ask for more.</Step>
-          <Step n="03" title="Pick a roadmap">{routeCount} routes to market, from devices to apps to AI, each with the steps for your country.</Step>
+          <Step n="03" title="Pick a roadmap">{routeCount} routes to market, from marketplaces to devices to AI, each with the steps for your country{openCount > 0 && openCount < routeCount ? ` — ${openCount} open now` : ''}.</Step>
           <Step n="04" title="Clear each gate">Every step has a deadline and needs evidence. Clear it, and the next one opens.</Step>
           <Step n="05" title="Get matched help">Mentors, hospitals, lawyers and incubators, recommended for the step you're on.</Step>
         </div>
