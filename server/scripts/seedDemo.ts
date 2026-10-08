@@ -188,26 +188,26 @@ const JOURNEYS: { user: string; problem: string; category: string; steps: Journe
     { step: '1', status: 'done', started: 140, completed: 60, done: 7 },
     { step: '2', status: 'in_progress', started: 60, done: 3, log: ['Participation rules drafted with Dr. Lin for feedback.'] },
   ]),
-  J('priya', 'prob-4', 'workflow-ops-tech', [
+  J('priya', 'prob-migraine', 'workflow-ops-tech', [
     { step: '0', status: 'done', started: 145, completed: 120, done: 5 },
     { step: '1', status: 'done', started: 120, completed: 75, done: 7 },
     { step: '2', status: 'done', started: 75, completed: 30, done: 10 },
     { step: '3', status: 'blocked', started: 30, done: 1, blocker: 'Waiting on the hospital IT security review' },
   ]),
-  J('james', 'prob-2', 'healthcare-services', [
+  J('james', 'prob-womens-psychological', 'healthcare-services', [
     { step: '0', status: 'done', started: 105, completed: 75, done: 5 },
     { step: '1', status: 'in_progress', started: 75, done: 2 },
   ]),
-  J('diego', 'prob-6', 'clinical-infrastructure', [
+  J('diego', 'prob-migraine', 'clinical-infrastructure', [
     { step: '0', status: 'done', started: 88, completed: 70, done: 5 },
     { step: '1', status: 'done', started: 70, completed: 35, done: 7 },
     { step: '2', status: 'blocked', started: 35, done: 2, blocker: 'Waiting on a data-sharing agreement with the partner hospital' },
   ]),
-  J('sofia', 'prob-3', 'patient-education', [
+  J('sofia', 'prob-migraine', 'patient-education', [
     { step: '0', status: 'done', started: 70, completed: 40, done: 5 },
     { step: '1', status: 'in_progress', started: 40, done: 3 },
   ]),
-  J('rahul', 'prob-5', 'training-simulation', [{ step: '0', status: 'in_progress', started: 25, done: 2 }]),
+  J('rahul', 'prob-womens-psychological', 'training-simulation', [{ step: '0', status: 'in_progress', started: 25, done: 2 }]),
   J('hannah', 'prob-migraine', 'marketplace-network', [
     { step: '0', status: 'done', started: 165, completed: 150, done: 5 },
     { step: '1', status: 'done', started: 150, completed: 110, done: 7 },
@@ -215,7 +215,7 @@ const JOURNEYS: { user: string; problem: string; category: string; steps: Journe
     { step: '3', status: 'done', started: 55, completed: 12, done: 5 },
     { step: '4', status: 'in_progress', started: 12, done: 2 },
   ]),
-  J('lucia', 'prob-6', 'clinical-infrastructure', [
+  J('lucia', 'prob-migraine', 'clinical-infrastructure', [
     { step: '0', status: 'blocked', started: 22, done: 1, blocker: 'Waiting on access to a partner hospital' },
   ]),
 ];
@@ -236,11 +236,11 @@ const DEMO_RESOURCES = [
 ];
 
 const APPLICATIONS: [string, string, string, number, 'Pending' | 'Approved' | 'Rejected', number, number?][] = [
-  ['marcus', 'PulseVibe Biosystems', 'prob-1', 125000, 'Pending', 55],
-  ['priya', 'NeuroTrack', 'prob-4', 200000, 'Approved', 110, 95],
-  ['hannah', 'SteriVue', 'prob-2', 175000, 'Approved', 140, 128],
-  ['diego', 'OncoScan', 'prob-6', 300000, 'Pending', 20],
-  ['james', 'CardiaIQ', 'prob-2', 90000, 'Rejected', 70, 60],
+  ['marcus', 'PulseVibe Biosystems', 'prob-womens-psychological', 125000, 'Pending', 55],
+  ['priya', 'NeuroTrack', 'prob-migraine', 200000, 'Approved', 110, 95],
+  ['hannah', 'SteriVue', 'prob-womens-psychological', 175000, 'Approved', 140, 128],
+  ['diego', 'OncoScan', 'prob-migraine', 300000, 'Pending', 20],
+  ['james', 'CardiaIQ', 'prob-womens-psychological', 90000, 'Rejected', 70, 60],
 ];
 
 const SUBMISSIONS: [string, string, 'Approved' | 'Changes Requested' | 'Submitted', number, number?][] = [

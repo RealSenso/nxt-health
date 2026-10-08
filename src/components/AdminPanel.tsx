@@ -59,10 +59,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser }) => {
     }
   };
 
-  const handleLoadStarterContent = async (confirmFirst = false) => {
-    if (confirmFirst && !window.confirm(
-      'Update the starter content?\n\nThis refreshes the 25 starter categories (any edits you made to them are overwritten), removes the older starter categories, and adds any missing starter problem statements. Problems you have edited are kept. Roadmap steps are loaded separately with "Import roadmap file".',
-    )) return;
+  const handleLoadStarterContent = async () => {
     setLoadingStarter(true);
     try {
       await store.loadStarterContent();
@@ -265,7 +262,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser }) => {
         actions={store.isContentEmpty() ? (
           <button
             id="btn-admin-load-starter"
-            onClick={() => handleLoadStarterContent()}
+            onClick={handleLoadStarterContent}
             disabled={loadingStarter}
             className="px-4 py-2.5 bg-[var(--nxt-mint-strong)] hover:bg-[var(--nxt-mint-deep)] disabled:opacity-60 text-white rounded-full text-sm font-semibold flex items-center gap-1.5 transition-colors"
           >
@@ -468,32 +465,31 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser }) => {
                       </div>
                     </div>
                   ) : (
-                    <div className="pt-2 border-t border-[var(--nxt-line)] flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                      <div className="flex-1">
-                        <p className="text-[11px] font-bold text-[var(--nxt-ink-soft)] uppercase tracking-wider mb-1">
-                          Reviewer Feedback
-                        </p>
-                        <p className={`text-xs rounded-lg px-2.5 py-1.5 border ${
+                    <div className="pt-2 border-t border-[var(--nxt-line)] space-y-1.5">
+                      <p className="text-[11px] font-bold text-[var(--nxt-ink-soft)] uppercase tracking-wider">
+                        Reviewer Feedback
+                      </p>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                        <p className={`flex-1 min-h-9 flex items-center text-xs rounded-lg px-3 border ${
                           app.status === 'Approved'
                             ? 'bg-[var(--nxt-mint)]/30 border-[var(--nxt-mint-strong)]/20 text-[var(--nxt-mint-deep)]'
                             : 'bg-[var(--nxt-peach)]/40 border-[var(--nxt-peach-deep)]/20 text-[var(--nxt-peach-deep)]'
                         }`}>
                           {app.admin_feedback || 'No feedback left.'}
                         </p>
-                        {app.reviewed_at && (
+                        <button
+                        id={`btn-reopen-app-${app.id}`}
+                        onClick={() => handleReopenApplication(app.id)}
+                        className="shrink-0 h-9 px-4 border border-[var(--nxt-ink)] text-[var(--nxt-ink)] hover:bg-[var(--nxt-ink)] hover:text-[var(--nxt-bg)] rounded-full text-xs font-semibold transition-colors"
+                      >
+                        Reopen for Review
+                      </button>
+                      </div>
+                      {app.reviewed_at && (
                           <p className="text-[11px] text-[var(--nxt-ink-soft)] mt-1">
                             Reviewed {new Date(app.reviewed_at).toLocaleDateString('en-US')}
                           </p>
                         )}
-                      </div>
-
-                      <button
-                        id={`btn-reopen-app-${app.id}`}
-                        onClick={() => handleReopenApplication(app.id)}
-                        className="shrink-0 px-3 py-1.5 border border-[var(--nxt-line)] hover:bg-[var(--nxt-bg-soft)] text-[var(--nxt-ink-soft)] rounded-full text-xs font-semibold transition-colors"
-                      >
-                        Reopen for Review
-                      </button>
                     </div>
                   )}
                 </div>
@@ -670,15 +666,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser }) => {
             >
               <Paperclip className="w-3.5 h-3.5" />
               <span>Import roadmap file</span>
-            </button>
-            <button
-              id="btn-update-starter-content"
-              onClick={() => handleLoadStarterContent(true)}
-              disabled={loadingStarter}
-              className="px-3 py-1.5 border border-[var(--nxt-line)] hover:bg-[var(--nxt-bg-soft)] disabled:opacity-60 rounded-full text-xs font-semibold flex items-center gap-1"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${loadingStarter ? 'animate-spin' : ''}`} />
-              <span>{loadingStarter ? 'Updating…' : 'Update starter content'}</span>
             </button>
             <button
               onClick={() => setEditingCategory({ name: '', description: '', order: categories.length + 1 })}
@@ -1438,23 +1425,23 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser }) => {
                         </div>
                       </div>
                     ) : (
-                      <div className="pt-2 border-t border-[var(--nxt-line)] flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                        <div className="flex-1">
-                          <p className="text-[11px] font-bold text-[var(--nxt-ink-soft)] uppercase tracking-wider mb-1">Reviewer Feedback</p>
-                          <p className={`text-xs rounded-lg px-2.5 py-1.5 border ${
+                      <div className="pt-2 border-t border-[var(--nxt-line)] space-y-1.5">
+                        <p className="text-[11px] font-bold text-[var(--nxt-ink-soft)] uppercase tracking-wider">Reviewer Feedback</p>
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                          <p className={`flex-1 min-h-9 flex items-center text-xs rounded-lg px-3 border ${
                             sub.status === 'Approved'
                               ? 'bg-[var(--nxt-mint)]/30 border-[var(--nxt-mint-strong)]/20 text-[var(--nxt-mint-deep)]'
                               : 'bg-[var(--nxt-peach)]/40 border-[var(--nxt-peach-deep)]/20 text-[var(--nxt-peach-deep)]'
                           }`}>
                             {sub.admin_feedback || 'No feedback left.'}
                           </p>
-                        </div>
-                        <button
+                          <button
                           onClick={() => handleReopenSubmission(sub.id)}
-                          className="shrink-0 px-3 py-1.5 border border-[var(--nxt-line)] hover:bg-[var(--nxt-bg-soft)] text-[var(--nxt-ink-soft)] rounded-full text-xs font-semibold transition-colors"
+                          className="shrink-0 h-9 px-4 border border-[var(--nxt-ink)] text-[var(--nxt-ink)] hover:bg-[var(--nxt-ink)] hover:text-[var(--nxt-bg)] rounded-full text-xs font-semibold transition-colors"
                         >
                           Reopen for Review
                         </button>
+                        </div>
                       </div>
                     )}
                   </div>

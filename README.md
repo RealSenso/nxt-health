@@ -61,7 +61,7 @@ The site is black and white, set in Helvetica Neue. The colours live in `src/ind
 
 ## Categories, roadmaps and problem statements
 
-- **Categories** (25 solution types, 6 open and 19 "coming soon") and the **problem statements** come from the NXT Platform sheets and are in `server/src/starterContent.ts`. In the admin console, **Categories → Update starter content** loads or refreshes them (it is safe to repeat).
+- **Categories** (25 solution types, 6 open and 19 "coming soon") and the **problem statements** come from the NXT Platform sheets and are in `server/src/starterContent.ts`. A new, empty site gets them from **Load starter content** in the admin console. When the API starts it also removes the older sample content (the first-generation categories and the six sample problems) — a no-op once they are gone.
 - **Roadmaps** are built from a checklist file — each phase becomes a step, each row a task with its details. The checklist is the product's core content and this repository is public, so it is **not committed**: it lives in `server/content/marketplace-roadmap.json` (git-ignored) and is loaded with **Categories → Import roadmap file** in the admin console. The format is defined in `server/src/roadmapTypes.ts`.
 - Every open category currently gets the Marketplace checklist (the only one supplied so far). Add a category-specific file later and import it the same way.
 - `npm --prefix server run seed-demo` also reads `server/content/marketplace-roadmap.json` (or `$ROADMAP_FILE`).

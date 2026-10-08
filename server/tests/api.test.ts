@@ -351,8 +351,8 @@ describe('uploads and profiles', () => {
     it('loads 25 categories (6 open) and the problem statements, and can be re-run safely', async () => {
       await admin('boss');
       const first = await request(app).post('/api/admin/starter-content').set('Authorization', token('boss')).expect(201);
-      // The test fixtures already contain cat-1 (replaced) and prob-1 (kept), so one old category goes and seven problems are new.
-      expect(first.body).toMatchObject({ categories: 25, steps: 0, problems_added: 7, removed_categories: 1 });
+      // The test fixtures contain cat-1 and prob-1, which are old starter ids, so one of each goes.
+      expect(first.body).toMatchObject({ categories: 25, steps: 0, problems_added: 2, removed_categories: 1, removed_problems: 1 });
 
       const loaded = await content('boss');
       expect(loaded.categories).toHaveLength(25);
@@ -360,7 +360,7 @@ describe('uploads and profiles', () => {
         'Marketplace / Network', 'Healthcare Services', 'Patient Education / Engagement',
         'Workflow / Operational Tech', 'Training / Simulation', 'Clinical Infrastructure / Platform',
       ]);
-      expect(loaded.problems.map((p: { title: string }) => p.title).slice(0, 2)).toEqual(['In women, what is “psychological” and what is not?', 'Solve Migraine']);
+      expect(loaded.problems.map((p: { title: string }) => p.title)).toEqual(['In women, what is “psychological” and what is not?', 'Solve Migraine']);
 
       const second = await request(app).post('/api/admin/starter-content').set('Authorization', token('boss')).expect(201);
       expect(second.body).toMatchObject({ categories: 25, problems_added: 0, removed_categories: 0 });
@@ -406,12 +406,14 @@ describe('uploads and profiles', () => {
       await member('founder');
       await database.col('categories').insertOne({ _id: 'cat-77', name: 'Device Product', description: '', order: 1 });
       await database.col('steps').insertOne({ _id: 'step-dev-77', category_id: 'cat-77', name: 'Old', description: '', order: 1 });
-      await database.col('scopes').insertOne({ _id: 'founder', working_problem_ids: ['prob-1'], category_locks: { 'prob-1': 'cat-77', 'prob-2': 'cat-x' } });
+      await database.col('scopes').insertOne({ _id: 'founder', working_problem_ids: ['prob-1', 'prob-keep'], category_locks: { 'prob-1': 'cat-x', 'prob-keep': 'cat-77', 'prob-other': 'cat-x' } });
       const res = await request(app).post('/api/admin/starter-content').set('Authorization', token('boss')).expect(201);
       expect(res.body.removed_categories).toBe(2); // the fixture cat-1 and this test's cat-77
       expect(await database.col('categories').findOne({ _id: 'cat-77' })).toBeNull();
       expect(await database.col('steps').findOne({ _id: 'step-dev-77' })).toBeNull();
-      expect((await database.col('scopes').findOne({ _id: 'founder' }))?.category_locks).toEqual({ 'prob-2': 'cat-x' });
+      const scope = await database.col('scopes').findOne({ _id: 'founder' });
+      expect(scope?.category_locks).toEqual({ 'prob-other': 'cat-x' }); // cat-77 is gone, and prob-1 is gone
+      expect(scope?.working_problem_ids).toEqual(['prob-keep']);
       await request(app).post('/api/admin/starter-content').set('Authorization', token('founder')).expect(403);
     });
 

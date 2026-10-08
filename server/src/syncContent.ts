@@ -1,6 +1,6 @@
 import type { Database } from './db.js';
 import type { RoadmapContent } from './roadmapTypes.js';
-import { buildRoadmapSteps, OBSOLETE_CATEGORY_ID, ROADMAP_SOURCE_CATEGORY, STARTER_CATEGORIES, STARTER_PROBLEMS, STARTER_RESOURCES } from './starterContent.js';
+import { buildRoadmapSteps, OBSOLETE_CATEGORY_ID, OBSOLETE_PROBLEM_ID, ROADMAP_SOURCE_CATEGORY, STARTER_CATEGORIES, STARTER_PROBLEMS, STARTER_RESOURCES } from './starterContent.js';
 
 type Doc = Record<string, unknown> & { id: string };
 const toDoc = ({ id, ...rest }: Doc) => ({ _id: id, ...rest });
@@ -10,12 +10,14 @@ export interface SyncResult {
   steps: number;
   problems_added: number;
   removed_categories: number;
+  removed_problems: number;
 }
 
 /**
  * Brings the database up to date with the starter content. Safe to run any time:
  *  - categories are written by id (a re-run refreshes them) and, when a roadmap is supplied, so are its steps,
  *  - problem statements and resources are only added when missing, so edits are never overwritten,
+ *  - the six sample problems (prob-1 … prob-6) are removed, along with the working/locked/saved references to them,
  *  - the first-generation starter categories (cat-1 … cat-21) and everything hanging off them are removed.
  */
 export async function syncStarterContent(database: Database, adminId: string, roadmap?: RoadmapContent): Promise<SyncResult> {
@@ -52,6 +54,25 @@ export async function syncStarterContent(database: Database, adminId: string, ro
     await col('resources').updateOne({ _id }, { $setOnInsert: { ...fields, rsvp_count: 0 } }, { upsert: true });
   }
 
+  const { removed_categories, removed_problems } = await removeObsoleteStarterContent(database);
+
+  return {
+    categories: STARTER_CATEGORIES.length,
+    steps: stepCount,
+    problems_added: problemsAdded,
+    removed_categories,
+    removed_problems,
+  };
+}
+
+/**
+ * Removes starter content that earlier versions loaded and the current content replaces: the first-generation
+ * categories (cat-1 … cat-21) with their steps, and the six sample problems (prob-1 … prob-6), plus whatever
+ * pointed at them. Touches nothing else, and does nothing once they are gone — so it is safe to run at every start.
+ */
+export async function removeObsoleteStarterContent(database: Database): Promise<{ removed_categories: number; removed_problems: number }> {
+  const { col } = database;
+
   // Remove the first-generation starter categories and what depended on them.
   const oldCategories = (await col('categories').find({ _id: { $regex: OBSOLETE_CATEGORY_ID.source } }).toArray()).map(c => c._id);
   if (oldCategories.length) {
@@ -77,6 +98,25 @@ export async function syncStarterContent(database: Database, adminId: string, ro
     ]);
   }
 
-  return { categories: STARTER_CATEGORIES.length, steps: stepCount, problems_added: problemsAdded, removed_categories: oldCategories.length };
-}
+  // Remove the sample problem statements that are not in the Drive sheets, and tidy what pointed at them.
+  const oldProblems = (await col('problems').find({ _id: { $regex: OBSOLETE_PROBLEM_ID.source } }).toArray()).map(p => p._id);
+  if (oldProblems.length) {
+    await Promise.all([
+      col('problems').deleteMany({ _id: { $in: oldProblems } }),
+      col('workspaces').deleteMany({ problem_id: { $in: oldProblems } }),
+      col('users').updateMany({}, { $pull: { saved_problem_ids: { $in: oldProblems } } as never }),
+      col('scopes').updateMany({}, [{
+        $set: {
+          working_problem_ids: { $filter: { input: { $ifNull: ['$working_problem_ids', []] }, cond: { $not: [{ $in: ['$$this', oldProblems] }] } } },
+          category_locks: {
+            $arrayToObject: {
+              $filter: { input: { $objectToArray: { $ifNull: ['$category_locks', {}] } }, cond: { $not: [{ $in: ['$$this.k', oldProblems] }] } },
+            },
+          },
+        },
+      }]),
+    ]);
+  }
 
+  return { removed_categories: oldCategories.length, removed_problems: oldProblems.length };
+}

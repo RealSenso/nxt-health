@@ -1,6 +1,7 @@
 import { createApp } from './app.js';
 import { connect } from './db.js';
 import { firebaseVerifier } from './firebase.js';
+import { removeObsoleteStarterContent } from './syncContent.js';
 
 function required(name: string): string {
   const value = process.env[name];
@@ -9,6 +10,12 @@ function required(name: string): string {
 }
 
 const { database } = await connect(required('MONGODB_URI'), process.env.MONGODB_DB || 'nxt_health');
+// One-time tidy-up of sample content that older versions loaded; a no-op once it is gone.
+const removed = await removeObsoleteStarterContent(database);
+if (removed.removed_categories || removed.removed_problems) {
+  console.log(`Removed ${removed.removed_categories} old starter categories and ${removed.removed_problems} sample problems.`);
+}
+
 const app = createApp({
   database,
   verifyToken: firebaseVerifier({ serviceAccountJson: process.env.FIREBASE_SERVICE_ACCOUNT, projectId: process.env.FIREBASE_PROJECT_ID }),

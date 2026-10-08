@@ -37,66 +37,6 @@ export const STARTER_PROBLEMS: Doc[] = [
     department: 'Neurology',
     funded: false,
   },
-  {
-    id: 'prob-1',
-    title: 'Early Detection of Post-Operative ICU Sepsis via Real-time Hemodynamics',
-    description: 'Current ICU protocols detect sepsis 4-8 hours after physiological deterioration begins. We need continuous multi-sensor predictive alerting that integrates arterial line waveforms with central venous pressure to identify microcirculatory collapse before organ hypoperfusion occurs.',
-    department: 'Critical Care & Surgical ICU',
-    funded: true,
-    funding_amount: '$250,000 Non-Dilutive Grant Pool',
-    created_by_admin: 'user-admin-1',
-    created_at: '2025-01-15T09:30:00Z',
-  },
-  {
-    id: 'prob-2',
-    title: 'Sterile Field Optical Tracking for Retained Surgical Sponges and Instruments',
-    description: 'Retained surgical bodies remain a catastrophic preventable adverse event in high-throughput operating rooms. An automated computer-vision or RFID-assisted scanning field is required that does not interrupt laminar air flow or surgical scrub routines.',
-    department: 'Operative & General Surgery',
-    funded: true,
-    funding_amount: '$175,000 Milestone Grant Pool',
-    created_by_admin: 'user-admin-1',
-    created_at: '2025-02-01T11:00:00Z',
-  },
-  {
-    id: 'prob-3',
-    title: 'Non-Invasive Point-of-Care Pediatric Bilirubin and Hemolysis Monitor',
-    description: 'Frequent heel-stick blood draws in neonatal ICUs cause trauma, infection risk, and parental distress. We seek a transcutaneous optical or saliva-based biosensor that accurately quantifies total serum bilirubin in neonates across all skin tones.',
-    department: 'Neonatology & Pediatrics',
-    funded: false,
-    funding_amount: 'Unfunded (Seeking Co-Developer / Sponsor)',
-    created_by_admin: 'user-admin-1',
-    created_at: '2025-02-18T14:15:00Z',
-  },
-  {
-    id: 'prob-4',
-    title: 'Automated Triaging of Emergent Cranial CT for Acute Intracranial Hemorrhage',
-    description: 'Community emergency departments often face a 45-minute delay for overnight radiologist over-reads. A lightweight, on-premise deep learning pipeline is needed to prioritize true-positive intracranial hemorrhages to the top of the PACS worklist within 90 seconds.',
-    department: 'Emergency Medicine & Neuroradiology',
-    funded: true,
-    funding_amount: '$300,000 Clinical Seed Fund',
-    created_by_admin: 'user-admin-1',
-    created_at: '2025-03-02T08:45:00Z',
-  },
-  {
-    id: 'prob-5',
-    title: 'High-Fidelity Telemetric Cough & Respiratory Acoustic Biomarker Tracker for COPD',
-    description: 'Chronic Obstructive Pulmonary Disease exacerbations cause preventable hospital readmissions. An ambient acoustic sensor system is required that isolates respiratory effort, nocturnal wheezing, and productive cough frequency without violating patient privacy.',
-    department: 'Pulmonology & Remote Monitoring',
-    funded: false,
-    funding_amount: 'Unfunded (Validation Open)',
-    created_by_admin: 'user-admin-1',
-    created_at: '2025-03-10T16:20:00Z',
-  },
-  {
-    id: 'prob-6',
-    title: 'Rapid Antimicrobial Susceptibility Testing (AST) for Bloodstream Infections in Under 2 Hours',
-    description: 'Standard phenotypic blood cultures take 24-72 hours to yield actionable antibiotic sensitivity, forcing physicians to rely on broad-spectrum antibiotics that drive resistance. We need a rapid microfluidic single-cell imaging diagnostic.',
-    department: 'Infectious Disease & Clinical Microbiology',
-    funded: true,
-    funding_amount: '$500,000 Translational Partnership',
-    created_by_admin: 'user-admin-1',
-    created_at: '2025-03-12T13:00:00Z',
-  }
 ];
 
 
@@ -212,3 +152,5 @@ export const STARTER_RESOURCES: Doc[] = [];
 
 /** Ids from earlier starter content that the current content replaces. */
 export const OBSOLETE_CATEGORY_ID = /^cat-\d+$/;
+/** The six sample problem statements that were never in the Drive sheets (prob-1 … prob-6). */
+export const OBSOLETE_PROBLEM_ID = /^prob-[1-6]$/;
