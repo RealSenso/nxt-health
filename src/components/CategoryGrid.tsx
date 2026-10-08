@@ -1,32 +1,9 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { ChevronRight } from 'lucide-react';
-import type { Category, Complexity } from '../types';
+import type { Category } from '../types';
 import { store } from '../services/store';
 import { categoryIcon } from '../data/icons';
-
-const COMPLEXITY_LABEL: Record<Complexity, string> = {
-  low: 'Low complexity',
-  moderate: 'Moderate complexity',
-  high: 'High complexity',
-  very_high: 'Very high complexity',
-};
-
-/** How demanding a solution type is to build (regulation, evidence, manufacturing…). */
-export const ComplexityChip: React.FC<{ category: Category }> = ({ category }) => {
-  if (!category.complexity) return null;
-  const level = ['low', 'moderate', 'high', 'very_high'].indexOf(category.complexity) + 1;
-  return (
-    <span title={category.complexity_note} className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--nxt-ink-soft)]">
-      <span className="inline-flex gap-0.5" aria-hidden="true">
-        {[1, 2, 3, 4].map(i => (
-          <span key={i} className={`w-1.5 h-3 rounded-sm ${i <= level ? 'bg-[var(--nxt-ink)]' : 'bg-[var(--nxt-line)]'}`} />
-        ))}
-      </span>
-      {COMPLEXITY_LABEL[category.complexity]}
-    </span>
-  );
-};
 
 interface Props {
   categories: Category[];
@@ -77,14 +54,11 @@ const Card: React.FC<{ cat: Category; idPrefix: string; onPick: (c: Category) =>
       <h3 className="font-display text-lg font-bold text-[var(--nxt-ink)] leading-snug mt-4">{cat.name}</h3>
       <p className="text-[15px] text-[var(--nxt-ink)] mt-1.5 leading-snug">{cat.description}</p>
       {cat.example && <p className="text-sm text-[var(--nxt-ink-soft)] mt-2 leading-snug">e.g. {cat.example}</p>}
-      <div className="mt-auto pt-5 flex items-center justify-between gap-3">
-        <ComplexityChip category={cat} />
-        {!soon && (
-          <span className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--nxt-ink)] shrink-0">
-            {stepCount > 0 ? `${stepCount}-step roadmap` : 'Roadmap'} <ChevronRight className="w-4 h-4" />
-          </span>
-        )}
-      </div>
+      {!soon && (
+        <p className="mt-auto pt-5 inline-flex items-center justify-end gap-1 text-xs font-semibold text-[var(--nxt-ink)]">
+          {stepCount > 0 ? `${stepCount}-step roadmap` : 'Roadmap'} <ChevronRight className="w-4 h-4" />
+        </p>
+      )}
     </>
   );
   const base = 'w-full text-left rounded-3xl border p-6 h-full flex flex-col';
