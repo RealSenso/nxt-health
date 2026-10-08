@@ -237,7 +237,7 @@ export const StepPage: React.FC<StepPageProps> = ({
           <Section icon={ListChecks} title={step.tasks?.length ? 'Tasks' : 'Deliverables'} aside={`${taskPct}% done`}>
             <ul className="space-y-1.5">
               {workspace.checklist.map(item => (
-                <li key={item.id} className="rounded-xl hover:bg-[var(--nxt-bg-soft)] transition-colors">
+                <li key={item.id} className={`rounded-xl hover:bg-[var(--nxt-bg-soft)] transition-colors ${openTasks.has(item.id) ? 'bg-[var(--nxt-bg-soft)] pb-2' : ''}`}>
                   <div className="group flex items-start gap-2.5 px-2 py-1.5">
                   <button
                     onClick={() => save({ checklist: workspace.checklist.map(t => t.id === item.id ? { ...t, done: !t.done } : t) })}
@@ -509,14 +509,14 @@ const DETAIL_ROWS: { key: 'detail' | 'deliverable' | 'experts' | 'resources' | '
 
 /** The checklist details for one task: what to do, who helps, and what it produces. */
 const TaskDetails: React.FC<{ task: StepTask }> = ({ task }) => (
-  <dl className="mx-2 mb-3 ml-9 rounded-xl border border-[var(--nxt-line)] bg-[var(--nxt-surface)] p-4 grid gap-x-6 gap-y-3 sm:grid-cols-2 text-sm">
+  <dl className="mt-1 mr-2 mb-2 ml-9 rounded-xl border border-[var(--nxt-line)] bg-[var(--nxt-surface)] p-5 grid gap-x-8 gap-y-4 sm:grid-cols-2 text-sm">
     {DETAIL_ROWS.filter(row => task[row.key]).map(row => (
       <div key={row.key} className={row.key === 'detail' ? 'sm:col-span-2' : ''}>
         <dt className="text-[11px] font-bold uppercase tracking-wider text-[var(--nxt-ink-soft)]">{row.label}</dt>
         <dd className="mt-0.5 text-[var(--nxt-ink)] leading-snug">{task[row.key]}</dd>
       </div>
     ))}
-    <div className="sm:col-span-2 flex flex-wrap items-center gap-2 pt-1">
+    <div className="sm:col-span-2 flex flex-wrap items-center gap-2 pt-2">
       <span className="text-xs px-2.5 py-1 rounded-full bg-[var(--nxt-bg-soft)] text-[var(--nxt-ink-soft)]">{task.sub_stage}</span>
       <span className="text-xs px-2.5 py-1 rounded-full bg-[var(--nxt-bg-soft)] text-[var(--nxt-ink-soft)]">{task.duration}</span>
       {task.gate && <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-[var(--nxt-mint-strong)] text-white">{task.gate} decision</span>}

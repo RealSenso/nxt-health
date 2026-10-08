@@ -496,6 +496,11 @@ export const TaskManagementPage: React.FC<TaskManagementPageProps> = ({
           <p className="text-sm text-[var(--nxt-ink-soft)] mt-1 max-w-sm mx-auto">
             Our clinical team hasn't published steps for this category yet. You'll be notified when they're live.
           </p>
+          {currentUser && store.isAdmin(currentUser) && (
+            <p className="text-sm font-semibold text-[var(--nxt-ink)] mt-4 max-w-md mx-auto">
+              Admin: no roadmap has been imported yet. Open Admin console → Categories and choose “Import roadmap file”.
+            </p>
+          )}
         </div>
       ) : (
         <RevealGroup className="relative space-y-4" stagger={0.05}>
