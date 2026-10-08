@@ -72,9 +72,7 @@ const Card: React.FC<{ cat: Category; idPrefix: string; onPick: (c: Category) =>
         <span className={`w-12 h-12 rounded-2xl flex items-center justify-center ${soon ? 'bg-[var(--nxt-bg-soft)] text-[var(--nxt-ink-soft)]' : 'bg-[var(--nxt-mint)] text-[var(--nxt-mint-strong)]'}`}>
           <Icon className="w-6 h-6" />
         </span>
-        {soon
-          ? <span className="text-xs font-bold px-2.5 py-1 rounded-full border border-[var(--nxt-line)] text-[var(--nxt-ink-soft)]">Coming soon</span>
-          : <span className="text-xs font-semibold text-[var(--nxt-ink-soft)]">Priority {cat.priority ?? cat.order}</span>}
+        {soon && <span className="text-xs font-bold px-2.5 py-1 rounded-full border border-[var(--nxt-line)] text-[var(--nxt-ink-soft)]">Coming soon</span>}
       </div>
       <h3 className="font-display text-lg font-bold text-[var(--nxt-ink)] leading-snug mt-4">{cat.name}</h3>
       <p className="text-[15px] text-[var(--nxt-ink)] mt-1.5 leading-snug">{cat.description}</p>
