@@ -121,11 +121,10 @@ export const ProblemStatementsList: React.FC<ProblemStatementsListProps> = ({
         </button>
 
         <Reveal className="relative bg-[var(--nxt-surface)] border border-[var(--nxt-line)] rounded-3xl p-6 sm:p-8 text-[var(--nxt-ink)]">
-          {problem.sponsor_name && (
-            <aside className="hidden lg:block absolute top-8 right-8 w-80 xl:w-96" aria-label="About the poster">
-              <Sponsor problem={problem} variant="panel" />
-            </aside>
-          )}
+          <aside className="hidden lg:block absolute top-8 right-8 w-80 xl:w-96 space-y-6" aria-label="About the poster and voting">
+            {problem.sponsor_name && <Sponsor problem={problem} variant="panel" />}
+            <VotePanel problemId={problem.id} signedIn={!!currentUser} onOpenLogin={onOpenLogin} stacked />
+          </aside>
           <div className="max-w-3xl">
             <div className="flex items-center gap-2 mb-4 flex-wrap">
               <span className="text-xs font-semibold text-[var(--nxt-mint-deep)] bg-[var(--nxt-mint)] px-2.5 py-0.5 rounded-full">
@@ -166,7 +165,7 @@ export const ProblemStatementsList: React.FC<ProblemStatementsListProps> = ({
 
             <div className="lg:hidden"><Sponsor problem={problem} /></div>
 
-            <VotePanel problemId={problem.id} signedIn={!!currentUser} onOpenLogin={onOpenLogin} />
+            <div className="lg:hidden"><VotePanel problemId={problem.id} signedIn={!!currentUser} onOpenLogin={onOpenLogin} /></div>
 
             <div className="flex flex-wrap items-center gap-4 text-xs text-[var(--nxt-ink-soft)] mb-6">
               <span className="flex items-center gap-1.5">

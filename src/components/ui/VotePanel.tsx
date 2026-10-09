@@ -7,10 +7,12 @@ interface Props {
   problemId: string;
   signedIn: boolean;
   onOpenLogin: () => void;
+  /** Narrow side column: the two choices stack and there is no bottom margin. */
+  stacked?: boolean;
 }
 
 /** "Do you agree this is a real problem?" with live results. One vote each; pressing the same button again takes it back. */
-export const VotePanel: React.FC<Props> = ({ problemId, signedIn, onOpenLogin }) => {
+export const VotePanel: React.FC<Props> = ({ problemId, signedIn, onOpenLogin, stacked }) => {
   const tally = store.getVotes(problemId);
   const mine = store.getMyVote(problemId);
   const total = tally.agree + tally.disagree;
@@ -30,9 +32,9 @@ export const VotePanel: React.FC<Props> = ({ problemId, signedIn, onOpenLogin })
   ];
 
   return (
-    <section className="rounded-2xl border border-[var(--nxt-line)] p-5 mb-6" aria-label="Vote on this problem">
+    <section className={`rounded-2xl border border-[var(--nxt-line)] p-5 ${stacked ? '' : 'mb-6'}`} aria-label="Vote on this problem">
       <h2 className="font-display text-base font-bold text-[var(--nxt-ink)]">Do you agree this is a problem worth solving?</h2>
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+      <div className={`mt-4 grid gap-3 ${stacked ? '' : 'sm:grid-cols-2'}`}>
         {options.map(({ choice, label, icon: Icon, count }) => {
           const active = mine === choice;
           return (
