@@ -343,7 +343,24 @@ export interface ListedExpert {
   name: string;
   title: string;
   linkedin: string;
+  photo_url?: string;
 }
+
+/** The full public profile of a listed expert. */
+export interface ListedExpertProfile extends ListedExpert {
+  photo_url: string;
+  bio: string;
+  specialisation: string;
+  organisation: string;
+  city: string;
+  years_experience: string;
+  credentials: string;
+  languages: string;
+  how_to_help: string;
+}
+
+export type ProblemVote = 'agree' | 'disagree';
+export type VoteTally = Record<string, { agree: number; disagree: number }>;
 
 export interface PublicExpert {
   id: string;

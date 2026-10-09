@@ -6,7 +6,7 @@ import {
   AcquisitionSource, AppNotification, ApplicationStatus, Booking, Category, Commitment, Consultation, FounderBackground,
   FounderOutcomes, FundingApplication, Gender, MembershipStatus, MentorProfile, MentorRequest, Message,
   ProblemStatement, PublicFounder, PublicProfileSettings, PublicTeam, Resource, ResourceView, Rsvp,
-  ListedExpert, StartupStage, Step, StepRating, StepSubmission, StepWorkspace, SubmissionStatus, Team, TeamInvite,
+  ListedExpert, ProblemVote, VoteTally, StartupStage, Step, StepRating, StepSubmission, StepWorkspace, SubmissionStatus, Team, TeamInvite,
   Thread, User, UserProgress, UserRole,
 } from '../types';
 import { api, ApiError } from './api';
@@ -46,6 +46,7 @@ interface BootstrapData {
     slack_url: string;
     booked_slots: Record<string, string[]>;
     listed_experts?: ListedExpert[];
+    problem_votes?: VoteTally;
   };
   me: RawUser | null;
   needs_profile: boolean;
@@ -55,6 +56,7 @@ interface BootstrapData {
   scope?: ScopeData;
   progress?: UserProgress[];
   workspaces?: Record<string, StepWorkspace>;
+  my_votes?: Record<string, ProblemVote>;
   applications?: FundingApplication[];
   submissions?: StepSubmission[];
   notifications?: AppNotification[];
@@ -413,6 +415,32 @@ class ApiStore {
 
   public setSlackUrl(url: string): Promise<void> {
     return this.mutate(d => { d.content.slack_url = url; }, () => api.put('/admin/settings/slack', { url }));
+  }
+
+  public getVotes(problemId: string): { agree: number; disagree: number } {
+    return this.data.content.problem_votes?.[problemId] || { agree: 0, disagree: 0 };
+  }
+
+  public getMyVote(problemId: string): ProblemVote | null {
+    return this.data.my_votes?.[problemId] || null;
+  }
+
+  /** Votes agree/disagree on a problem statement; voting the same way again takes the vote back. */
+  public voteOnProblem(problemId: string, vote: ProblemVote): Promise<void> {
+    const previous = this.getMyVote(problemId);
+    const next = previous === vote ? null : vote;
+    return this.mutate(
+      d => {
+        const tally = { ...(d.content.problem_votes?.[problemId] || { agree: 0, disagree: 0 }) };
+        if (previous) tally[previous] = Math.max(0, tally[previous] - 1);
+        if (next) tally[next] += 1;
+        d.content.problem_votes = { ...d.content.problem_votes, [problemId]: tally };
+        const mine = { ...d.my_votes };
+        if (next) mine[problemId] = next; else delete mine[problemId];
+        d.my_votes = mine;
+      },
+      () => api.put(`/problems/${problemId}/vote`, { vote: next }),
+    );
   }
 
   public getListedExperts(): ListedExpert[] {

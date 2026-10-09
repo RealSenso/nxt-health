@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { VotePanel } from './ui/VotePanel';
 import { Sponsor } from './ui/Sponsor';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'motion/react';
@@ -164,6 +165,8 @@ export const ProblemStatementsList: React.FC<ProblemStatementsListProps> = ({
             </p>
 
             <div className="lg:hidden"><Sponsor problem={problem} /></div>
+
+            <VotePanel problemId={problem.id} signedIn={!!currentUser} onOpenLogin={onOpenLogin} />
 
             <div className="flex flex-wrap items-center gap-4 text-xs text-[var(--nxt-ink-soft)] mb-6">
               <span className="flex items-center gap-1.5">

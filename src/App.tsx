@@ -6,6 +6,7 @@ import { store, PLATFORM_NAME } from './services/store';
 import { Navbar } from './components/Navbar';
 import { HomePage } from './components/HomePage';
 import { ExpertsPage } from './components/public/ExpertsPage';
+import { ListedExpertPage } from './components/public/ListedExpertPage';
 import { ExpertDetailPage } from './components/public/ExpertDetailPage';
 import { BecomeExpertPage } from './components/public/BecomeExpertPage';
 import { LoginPage } from './components/LoginPage';
@@ -111,6 +112,7 @@ export default function App() {
         <Route path="/" element={isAuthenticated ? <Navigate to="/problems" replace /> : <HomePage />} />
         <Route path="/experts" element={<ExpertsPage />} />
         <Route path="/experts/join" element={<BecomeExpertPage />} />
+        <Route path="/experts/network/:id" element={<ListedExpertPage />} />
         <Route path="/experts/:expertId" element={<ExpertDetailPage />} />
         {(['login', 'signup', 'reset-password'] as const).map(path => (
           <React.Fragment key={path}><Route

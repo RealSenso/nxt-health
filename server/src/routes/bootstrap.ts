@@ -1,4 +1,5 @@
 import { listedExperts } from './expertPipeline.js';
+import { voteTally } from './votes.js';
 import { Router } from 'express';
 import { isAdmin, scopeKeyOf, UserDoc } from '../auth.js';
 import type { Database } from '../db.js';
@@ -58,6 +59,7 @@ export function bootstrapRouter(database: Database): Router {
         slack_url: (slack?.url as string) || DEFAULT_SLACK_URL,
         booked_slots: bookedSlots,
         listed_experts: await listedExperts(database),
+        problem_votes: await voteTally(database),
       },
       me: null,
       needs_profile: !!req.auth && !req.user,
@@ -126,6 +128,7 @@ export function bootstrapRouter(database: Database): Router {
       my_rsvps: myRsvps.map(r => r.resource_id),
       my_bookings: myBookings.map(b => ({ resource_id: b.resource_id, slot: b.slot })),
       my_ratings: outAll(myRatings),
+      my_votes: Object.fromEntries((await col('problemVotes').find({ user_id: user._id }).toArray()).map(v => [v.problem_id as string, v.vote as string])),
       public_profile: out(publicProfile as never),
       mentors: canSeeMentors
         ? mentorUsers.map(m => {

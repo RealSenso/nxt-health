@@ -12,7 +12,42 @@ interface PipelineExpert {
   fit: 'Strong' | 'Medium' | '';
   stage: 'onboarding' | 'outreach';
   listed?: boolean;
+  photo_url?: string;
+  bio?: string;
+  specialisation?: string;
+  organisation?: string;
+  city?: string;
+  years_experience?: string;
+  credentials?: string;
+  languages?: string;
+  how_to_help?: string;
 }
+
+const PROFILE_FIELDS: { key: keyof PipelineExpert; label: string; long?: boolean; placeholder?: string }[] = [
+  { key: 'photo_url', label: 'Photo link', placeholder: 'https://…' },
+  { key: 'specialisation', label: 'Specialisation' },
+  { key: 'organisation', label: 'Organisation / practice' },
+  { key: 'city', label: 'City' },
+  { key: 'years_experience', label: 'Years of experience' },
+  { key: 'languages', label: 'Languages' },
+  { key: 'credentials', label: 'Credentials and qualifications' },
+  { key: 'bio', label: 'About', long: true },
+  { key: 'how_to_help', label: 'How they help founders', long: true },
+];
+
+/** The public profile fields of an expert (never contact details). Saved when a field loses focus. */
+const ProfileForm: React.FC<{ item: PipelineExpert; onSave: (fields: Partial<PipelineExpert>) => void }> = ({ item, onSave }) => (
+  <div className="mt-4 grid gap-3 sm:grid-cols-2 rounded-2xl bg-[var(--nxt-bg-soft)] p-4">
+    {PROFILE_FIELDS.map(({ key, label, long, placeholder }) => (
+      <label key={key} className={`block text-xs font-semibold text-[var(--nxt-ink-soft)] ${long ? 'sm:col-span-2' : ''}`}>
+        {label}
+        {long
+          ? <textarea rows={3} defaultValue={(item[key] as string) || ''} onBlur={(e) => { if (e.target.value !== ((item[key] as string) || '')) onSave({ [key]: e.target.value }); }} className="mt-1 w-full rounded-lg border border-[var(--nxt-line)] bg-[var(--nxt-surface)] p-2 text-sm font-normal text-[var(--nxt-ink)]" />
+          : <input defaultValue={(item[key] as string) || ''} placeholder={placeholder} onBlur={(e) => { if (e.target.value !== ((item[key] as string) || '')) onSave({ [key]: e.target.value }); }} className="mt-1 w-full rounded-lg border border-[var(--nxt-line)] bg-[var(--nxt-surface)] p-2 text-sm font-normal text-[var(--nxt-ink)]" />}
+      </label>
+    ))}
+  </div>
+);
 
 const STAGES = { onboarding: 'Onboarding', outreach: 'Approached' } as const;
 
@@ -23,6 +58,7 @@ export const AdminExperts: React.FC = () => {
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [stage, setStage] = useState<'all' | PipelineExpert['stage']>('all');
   const [query, setQuery] = useState('');
+  const [editing, setEditing] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
@@ -100,7 +136,7 @@ export const AdminExperts: React.FC = () => {
 
       <ul className="mt-4 divide-y divide-[var(--nxt-line)]">
         {shown.map(item => (
-          <li key={item.id} className="py-4 flex flex-col sm:flex-row sm:items-start gap-3 justify-between">
+          <li key={item.id} className="py-4 flex flex-col sm:flex-row sm:flex-wrap sm:items-start gap-3 justify-between">
             <div className="min-w-0">
               <p className="font-semibold">{item.name}</p>
               {item.title && <p className="text-sm text-[var(--nxt-ink-soft)] mt-0.5">{item.title}</p>}
@@ -124,8 +160,10 @@ export const AdminExperts: React.FC = () => {
                 <option value="onboarding">Onboarding</option>
                 <option value="outreach">Approached</option>
               </select>
+              <button onClick={() => setEditing(editing === item.id ? '' : item.id)} className="text-xs font-semibold underline whitespace-nowrap">{editing === item.id ? 'Close profile' : 'Edit profile'}</button>
               <button onClick={() => void remove(item)} className="p-2 rounded-full text-[var(--nxt-ink-soft)] hover:text-[var(--nxt-ink)]" aria-label={`Remove ${item.name}`}><Trash2 className="w-4 h-4" /></button>
             </div>
+            {editing === item.id && <div className="w-full sm:basis-full"><ProfileForm item={item} onSave={(fields) => void change(item, fields)} /></div>}
           </li>
         ))}
       </ul>

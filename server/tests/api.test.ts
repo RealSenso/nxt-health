@@ -175,6 +175,33 @@ describe('step costs', () => {
   });
 });
 
+describe('problem votes', () => {
+  it('lets signed-in people agree or disagree once, change their mind, and shows the totals to everyone', async () => {
+    await admin('boss');
+    await signup('ann');
+    await signup('bob');
+    await request(app).post('/api/admin/problems').set('Authorization', token('boss')).send({ title: 'T', description: 'd', department: 'x', funded: false }).expect(201);
+    const problems = (await request(app).get('/api/bootstrap').expect(200)).body.content.problems;
+    const id = problems.find((p: { title: string }) => p.title === 'T').id;
+    const put = (uid: string | null, vote: string | null) => {
+      const r = request(app).put(`/api/problems/${id}/vote`);
+      return (uid ? r.set('Authorization', token(uid)) : r).send({ vote });
+    };
+    await put(null, 'agree').expect(401);
+    await put('ann', 'maybe').expect(400);
+    await request(app).put('/api/problems/nope/vote').set('Authorization', token('ann')).send({ vote: 'agree' }).expect(404);
+    await put('ann', 'agree').expect(200);
+    await put('bob', 'disagree').expect(200);
+    await put('ann', 'disagree').expect(200); // changing a vote doesn't add another
+    const anon = (await request(app).get('/api/bootstrap').expect(200)).body.content.problem_votes[id];
+    expect(anon).toEqual({ agree: 0, disagree: 2 });
+    const mine = (await request(app).get('/api/bootstrap').set('Authorization', token('ann')).expect(200)).body.my_votes;
+    expect(mine).toEqual({ [id]: 'disagree' });
+    await put('ann', null).expect(200);
+    expect((await request(app).get('/api/bootstrap').expect(200)).body.content.problem_votes[id]).toEqual({ agree: 0, disagree: 1 });
+  });
+});
+
 describe('events', () => {
   it('enforces RSVP capacity under concurrent requests', async () => {
     await Promise.all(['u1', 'u2', 'u3', 'u4'].map(member));
@@ -492,7 +519,13 @@ describe('uploads and profiles', () => {
       const shown = (await request(app).get('/api/public/experts').expect(200)).body.listed;
       expect(shown).toEqual([{ id: 'exp-test-person', name: 'Test Person', title: 'Surgeon', linkedin: '' }]);
       expect(JSON.stringify(shown)).not.toContain('tp@example.com');
+      await request(app).patch('/api/admin/expert-pipeline/exp-test-person').set('Authorization', token('boss')).send({ bio: 'Operates.', city: 'Pune', photo_url: 'http://insecure' }).expect(400);
+      await request(app).patch('/api/admin/expert-pipeline/exp-test-person').set('Authorization', token('boss')).send({ bio: 'Operates.', city: 'Pune' }).expect(200);
+      const page = (await request(app).get('/api/public/listed-experts/exp-test-person').expect(200)).body.expert;
+      expect(page).toMatchObject({ name: 'Test Person', bio: 'Operates.', city: 'Pune' });
+      expect(JSON.stringify(page)).not.toMatch(/tp@example\.com|email|phone/);
       await request(app).patch('/api/admin/expert-pipeline/exp-test-person').set('Authorization', token('boss')).send({ listed: false }).expect(200);
+      await request(app).get('/api/public/listed-experts/exp-test-person').expect(404);
       await request(app).post('/api/admin/expert-pipeline/import').set('Authorization', token('boss')).send({ experts: [{ ...entry, stage: 'bogus' }] }).expect(400);
       await request(app).delete('/api/admin/expert-pipeline/exp-test-person').set('Authorization', token('boss')).expect(200);
     });
