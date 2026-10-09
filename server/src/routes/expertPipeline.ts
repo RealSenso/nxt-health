@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { HttpError, requireAdmin } from '../auth.js';
+import { HttpError, requireAdmin, requireMember } from '../auth.js';
 import type { Database } from '../db.js';
 import { out, outAll } from '../db.js';
 import { parse } from '../util.js';
@@ -67,6 +67,7 @@ export function expertPipelineRouter(database: Database): Router {
   const pipeline = database.col('expertPipeline');
 
   r.get('/public/listed-experts/:id', async (req, res) => {
+    requireMember(req);
     const expert = await listedExpert(database, String(req.params.id));
     if (!expert) throw new HttpError(404, 'Expert not found.');
     res.json({ expert });

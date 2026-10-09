@@ -302,21 +302,35 @@ describe('uploads and profiles', () => {
     });
 
     async function setupExpert(uid = 'mentor', extra: Record<string, unknown> = {}) {
+      await member('viewer').catch(() => undefined);
       await request(app).patch(`/api/admin/users/${uid}`).set('Authorization', token('boss')).send({ is_mentor: true }).expect(200);
       await request(app).put('/api/mentor/profile').set('Authorization', token(uid)).send(profile(extra)).expect(200);
     }
 
-    const firstSlot = async (uid = 'mentor') => (await request(app).get(`/api/public/experts/${uid}`).expect(200)).body.slots[0] as string;
+    const firstSlot = async (uid = 'mentor') => (await request(app).get(`/api/public/experts/${uid}`).set('Authorization', token('viewer')).expect(200)).body.slots[0] as string;
+
+    it('keeps the expert directory and profiles for members only', async () => {
+      await signup('nonmember');
+      for (const path of ['/api/public/experts', '/api/public/experts/mentor', '/api/public/listed-experts/exp-x']) {
+        await request(app).get(path).expect(401);
+        await request(app).get(path).set('Authorization', token('nonmember')).expect(403);
+      }
+      await admin('boss');
+      await request(app).post('/api/admin/expert-pipeline/import').set('Authorization', token('boss')).send({ experts: [{ id: 'exp-x', name: 'X', title: '', email: '', phone: '', linkedin: '', fit: '', stage: 'onboarding', listed: true }] }).expect(201);
+      expect((await request(app).get('/api/bootstrap').expect(200)).body.content.listed_experts).toEqual([]);
+      expect((await request(app).get('/api/bootstrap').set('Authorization', token('nonmember')).expect(200)).body.content.listed_experts).toEqual([]);
+      expect((await request(app).get('/api/bootstrap').set('Authorization', token('boss')).expect(200)).body.content.listed_experts).toHaveLength(1);
+    });
 
     it('lists experts publicly without leaking the private call link, and only while they take bookings', async () => {
       await admin('boss');
       await member('mentor');
       await setupExpert();
-      const list = await request(app).get('/api/public/experts').expect(200);
+      const list = await request(app).get('/api/public/experts').set('Authorization', token('viewer')).expect(200);
       expect(list.body.experts).toHaveLength(1);
       expect(list.body.experts[0]).toMatchObject({ id: 'mentor', rate_usd: 200, open_slots: expect.any(Number) });
       expect(JSON.stringify(list.body)).not.toContain('meet.example.com');
-      const detail = await request(app).get('/api/public/experts/mentor').expect(200);
+      const detail = await request(app).get('/api/public/experts/mentor').set('Authorization', token('viewer')).expect(200);
       expect(detail.body.slots.length).toBeGreaterThan(0);
       expect(JSON.stringify(detail.body)).not.toContain('meet.example.com');
 
@@ -328,8 +342,8 @@ describe('uploads and profiles', () => {
       expect(JSON.stringify(own.body.mentors)).toContain('meet.example.com');
 
       await request(app).put('/api/mentor/profile').set('Authorization', token('mentor')).send(profile({ accepting: false })).expect(200);
-      expect((await request(app).get('/api/public/experts').expect(200)).body.experts).toHaveLength(0);
-      await request(app).get('/api/public/experts/mentor').expect(404);
+      expect((await request(app).get('/api/public/experts').set('Authorization', token('viewer')).expect(200)).body.experts).toHaveLength(0);
+      await request(app).get('/api/public/experts/mentor').set('Authorization', token('viewer')).expect(404);
     });
 
     it('rejects unsafe links and out-of-range rates on an expert profile', async () => {
@@ -384,7 +398,7 @@ describe('uploads and profiles', () => {
       await setupExpert();
       const slot = await firstSlot();
       const first = await request(app).post('/api/consultations').set('Authorization', token('a')).send({ mentor_uid: 'mentor', minutes: 60, slot }).expect(201);
-      expect((await request(app).get('/api/public/experts/mentor').expect(200)).body.slots).not.toContain(slot);
+      expect((await request(app).get('/api/public/experts/mentor').set('Authorization', token('viewer')).expect(200)).body.slots).not.toContain(slot);
       await request(app).post('/api/consultations').set('Authorization', token('b')).send({ mentor_uid: 'mentor', minutes: 30, slot }).expect(409);
       await request(app).post(`/api/consultations/${first.body.consultation.id}/cancel`).set('Authorization', token('a')).expect(200);
       await request(app).post('/api/consultations').set('Authorization', token('b')).send({ mentor_uid: 'mentor', minutes: 30, slot }).expect(201);
@@ -546,18 +560,18 @@ describe('uploads and profiles', () => {
       const list = await request(app).get('/api/admin/expert-pipeline').set('Authorization', token('boss')).expect(200);
       expect(list.body.experts).toEqual([expect.objectContaining({ id: 'exp-test-person', stage: 'onboarding', email: 'tp@example.com' })]);
 
-      expect((await request(app).get('/api/public/experts').expect(200)).body).toMatchObject({ experts: [], listed: [] });
+      expect((await request(app).get('/api/public/experts').set('Authorization', token('boss')).expect(200)).body).toMatchObject({ experts: [], listed: [] });
       await request(app).patch('/api/admin/expert-pipeline/exp-test-person').set('Authorization', token('boss')).send({ listed: true }).expect(200);
-      const shown = (await request(app).get('/api/public/experts').expect(200)).body.listed;
+      const shown = (await request(app).get('/api/public/experts').set('Authorization', token('boss')).expect(200)).body.listed;
       expect(shown).toEqual([{ id: 'exp-test-person', name: 'Test Person', title: 'Surgeon', linkedin: '', photo_url: '' }]);
       expect(JSON.stringify(shown)).not.toContain('tp@example.com');
       await request(app).patch('/api/admin/expert-pipeline/exp-test-person').set('Authorization', token('boss')).send({ bio: 'Operates.', city: 'Pune', photo_url: 'http://insecure' }).expect(400);
       await request(app).patch('/api/admin/expert-pipeline/exp-test-person').set('Authorization', token('boss')).send({ bio: 'Operates.', city: 'Pune' }).expect(200);
-      const page = (await request(app).get('/api/public/listed-experts/exp-test-person').expect(200)).body.expert;
+      const page = (await request(app).get('/api/public/listed-experts/exp-test-person').set('Authorization', token('boss')).expect(200)).body.expert;
       expect(page).toMatchObject({ name: 'Test Person', bio: 'Operates.', city: 'Pune' });
       expect(JSON.stringify(page)).not.toMatch(/tp@example\.com|email|phone/);
       await request(app).patch('/api/admin/expert-pipeline/exp-test-person').set('Authorization', token('boss')).send({ listed: false }).expect(200);
-      await request(app).get('/api/public/listed-experts/exp-test-person').expect(404);
+      await request(app).get('/api/public/listed-experts/exp-test-person').set('Authorization', token('boss')).expect(404);
       await request(app).post('/api/admin/expert-pipeline/import').set('Authorization', token('boss')).send({ experts: [{ ...entry, stage: 'bogus' }] }).expect(400);
       await request(app).delete('/api/admin/expert-pipeline/exp-test-person').set('Authorization', token('boss')).expect(200);
     });

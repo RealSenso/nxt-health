@@ -7,6 +7,7 @@ import { Navbar } from './components/Navbar';
 import { HomePage } from './components/HomePage';
 import { ExpertsPage } from './components/public/ExpertsPage';
 import { ListedExpertPage } from './components/public/ListedExpertPage';
+import { PublicLayout } from './components/public/PublicLayout';
 import { ExpertDetailPage } from './components/public/ExpertDetailPage';
 import { BecomeExpertPage } from './components/public/BecomeExpertPage';
 import { LoginPage } from './components/LoginPage';
@@ -110,10 +111,10 @@ export default function App() {
     <>
       <Routes>
         <Route path="/" element={isAuthenticated ? <Navigate to="/problems" replace /> : <HomePage />} />
-        <Route path="/experts" element={<ExpertsPage />} />
+        <Route path="/experts" element={<MembersOnly><ExpertsPage /></MembersOnly>} />
         <Route path="/experts/join" element={<BecomeExpertPage />} />
-        <Route path="/experts/network/:id" element={<ListedExpertPage />} />
-        <Route path="/experts/:expertId" element={<ExpertDetailPage />} />
+        <Route path="/experts/network/:id" element={<MembersOnly><ListedExpertPage /></MembersOnly>} />
+        <Route path="/experts/:expertId" element={<MembersOnly><ExpertDetailPage /></MembersOnly>} />
         {(['login', 'signup', 'reset-password'] as const).map(path => (
           <React.Fragment key={path}><Route
             path={`/${path}`}
@@ -279,7 +280,7 @@ function Shell({ currentUser, modals }: { currentUser: User | null; modals: Moda
         <div className="nxt-container py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-sm text-[var(--nxt-ink-soft)]">{PLATFORM_NAME} · nxthealth.ai · India</p>
           <div className="flex items-center gap-5 text-sm text-[var(--nxt-ink-soft)]">
-            <Link to="/experts" className="underline underline-offset-2 hover:text-[var(--nxt-ink)] transition-colors">Find an expert</Link>
+            {currentUser?.is_member && <Link to="/experts" className="underline underline-offset-2 hover:text-[var(--nxt-ink)] transition-colors">Find an expert</Link>}
             <button onClick={modals.openSlack} className="hover:text-[var(--nxt-ink)] transition-colors">Community Slack</button>
             {currentUser ? (
               <button onClick={modals.openMembership} className="hover:text-[var(--nxt-ink)] transition-colors">
@@ -293,6 +294,24 @@ function Shell({ currentUser, modals }: { currentUser: User | null; modals: Moda
       </footer>
     </div>
   );
+}
+
+/** Expert pages are for signed-in members. Visitors are sent to log in; non-members are told how to get access. */
+function MembersOnly({ children }: { children: React.ReactNode }) {
+  const location = useLocation();
+  if (!store.isAuthenticated()) return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+  if (!store.getCurrentUser().is_member) {
+    return (
+      <PublicLayout variant="experts">
+        <section className="nxt-container py-24 max-w-2xl">
+          <h1 className="font-display font-bold text-4xl tracking-[-0.03em]">Experts are for members.</h1>
+          <p className="mt-4 text-lg text-[var(--nxt-ink-soft)]">Request membership to see our experts, read their profiles and book sessions.</p>
+          <Link to="/problems" className="mt-8 inline-block rounded-full bg-[var(--nxt-ink-fixed)] text-white font-semibold px-6 py-3">Go to the app to request membership</Link>
+        </section>
+      </PublicLayout>
+    );
+  }
+  return <>{children}</>;
 }
 
 function RoadmapTabs({ children }: { children: React.ReactNode }) {

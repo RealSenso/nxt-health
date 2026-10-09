@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import type { Database } from '../db.js';
-import { HttpError } from '../auth.js';
+import { HttpError, requireMember } from '../auth.js';
 import { listedExperts as listedForDisplay } from './expertPipeline.js';
 
 import { openSlotsFor, DEFAULT_RATE_USD } from './consultations.js';
@@ -33,7 +33,9 @@ export function expertsRouter(database: Database): Router {
     return users.map(user => ({ user, profile: profiles.find(p => p._id === user._id)! }));
   }
 
-  r.get('/public/experts', async (_req, res) => {
+  // The expert directory is for members: signed-in, verified and with an active membership (or an admin).
+  r.get('/public/experts', async (req, res) => {
+    requireMember(req);
     const experts = await listedExperts();
     const items = await Promise.all(experts.map(async ({ user, profile }) =>
       publicExpert(user, profile, (await openSlotsFor(database, profile, user._id)).length)));
@@ -42,6 +44,7 @@ export function expertsRouter(database: Database): Router {
   });
 
   r.get('/public/experts/:id', async (req, res) => {
+    requireMember(req);
     const id = String(req.params.id);
     const expert = (await listedExperts()).find(e => e.user._id === id);
     if (!expert) throw new HttpError(404, 'Expert not found.');

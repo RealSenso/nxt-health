@@ -77,6 +77,9 @@ export const PublicLayout: React.FC<{ variant: PublicVariant; children: React.Re
   useAnchorScroll();
   const nav = NAV[variant];
   const signedIn = store.isAuthenticated();
+  // Expert pages are for members, so everyone else only sees the way to apply as an expert.
+  const isMember = signedIn && store.getCurrentUser().is_member;
+  const visible = (item: NavItem) => isMember || !/^\/experts(#.*)?$|^\/experts\/(?!join)/.test(item.to);
 
   return (
     <div className="min-h-screen flex flex-col bg-[var(--nxt-bg)] text-[var(--nxt-ink)]">
@@ -92,7 +95,7 @@ export const PublicLayout: React.FC<{ variant: PublicVariant; children: React.Re
             )}
           </Link>
           <nav className="flex items-center gap-5 lg:gap-8">
-            {nav.items.map(item => (
+            {nav.items.filter(visible).map(item => (
               <Link key={item.label} to={item.to} className="hidden md:inline text-[15px] text-white/90 hover:text-white">{item.label}</Link>
             ))}
             {signedIn ? (
@@ -110,7 +113,7 @@ export const PublicLayout: React.FC<{ variant: PublicVariant; children: React.Re
         <div className="nxt-container py-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-[15px] text-[var(--nxt-ink-soft)]">
           <p>NXT Health · nxthealth.ai · India</p>
           <nav className="flex flex-wrap gap-x-6 gap-y-2">
-            {FOOTER_LINKS[variant].map(item => (
+            {FOOTER_LINKS[variant].filter(visible).map(item => (
               <Link key={item.label} to={item.to} className="underline underline-offset-2 hover:text-[var(--nxt-ink)]">{item.label}</Link>
             ))}
           </nav>

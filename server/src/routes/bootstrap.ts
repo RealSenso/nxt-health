@@ -58,7 +58,7 @@ export function bootstrapRouter(database: Database): Router {
         resources: visibleResources,
         slack_url: (slack?.url as string) || DEFAULT_SLACK_URL,
         booked_slots: bookedSlots,
-        listed_experts: await listedExperts(database),
+        listed_experts: fullAccess ? await listedExperts(database) : [],
         problem_votes: await voteTally(database),
       },
       me: null,
