@@ -68,7 +68,7 @@ export const RoadmapPlaybook: React.FC<{ category: Category | null }> = ({ categ
       )}
       {playbook.cost_inputs.length > 0 && (
         <Panel title="What will it cost to build?" hint="Inputs to start a funding estimate for your startup.">
-          <Table head={['Cost', 'Input', 'Why it matters', 'How to plan it']} rows={playbook.cost_inputs.map(c => [c.category, c.input, c.why, c.approach])} />
+          <Table head={['Cost', 'Input', 'Why it matters']} rows={playbook.cost_inputs.map(c => [c.category, c.input, c.why])} />
         </Panel>
       )}
     </section>

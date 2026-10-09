@@ -1,7 +1,7 @@
 import { createApp } from './app.js';
 import { connect } from './db.js';
 import { firebaseVerifier } from './firebase.js';
-import { removeObsoleteStarterContent } from './syncContent.js';
+import { removeObsoleteStarterContent, syncCategoryOrder } from './syncContent.js';
 
 function required(name: string): string {
   const value = process.env[name];
@@ -14,7 +14,8 @@ const { database } = await connect(required('MONGODB_URI'), process.env.MONGODB_
 const removed = await removeObsoleteStarterContent(database);
 if (removed.removed_categories || removed.removed_problems) {
   console.log(`Removed ${removed.removed_categories} old starter categories and ${removed.removed_problems} sample problems.`);
-}
+}await syncCategoryOrder(database);
+
 const app = createApp({
   database,
   verifyToken: firebaseVerifier({ serviceAccountJson: process.env.FIREBASE_SERVICE_ACCOUNT, projectId: process.env.FIREBASE_PROJECT_ID }),

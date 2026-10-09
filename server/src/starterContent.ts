@@ -53,10 +53,12 @@ interface CategoryDef {
 }
 
 /**
- * The 25 solution types. The first six (the "green" priority list) are open to founders;
+ * The 25 solution types. SaMD and Medical Device come first, then the six "green" priority categories; all eight are open to founders;
  * the rest are listed as coming soon, ordered from lowest to highest complexity.
  */
 const CATEGORY_DEFS: CategoryDef[] = [
+  { slug: 'samd', name: 'SaMD', description: 'Software that itself performs a medical function', example: 'AI radiology diagnosis, clinical decision support', complexity: 'very_high', complexity_note: 'Software lifecycle + clinical evidence + cybersecurity + regulation' },
+  { slug: 'medical-device', name: 'Medical Device', description: 'Physical device used for diagnosis, monitoring or treatment', example: 'Portable ECG, infusion device, surgical device', complexity: 'very_high', complexity_note: 'Design controls, testing, QMS, regulatory approval, manufacturing' },
   { slug: 'marketplace-network', name: 'Marketplace / Network', description: 'Connects healthcare participants', example: 'Specialist network, doctor-startup network', complexity: 'low', complexity_note: 'Low regulatory burden; mainly business, technology, contracts and operations' },
   { slug: 'healthcare-services', name: 'Healthcare Services', description: 'Solves problem through people/process rather than technology', example: 'Specialty care management, home healthcare', complexity: 'low', complexity_note: 'Primarily service design, clinical governance, staffing and operations' },
   { slug: 'patient-education', name: 'Patient Education / Engagement', description: 'Improves understanding/adherence/behaviour', example: 'Regional-language disease education', complexity: 'low', complexity_note: 'Usually low regulatory complexity unless making medical claims' },
@@ -76,8 +78,6 @@ const CATEGORY_DEFS: CategoryDef[] = [
   { slug: 'diagnostics-service', name: 'Diagnostics-as-a-Service', description: 'Provides diagnostic capability as a service', example: 'Mobile diagnostic screening', complexity: 'high', complexity_note: 'Diagnostic equipment + trained personnel + quality/regulatory requirements' },
   { slug: 'clinical-trial-tech', name: 'Research / Clinical Trial Tech', description: 'Makes research faster/cheaper', example: 'Patient recruitment, trial data platform, decentralised trials', complexity: 'high', complexity_note: 'GxP/clinical-trial requirements depending on function' },
 
-  { slug: 'medical-device', name: 'Medical Device', description: 'Physical device used for diagnosis, monitoring or treatment', example: 'Portable ECG, infusion device, surgical device', complexity: 'very_high', complexity_note: 'Design controls, testing, QMS, regulatory approval, manufacturing' },
-  { slug: 'samd', name: 'SaMD', description: 'Software that itself performs a medical function', example: 'AI radiology diagnosis, clinical decision support', complexity: 'very_high', complexity_note: 'Software lifecycle + clinical evidence + cybersecurity + regulation' },
   { slug: 'ivd', name: 'IVD / Diagnostic Test', description: 'Tests a biological sample to diagnose/monitor disease', example: 'Blood test, molecular diagnostic, biomarker test', complexity: 'very_high', complexity_note: 'Analytical + clinical performance + regulatory + manufacturing' },
   { slug: 'ai-ml-device', name: 'AI/ML in Medical Device', description: 'AI embedded into a device or medical software', example: 'AI detecting diabetic retinopathy from retinal images', complexity: 'very_high', complexity_note: 'Device regulation + AI validation/data/model lifecycle' },
   { slug: 'robotics', name: 'Robotics / Automation', description: 'Automates or augments clinical procedures', example: 'Surgical robot, rehabilitation robot', complexity: 'very_high', complexity_note: 'Hardware + software + safety + clinical validation' },
@@ -89,19 +89,17 @@ const CATEGORY_DEFS: CategoryDef[] = [
   { slug: 'care-service', name: 'Care-as-a-Service', description: 'Delivers an entire care pathway', example: 'Chronic disease management' },
 ];
 
-/** How many of the first categories are open to founders (the six priority "green" categories). */
-export const LIVE_CATEGORY_COUNT = 6;
+/** How many of the first categories are open to founders: SaMD, Medical Device, then the six priority "green" categories. */
+export const LIVE_CATEGORY_COUNT = 8;
 
 /** Categories that are open because they have a checklist written for them, in addition to the first six. */
 const DEDICATED_ROADMAP_SLUGS = ['medical-device', 'samd'];
-/** Of those, the ones whose checklist is complete and are open to founders. Medical Device is open with the part of its checklist that has been imported. */
-const OPEN_DEDICATED_SLUGS = ['samd', 'medical-device'];
 
 const categoryId = (slug: string) => `cat-${slug}`;
 
 export const STARTER_CATEGORIES: Doc[] = CATEGORY_DEFS.map((def, index) => {
   const dedicated = DEDICATED_ROADMAP_SLUGS.includes(def.slug);
-  const live = index < LIVE_CATEGORY_COUNT || OPEN_DEDICATED_SLUGS.includes(def.slug);
+  const live = index < LIVE_CATEGORY_COUNT;
   return {
     id: categoryId(def.slug),
     name: def.name,
@@ -111,7 +109,7 @@ export const STARTER_CATEGORIES: Doc[] = CATEGORY_DEFS.map((def, index) => {
     coming_soon: !live,
     ...(index < LIVE_CATEGORY_COUNT ? { priority: index + 1 } : {}),
     ...(def.complexity ? { complexity: def.complexity, complexity_note: def.complexity_note } : {}),
-    ...(live && !dedicated && index > 0
+    ...(live && !dedicated && def.slug !== 'marketplace-network'
       ? { roadmap_note: 'This starter roadmap is built from the Marketplace checklist. A checklist written for this category is coming.' }
       : {}),
   };

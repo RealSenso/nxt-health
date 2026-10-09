@@ -357,8 +357,8 @@ describe('uploads and profiles', () => {
       const loaded = await content('boss');
       expect(loaded.categories).toHaveLength(25);
       expect(loaded.categories.filter((c: { coming_soon: boolean }) => !c.coming_soon).map((c: { name: string }) => c.name)).toEqual([
-        'Marketplace / Network', 'Healthcare Services', 'Patient Education / Engagement',
-        'Workflow / Operational Tech', 'Training / Simulation', 'Clinical Infrastructure / Platform', 'Medical Device', 'SaMD',
+        'SaMD', 'Medical Device', 'Marketplace / Network', 'Healthcare Services', 'Patient Education / Engagement',
+        'Workflow / Operational Tech', 'Training / Simulation', 'Clinical Infrastructure / Platform',
       ]);
       expect(loaded.problems.map((p: { title: string }) => p.title)).toEqual(['In women, what is “psychological” and what is “not”?', 'Solve Migraine']);
 

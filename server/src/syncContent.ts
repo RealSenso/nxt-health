@@ -65,6 +65,13 @@ export async function syncStarterContent(database: Database, adminId: string, ro
   };
 }
 
+/** Puts the starter categories in their current order. Only the order is touched, so admin edits are kept. */
+export async function syncCategoryOrder(database: Database): Promise<void> {
+  await database.col('categories').bulkWrite(
+    STARTER_CATEGORIES.map(c => ({ updateOne: { filter: { _id: c.id as string }, update: { $set: { order: c.order as number } } } })),
+  );
+}
+
 /**
  * Removes starter content that earlier versions loaded and the current content replaces: the first-generation
  * categories (cat-1 … cat-21) with their steps, and the six sample problems (prob-1 … prob-6), plus whatever
