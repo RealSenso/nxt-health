@@ -79,14 +79,28 @@ export const StepPage: React.FC<StepPageProps> = ({
     store.saveStepWorkspace(scopeKey, problemId, step.id, next);
   };
 
+  // After finishing a step, ask what it cost so admins can keep the expected prices realistic.
+  const [askSpend, setAskSpend] = useState(false);
+  const [spendDraft, setSpendDraft] = useState('');
+  const openSpendPrompt = () => {
+    setSpendDraft(workspace.spent_inr !== undefined ? String(workspace.spent_inr) : '');
+    setAskSpend(true);
+  };
+  const saveSpend = (amount: number | undefined) => {
+    save(amount === undefined ? {} : { spent_inr: amount });
+    setAskSpend(false);
+  };
+
   const handleStatusChange = (status: StepWorkStatus) => {
     if ((status === 'done') !== isCompleted) onToggleComplete();
     save({ status });
+    if (status === 'done' && !isCompleted) openSpendPrompt();
   };
 
   const handleToggleComplete = () => {
     save({ status: isCompleted ? 'in_progress' : 'done' });
     onToggleComplete();
+    if (!isCompleted) openSpendPrompt();
   };
 
   const handleAddTask = () => {
@@ -143,6 +157,39 @@ export const StepPage: React.FC<StepPageProps> = ({
 
   return (
     <div className="space-y-8 lg:space-y-10">
+      {askSpend && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setAskSpend(false)}>
+          <form
+            onClick={(e) => e.stopPropagation()}
+            onSubmit={(e) => { e.preventDefault(); saveSpend(spendDraft === '' ? 0 : Math.max(0, Number(spendDraft))); }}
+            className="bg-[var(--nxt-surface)] text-[var(--nxt-ink)] rounded-[22px] max-w-md w-full p-7 border border-[var(--nxt-line)] shadow-2xl"
+          >
+            <h3 className="font-display font-bold text-2xl tracking-[-0.02em]">How much did this step cost you?</h3>
+            <p className="mt-2 text-[15px] text-[var(--nxt-ink-soft)]">
+              Total spent on “{step.name}” in rupees, including fees, tools, tests and consultants. Enter 0 if it cost nothing. We use this to keep the expected costs on the roadmap realistic.
+            </p>
+            {step.expected_cost_inr !== undefined && <p className="mt-2 text-sm text-[var(--nxt-ink-soft)]">Typically around ₹{step.expected_cost_inr.toLocaleString('en-IN')}.</p>}
+            <div className="mt-5 flex items-center gap-2 rounded-xl border border-[var(--nxt-line)] px-4 py-3">
+              <span className="font-semibold">₹</span>
+              <input
+                id="input-spend-dialog"
+                autoFocus
+                type="number"
+                min={0}
+                inputMode="decimal"
+                value={spendDraft}
+                onChange={(e) => setSpendDraft(e.target.value)}
+                placeholder="0"
+                className="flex-1 bg-transparent text-lg focus:outline-hidden"
+              />
+            </div>
+            <div className="mt-6 flex items-center justify-between gap-3">
+              <button type="button" onClick={() => setAskSpend(false)} className="text-sm font-semibold text-[var(--nxt-ink-soft)] hover:text-[var(--nxt-ink)]">Skip for now</button>
+              <button type="submit" id="btn-save-spend" className="rounded-full bg-[var(--nxt-mint-strong)] hover:bg-[var(--nxt-mint-deep)] text-white font-semibold px-6 py-2.5">Save</button>
+            </div>
+          </form>
+        </div>
+      )}
       <Reveal className="bg-[var(--nxt-surface)] rounded-2xl border border-[var(--nxt-line)] p-6 sm:p-7">
         <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-5">
           <div className="min-w-0">
@@ -200,6 +247,20 @@ export const StepPage: React.FC<StepPageProps> = ({
           <Meta label="Time on step">
             <span className="font-semibold text-[var(--nxt-ink)]">{daysActive === null ? '—' : `${daysActive} day${daysActive === 1 ? '' : 's'}`}</span>
             {guide.typicalDuration && <span className="text-xs">({guide.typicalDuration.startsWith('about') ? '' : 'typical '}{guide.typicalDuration})</span>}
+          </Meta>
+          <Meta label="Spent on this step">
+            <span className="text-[var(--nxt-ink)] font-semibold">₹</span>
+            <input
+              id="input-step-spent"
+              type="number"
+              min={0}
+              inputMode="decimal"
+              placeholder="0"
+              value={workspace.spent_inr ?? ''}
+              onChange={(e) => save({ spent_inr: e.target.value === '' ? undefined : Math.max(0, Number(e.target.value)) })}
+              className="w-24 text-xs bg-transparent text-[var(--nxt-ink)] focus:outline-hidden border-b border-[var(--nxt-line)]"
+            />
+            {step.expected_cost_inr !== undefined && <span className="text-xs">(typically ₹{step.expected_cost_inr.toLocaleString('en-IN')})</span>}
           </Meta>
           <Meta label="Target">
             <input

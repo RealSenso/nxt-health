@@ -12,6 +12,7 @@ const workspaceSchema = z.object({
   started_at: z.string().optional(),
   target_date: z.string().max(40).optional(),
   blocker: z.string().max(500).optional(),
+  spent_inr: z.number().min(0).max(1e10).optional(),
   checklist: z.array(z.object({ id, label: z.string().trim().min(1).max(300), done: z.boolean(), custom: z.boolean() })).max(100),
   log: z.array(z.object({ id, text: z.string().max(5000), author_name: z.string().max(120), created_at: z.string() })).max(1000),
 });

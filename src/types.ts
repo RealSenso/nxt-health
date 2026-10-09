@@ -159,6 +159,8 @@ export interface Step {
   /** Planned work for the step; when present it replaces the generic checklist. */
   tasks?: StepTask[];
   typical_duration?: string;
+  /** What a founder is expected to spend on this step, in rupees. Set by admins, informed by what founders report. */
+  expected_cost_inr?: number;
   locked?: boolean;
 }
 
@@ -251,6 +253,8 @@ export interface StepWorkspace {
   started_at?: string;
   target_date?: string;
   blocker?: string;
+  /** What the founder reports having spent on this step, in rupees. */
+  spent_inr?: number;
   checklist: StepChecklistItem[];
   log: StepLogEntry[];
   updated_at: string;

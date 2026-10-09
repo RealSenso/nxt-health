@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   Filter, Activity, Users, Route, BookMarked, ShieldCheck, TrendingDown, AlertTriangle, Clock, Star,
-  Trophy, Megaphone, UserCheck, Hourglass, MessageSquare,
+  Trophy, Megaphone, UserCheck, Hourglass, MessageSquare, IndianRupee,
 } from 'lucide-react';
 import { store } from '../../services/store';
 import { getStepGuide } from '../../data/stepGuides';
@@ -50,7 +50,97 @@ const Table: React.FC<{ head: string[]; children: React.ReactNode }> = ({ head, 
   </div>
 );
 
-type Tab = 'growth' | 'founders' | 'roadmaps' | 'quality';
+const rupees = (n: number) => `₹${Math.round(n).toLocaleString('en-IN')}`;
+
+/** What founders say they spent on each step, next to the expected cost, which an admin can adjust. */
+const CostsPanel: React.FC = () => {
+  const steps = store.getSteps();
+  const categories = store.getCategories();
+  const spendByStep = new Map<string, number[]>();
+  for (const [key, ws] of Object.entries(store.getAllStepWorkspaces())) {
+    if (typeof ws.spent_inr !== 'number') continue;
+    const stepId = key.split('::')[2];
+    spendByStep.set(stepId, [...(spendByStep.get(stepId) || []), ws.spent_inr]);
+  }
+  const reported = [...spendByStep.values()].flat();
+  const total = reported.reduce((n, v) => n + v, 0);
+  const [saving, setSaving] = useState('');
+
+  const setExpected = async (step: (typeof steps)[number], value: number | undefined) => {
+    if (value === step.expected_cost_inr) return;
+    setSaving(step.id);
+    try { await store.saveStep({ ...step, expected_cost_inr: value }); } finally { setSaving(''); }
+  };
+
+  const rows = categories
+    .map(category => ({
+      category,
+      steps: steps.filter(s => s.category_id === category.id).map(step => {
+        const values = spendByStep.get(step.id) || [];
+        return {
+          step, values,
+          avg: values.length ? values.reduce((n, v) => n + v, 0) / values.length : null,
+          med: median(values), min: values.length ? Math.min(...values) : null, max: values.length ? Math.max(...values) : null,
+        };
+      }),
+    }))
+    .filter(r => r.steps.length > 0);
+
+  return (
+    <>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <StatTile icon={IndianRupee} label="Cost reports" value={reported.length} sub="steps with a spend entered" />
+        <StatTile icon={Activity} label="Total reported" value={rupees(total)} />
+        <StatTile icon={Route} label="Average per step" value={reported.length ? rupees(total / reported.length) : '—'} />
+        <StatTile icon={Star} label="Steps with data" value={spendByStep.size} sub={`of ${steps.length}`} />
+      </div>
+      <Panel title="Expected vs reported cost" hint="Founders are asked what each step cost when they finish it. Set the expected cost from what they report — it appears on the step page as the typical cost.">
+        {reported.length === 0 && <p className="text-sm text-[var(--nxt-ink-soft)] mb-4">No founder has reported a cost yet. Figures will appear here as steps are completed.</p>}
+        <div className="space-y-8">
+          {rows.map(({ category, steps: rs }) => (
+            <div key={category.id}>
+              <h4 className="font-semibold text-[var(--nxt-ink)] mb-2">{category.name}</h4>
+              <Table head={['Step', 'Reports', 'Average', 'Median', 'Range', 'Expected cost (₹)']}>
+                {rs.map(({ step, values, avg, med, min, max }) => (
+                  <tr key={step.id} className="align-middle">
+                    <td className="py-2.5 px-1 pr-3 text-[var(--nxt-ink)]">{step.order}. {step.name}</td>
+                    <td className="py-2.5 px-1 text-right tabular-nums">{values.length}</td>
+                    <td className="py-2.5 px-1 text-right tabular-nums">{avg === null ? '—' : rupees(avg)}</td>
+                    <td className="py-2.5 px-1 text-right tabular-nums">{med === null ? '—' : rupees(med)}</td>
+                    <td className="py-2.5 px-1 text-right tabular-nums whitespace-nowrap">{min === null || max === null ? '—' : `${rupees(min)} – ${rupees(max)}`}</td>
+                    <td className="py-2.5 px-1">
+                      <div className="flex items-center justify-end gap-2">
+                        <input
+                          key={`${step.id}-${step.expected_cost_inr ?? ''}`}
+                          type="number"
+                          min={0}
+                          inputMode="decimal"
+                          defaultValue={step.expected_cost_inr ?? ''}
+                          placeholder="not set"
+                          aria-label={`Expected cost for ${step.name}`}
+                          disabled={saving === step.id}
+                          onBlur={(e) => void setExpected(step, e.target.value === '' ? undefined : Math.max(0, Number(e.target.value)))}
+                          className="w-28 rounded-lg border border-[var(--nxt-line)] bg-transparent px-2 py-1 text-right tabular-nums"
+                        />
+                        {med !== null && (
+                          <button onClick={() => void setExpected(step, Math.round(med))} disabled={saving === step.id} className="text-xs font-semibold underline whitespace-nowrap">
+                            Use median
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </Table>
+            </div>
+          ))}
+        </div>
+      </Panel>
+    </>
+  );
+};
+
+type Tab = 'growth' | 'founders' | 'roadmaps' | 'costs' | 'quality';
 
 export const BusinessAnalytics: React.FC = () => {
   const [tab, setTab] = useState<Tab>('growth');
@@ -273,6 +363,7 @@ export const BusinessAnalytics: React.FC = () => {
             { id: 'growth', label: 'Funnel & retention', icon: Filter },
             { id: 'founders', label: 'Founders', icon: Users },
             { id: 'roadmaps', label: 'Roadmap health', icon: Route },
+            { id: 'costs', label: 'Costs', icon: IndianRupee },
             { id: 'quality', label: 'Resources & quality', icon: ShieldCheck },
           ]}
           active={tab}
@@ -461,6 +552,8 @@ export const BusinessAnalytics: React.FC = () => {
           </Panel>
         </>
       )}
+
+      {tab === 'costs' && <CostsPanel />}
 
       {tab === 'quality' && (
         <>

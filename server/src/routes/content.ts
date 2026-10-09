@@ -39,6 +39,7 @@ const schemas = {
     order: z.number().int().min(0).max(10000),
     stage_tag: text(80).optional(),
     typical_duration: text(100).optional(),
+    expected_cost_inr: z.number().min(0).max(1e10).optional(),
     tasks: z.array(roadmapTaskSchema).max(100).optional(),
   }),
   resources: z.object({

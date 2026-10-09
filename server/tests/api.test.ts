@@ -158,6 +158,23 @@ describe('scope isolation', () => {
   });
 });
 
+describe('step costs', () => {
+  it('stores what founders spend on a step, shows it to admins, and lets admins set the expected cost', async () => {
+    await admin('boss');
+    await member('founder');
+    const body = { status: 'done', checklist: [], log: [], spent_inr: 125000 };
+    await request(app).put('/api/scope/workspaces/prob-x/step-x').set('Authorization', token('founder')).send({ ...body, spent_inr: -5 }).expect(400);
+    await request(app).put('/api/scope/workspaces/prob-x/step-x').set('Authorization', token('founder')).send(body).expect(200);
+
+    const adminView = (await request(app).get('/api/bootstrap').set('Authorization', token('boss')).expect(200)).body;
+    expect(Object.values(adminView.workspaces).map((w) => (w as { spent_inr: number }).spent_inr)).toEqual([125000]);
+
+    const cat = await request(app).post('/api/admin/categories').set('Authorization', token('boss')).send({ name: 'Cost test', description: 'd', order: 99 }).expect(201);
+    const step = await request(app).post('/api/admin/steps').set('Authorization', token('boss')).send({ category_id: cat.body.item.id, name: 'S', description: 'd', order: 1, expected_cost_inr: 90000 }).expect(201);
+    expect(JSON.stringify(step.body)).toContain('90000');
+  });
+});
+
 describe('events', () => {
   it('enforces RSVP capacity under concurrent requests', async () => {
     await Promise.all(['u1', 'u2', 'u3', 'u4'].map(member));

@@ -690,7 +690,7 @@ class ApiStore {
   }
 
   public saveStepWorkspace(scopeKey: string, problemId: string, stepId: string, workspace: StepWorkspace): void {
-    const { status, started_at, target_date, blocker, checklist, log } = workspace;
+    const { status, started_at, target_date, blocker, spent_inr, checklist, log } = workspace;
     void this.mutate(
       d => { d.workspaces = { ...d.workspaces, [this.workspaceKey(scopeKey, problemId, stepId)]: { ...workspace, updated_at: new Date().toISOString() } }; },
       () => api.put(`/scope/workspaces/${problemId}/${stepId}`, {
@@ -698,6 +698,7 @@ class ApiStore {
         ...(started_at ? { started_at } : {}),
         ...(target_date ? { target_date } : {}),
         ...(blocker ? { blocker } : {}),
+        ...(spent_inr !== undefined ? { spent_inr } : {}),
       }),
     );
   }
