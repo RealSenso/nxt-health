@@ -41,6 +41,25 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser }) => {
   const [resetSuccess, setResetSuccess] = useState(false);
   const [loadingStarter, setLoadingStarter] = useState(false);
 
+  const roadmapFileRef = useRef<HTMLInputElement>(null);
+  const [importMessage, setImportMessage] = useState<{ ok: boolean; text: string } | null>(null);
+
+  const handleImportRoadmap = async (file: File | undefined) => {
+    if (!file) return;
+    if (!window.confirm(`Import "${file.name}"?\n\nThis builds the roadmap steps from the file, for the category it is written for (or for the open categories that have no checklist of their own). Steps with the same ids are overwritten — any edits you made to them are lost.`)) return;
+    setLoadingStarter(true);
+    setImportMessage(null);
+    try {
+      const result = await store.importRoadmap(JSON.parse(await file.text()));
+      setImportMessage({ ok: true, text: `Roadmap imported — ${result.steps} steps built.` });
+    } catch (e) {
+      setImportMessage({ ok: false, text: e instanceof SyntaxError ? "That file isn't valid JSON." : e instanceof Error ? e.message : 'Could not import that file.' });
+    } finally {
+      setLoadingStarter(false);
+      if (roadmapFileRef.current) roadmapFileRef.current.value = '';
+    }
+  };
+
   const handleLoadStarterContent = async () => {
     setLoadingStarter(true);
     try {
@@ -640,6 +659,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser }) => {
               <p className="text-xs text-[var(--nxt-ink-soft)]">Categories marked "coming soon" are visible to founders but can't be started yet.</p>
             </div>
             <div className="flex flex-wrap items-center justify-end gap-2">
+            <input ref={roadmapFileRef} type="file" accept="application/json,.json" className="hidden" onChange={(e) => void handleImportRoadmap(e.target.files?.[0])} />
+            <button
+              id="btn-import-roadmap"
+              onClick={() => roadmapFileRef.current?.click()}
+              disabled={loadingStarter}
+              className="px-3 py-1.5 border border-[var(--nxt-line)] hover:bg-[var(--nxt-bg-soft)] disabled:opacity-60 rounded-full text-xs font-semibold flex items-center gap-1"
+            >
+              <Paperclip className="w-3.5 h-3.5" />
+              <span>Import roadmap file</span>
+            </button>
             <button
               onClick={() => setEditingCategory({ name: '', description: '', order: categories.length + 1 })}
               className="px-3 py-1.5 bg-[var(--nxt-mint-strong)] hover:bg-[var(--nxt-mint-deep)] text-white rounded-full text-xs font-semibold flex items-center gap-1 shadow-sm"
@@ -649,6 +678,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser }) => {
             </button>
             </div>
           </div>
+
+          {importMessage && (
+            <p role="status" className={`text-xs font-semibold px-4 py-2.5 rounded-xl border ${importMessage.ok ? 'border-[var(--nxt-line)] bg-[var(--nxt-bg-soft)] text-[var(--nxt-ink)]' : 'border-[var(--nxt-peach-deep)]/30 bg-[var(--nxt-peach)] text-[var(--nxt-peach-deep)]'}`}>
+              {importMessage.text}
+            </p>
+          )}
 
           {editingCategory && (
             <form onSubmit={handleSaveCategory} className="bg-[var(--nxt-bg-soft)] border border-[var(--nxt-mint-strong)]/20 rounded-xl p-4 space-y-3">
