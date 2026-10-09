@@ -17,8 +17,8 @@ export const ListedExperts: React.FC<{ experts: ListedExpert[]; title?: string; 
         {experts.map(x => (
           <li key={x.id} className="flex items-start gap-4 rounded-2xl border border-[var(--nxt-line)] bg-[var(--nxt-surface)] p-5">
             {x.photo_url
-              ? <img src={x.photo_url} alt="" className="w-12 h-12 shrink-0 rounded-full object-cover" loading="lazy" />
-              : <div className="w-12 h-12 shrink-0 rounded-full bg-[var(--nxt-bg-soft)] text-[var(--nxt-ink-soft)] font-display font-bold flex items-center justify-center" aria-hidden="true">{initials(x.name)}</div>}
+              ? <img src={x.photo_url} alt="" className="w-12 h-12 shrink-0 rounded-xl object-cover" loading="lazy" />
+              : <div className="w-12 h-12 shrink-0 rounded-xl bg-[var(--nxt-bg-soft)] text-[var(--nxt-ink-soft)] font-display font-bold flex items-center justify-center" aria-hidden="true">{initials(x.name)}</div>}
             <div className="min-w-0">
               <Link to={`/experts/network/${x.id}`} className="font-semibold text-[var(--nxt-ink)] hover:underline">{x.name}</Link>
               {x.title && <p className="text-sm text-[var(--nxt-ink-soft)] mt-0.5">{x.title}</p>}
