@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { store } from '../services/store';
 import { PublicLayout } from './public/PublicLayout';
 import { InquiryForm, LeadRole } from './public/InquiryForm';
