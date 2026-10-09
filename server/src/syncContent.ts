@@ -124,5 +124,10 @@ export async function removeObsoleteStarterContent(database: Database): Promise<
     [{ $set: { description: { $replaceOne: { input: '$description', find: '— Ashwath', replacement: '— Aswath' } } } }],
   );
 
+  await col('problems').updateOne(
+    { _id: 'prob-womens-psychological', title: 'In women, what is “psychological” and what is not?' },
+    { $set: { title: 'In women, what is “psychological” and what is “not”?' } },
+  );
+
   return { removed_categories: oldCategories.length, removed_problems: oldProblems.length };
 }

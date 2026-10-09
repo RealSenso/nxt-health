@@ -8,7 +8,7 @@ type Doc = Record<string, unknown> & { id: string };
 export const STARTER_PROBLEMS: Doc[] = [
   {
     id: 'prob-womens-psychological',
-    title: 'In women, what is “psychological” and what is not?',
+    title: 'In women, what is “psychological” and what is “not”?',
     description: [
       'I am a 9-to-5 professional. I love movies, travel, life and, most of all, my wife. I love my mom too, and of course, my sisters.',
       'Over the years, I have noticed something that bothers me.',
