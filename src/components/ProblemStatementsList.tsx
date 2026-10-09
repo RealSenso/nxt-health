@@ -314,7 +314,7 @@ export const ProblemStatementsList: React.FC<ProblemStatementsListProps> = ({
         }
       />
 
-      {!isMember && (
+      {currentUser && !isMember && (
         <Reveal className="bg-[var(--nxt-peach)] border border-[var(--nxt-peach-deep)]/30 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="flex items-start gap-3">
             <div className="w-8 h-8 rounded-xl bg-[var(--nxt-surface)]/60 text-[var(--nxt-peach-deep)] flex items-center justify-center shrink-0">

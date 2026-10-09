@@ -225,6 +225,8 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div className="flex items-center gap-2 shrink-0">
             {!currentUser && <ThemeToggleButton theme={theme} onToggle={handleToggleTheme} />}
 
+            {!currentUser && <span className="hidden sm:inline text-sm text-white/70 whitespace-nowrap">Browsing as a guest</span>}
+
             {!currentUser ? (
               <motion.button
                 id="btn-navbar-login"
