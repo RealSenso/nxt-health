@@ -7,6 +7,7 @@ import './index.css';
 // Optional local-only font files (git-ignored); resolves to nothing when they are absent.
 import.meta.glob('./fonts.local.css', { eager: true });
 import {applyTheme, getStoredTheme} from './services/theme';
+import {watchForNewVersion} from './services/updates';
 
 applyTheme(getStoredTheme());
 
@@ -17,3 +18,5 @@ createRoot(document.getElementById('root')!).render(
     </BrowserRouter>
   </StrictMode>,
 );
+
+watchForNewVersion();

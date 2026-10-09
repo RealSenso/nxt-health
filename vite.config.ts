@@ -4,9 +4,21 @@ import path from 'path';
 import {defineConfig} from 'vite';
 
 export default defineConfig(({ command }) => {
+  // Every build gets an id. The page and a version.json file both carry it, so open tabs can tell when a newer version is live.
+  const buildId = Date.now().toString(36);
   return {
+    define: { __BUILD_ID__: JSON.stringify(buildId) },
     base: command === 'build' ? '/nxt-health/' : '/',
-    plugins: [react(), tailwindcss()],
+    plugins: [
+      react(),
+      tailwindcss(),
+      {
+        name: 'emit-version',
+        generateBundle() {
+          this.emitFile({ type: 'asset', fileName: 'version.json', source: JSON.stringify({ build: buildId }) });
+        },
+      },
+    ],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),

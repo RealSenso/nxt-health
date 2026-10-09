@@ -106,7 +106,9 @@ class ApiStore {
       this.ready = true;
       this.notify();
     });
-    setInterval(() => { if (document.visibilityState === 'visible') void this.refresh(); }, 30_000);
+    setInterval(() => { if (document.visibilityState === 'visible') void this.refresh(); }, 12_000);
+    window.addEventListener('focus', () => void this.refresh());
+    window.addEventListener('online', () => void this.refresh());
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') void this.refresh(); });
   }
 
