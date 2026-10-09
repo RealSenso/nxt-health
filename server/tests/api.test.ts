@@ -450,7 +450,7 @@ describe('uploads and profiles', () => {
         'SaMD', 'Medical Device', 'Marketplace / Network', 'Healthcare Services', 'Patient Education / Engagement',
         'Workflow / Operational Tech', 'Training / Simulation', 'Clinical Infrastructure / Platform',
       ]);
-      expect(loaded.problems.map((p: { title: string }) => p.title)).toEqual(['In women, what is “psychological” and what is “not”?', 'Solve Migraine']);
+      expect(loaded.problems.map((p: { title: string }) => p.title)).toEqual(['In women, what is “psychological” and what is “not”?', 'Solve migraine, without meds.']);
 
       const second = await request(app).post('/api/admin/starter-content').set('Authorization', token('boss')).expect(201);
       expect(second.body).toMatchObject({ categories: 25, problems_added: 0, removed_categories: 0 });

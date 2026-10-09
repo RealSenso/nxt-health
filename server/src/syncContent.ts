@@ -136,6 +136,8 @@ export async function removeObsoleteStarterContent(database: Database): Promise<
     { $set: { title: 'In women, what is “psychological” and what is “not”?' } },
   );
 
+  await col('problems').updateOne({ _id: 'prob-migraine', title: 'Solve Migraine' }, { $set: { title: 'Solve migraine, without meds.' } });
+
   // Add the sponsors' names and LinkedIn links to problems loaded before they were recorded.
   for (const p of STARTER_PROBLEMS) {
     if (!p.sponsor_name) continue;

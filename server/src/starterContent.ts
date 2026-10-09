@@ -26,7 +26,7 @@ export const STARTER_PROBLEMS: Doc[] = [
   },
   {
     id: 'prob-migraine',
-    title: 'Solve Migraine',
+    title: 'Solve migraine, without meds.',
     description: [
       'I have lived with migraine for most of my life.',
       'I know the medicines are available. I also know the long list of things friends and family will tell you to do: stay in the dark, drink coffee, drink water, hydrate, eat a proper meal, sleep.',
