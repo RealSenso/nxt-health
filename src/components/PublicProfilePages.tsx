@@ -57,7 +57,7 @@ export const PublicFounderPage: React.FC = () => {
           {profile.location && <Chip icon={MapPin}>{profile.location}</Chip>}
           {profile.background && <Chip icon={Briefcase}>{labelFor(BACKGROUND_OPTIONS, profile.background as never)}</Chip>}
           {profile.startup_stage && <Chip icon={Rocket}>{labelFor(STAGE_OPTIONS, profile.startup_stage as never)} stage</Chip>}
-          {profile.is_mentor && <Chip icon={GraduationCap}>NXT Health mentor</Chip>}
+          {profile.is_mentor && <Chip icon={GraduationCap}>NXT Health expert</Chip>}
         </div>
       </section>
       {profile.bio && (

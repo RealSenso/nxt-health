@@ -16,7 +16,20 @@ const expertSchema = z.object({
   linkedin: text(300),
   fit: z.enum(['Strong', 'Medium', '']),
   stage: z.enum(['onboarding', 'outreach']),
+  /** Shown in the expert list that founders and visitors see (name, role and LinkedIn only). */
+  listed: z.boolean().optional(),
 }).strict();
+
+/** The onboarded experts an admin has chosen to show: name, role and LinkedIn only — never contact details. */
+export async function listedExperts(database: Database) {
+  const docs = await database.col('expertPipeline').find({ listed: true }).sort({ name: 1 }).toArray();
+  return docs.map(d => ({
+    id: d._id as string,
+    name: d.name as string,
+    title: (d.title as string) || '',
+    linkedin: /^https:\/\//i.test((d.linkedin as string) || '') ? (d.linkedin as string) : '',
+  }));
+}
 
 /**
  * The experts NXT is talking to: people being onboarded and people approached. Admin-only —

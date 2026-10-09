@@ -301,7 +301,7 @@ function RoadmapTabs({ children }: { children: React.ReactNode }) {
   const tabs = [
     { id: 'tasks', label: 'Roadmaps', icon: ListTodo },
     { id: 'resources', label: 'Resources', icon: BookMarked },
-    ...(isMember ? [{ id: 'mentors', label: 'Mentors', icon: GraduationCap }] : []),
+    ...(isMember ? [{ id: 'mentors', label: 'Experts', icon: GraduationCap }] : []),
   ];
   return (
     <>
@@ -327,7 +327,7 @@ function RequireMember({ currentUser, onOpenMembership }: { currentUser: User | 
       <p className="text-sm text-[var(--nxt-ink-soft)] mt-2">
         {currentUser?.membership_status === 'requested'
           ? "Your membership request is being reviewed — we'll notify you as soon as it's approved."
-          : 'Request membership to apply for funding, follow full roadmaps and connect with mentors.'}
+          : 'Request membership to apply for funding, follow full roadmaps and connect with experts.'}
       </p>
       {currentUser?.membership_status !== 'requested' && (
         <button onClick={onOpenMembership} className="mt-5 px-5 py-2.5 rounded-full bg-[var(--nxt-mint-strong)] text-white text-sm font-semibold">Request membership</button>

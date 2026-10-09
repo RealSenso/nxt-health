@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Sponsor } from './ui/Sponsor';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'motion/react';
 import {
@@ -156,6 +157,8 @@ export const ProblemStatementsList: React.FC<ProblemStatementsListProps> = ({
             <p className="text-sm sm:text-base text-[var(--nxt-ink-soft)] leading-relaxed whitespace-pre-line mb-6">
               {problem.description}
             </p>
+
+            <Sponsor problem={problem} />
 
             <div className="flex flex-wrap items-center gap-4 text-xs text-[var(--nxt-ink-soft)] mb-6">
               <span className="flex items-center gap-1.5">
@@ -449,6 +452,8 @@ export const ProblemStatementsList: React.FC<ProblemStatementsListProps> = ({
                     {problem.description}
                   </p>
                 </div>
+
+                {problem.sponsor_name && <div className="mb-3"><Sponsor problem={problem} size="sm" /></div>}
 
                 {problem.funded && (
                   <p className="mb-3 flex items-center gap-1.5 text-xs font-bold text-[var(--nxt-mint-strong)]">

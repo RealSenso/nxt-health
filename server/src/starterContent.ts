@@ -21,6 +21,8 @@ export const STARTER_PROBLEMS: Doc[] = [
     ].join('\n\n'),
     department: "Women's Health",
     funded: false,
+    sponsor_name: 'Aswath',
+    sponsor_linkedin: 'https://www.linkedin.com/in/aswath-g-23b3581b7/',
   },
   {
     id: 'prob-migraine',
@@ -36,6 +38,8 @@ export const STARTER_PROBLEMS: Doc[] = [
     ].join('\n\n'),
     department: 'Neurology',
     funded: false,
+    sponsor_name: 'Vinit Singh',
+    sponsor_linkedin: 'https://www.linkedin.com/in/vinit-singh-20b67153/',
   },
 ];
 

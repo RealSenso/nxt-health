@@ -136,5 +136,14 @@ export async function removeObsoleteStarterContent(database: Database): Promise<
     { $set: { title: 'In women, what is “psychological” and what is “not”?' } },
   );
 
+  // Add the sponsors' names and LinkedIn links to problems loaded before they were recorded.
+  for (const p of STARTER_PROBLEMS) {
+    if (!p.sponsor_name) continue;
+    await col('problems').updateOne(
+      { _id: p.id, sponsor_name: { $exists: false } },
+      { $set: { sponsor_name: p.sponsor_name, sponsor_linkedin: p.sponsor_linkedin } },
+    );
+  }
+
   return { removed_categories: oldCategories.length, removed_problems: oldProblems.length };
 }

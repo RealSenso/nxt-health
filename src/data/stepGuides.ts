@@ -187,7 +187,7 @@ const FALLBACK: StepGuide = {
   deliverables: ['Define what "done" means for this step', 'Complete the core work', 'Document the outcome and evidence'],
   exitCriteria: ['Evidence reviewed and approved by an admin'],
   pitfalls: ['Moving on without documenting decisions'],
-  whoToTalkTo: ['Your clinical champion', 'Platform mentors'],
+  whoToTalkTo: ['Your clinical champion', 'Platform experts'],
 };
 
 /** The roadmap phases a mentor can claim expertise in (they match the step names of every roadmap). */

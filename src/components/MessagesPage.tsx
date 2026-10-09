@@ -29,7 +29,7 @@ export const MessagesPage: React.FC<{ currentUser: User }> = ({ currentUser }) =
         icon={MessageSquare}
         eyebrow="Messages"
         title="Conversations"
-        subtitle="Discussions about your funding applications and evidence, and chats with your mentors."
+        subtitle="Discussions about your funding applications and evidence, and chats with your experts."
       />
       <div className="grid lg:grid-cols-[340px_1fr] gap-6 lg:gap-8 items-start">
         <aside className={`${threadId ? 'hidden lg:block' : ''} rounded-3xl border border-[var(--nxt-line)] bg-[var(--nxt-surface)] overflow-hidden`}>

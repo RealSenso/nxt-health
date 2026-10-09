@@ -48,7 +48,7 @@ export function mentorsRouter(database: Database): Router {
 
   r.put('/mentor/profile', async (req, res) => {
     const user = requireUser(req);
-    if (!user.is_mentor) throw new HttpError(403, 'Only mentors can edit a mentor profile.');
+    if (!user.is_mentor) throw new HttpError(403, 'Only experts can edit an expert profile.');
     res.json({ profile: await saveProfile(user._id, parse(profileSchema, req.body)) });
   });
 
@@ -56,7 +56,7 @@ export function mentorsRouter(database: Database): Router {
     const admin = requireUser(req);
     if (!isAdmin(admin)) throw new HttpError(403, 'Admins only.');
     const target = await database.col('users').findOne({ _id: String(req.params.uid) });
-    if (!target?.is_mentor) throw new HttpError(400, 'Mark this user as a mentor first.');
+    if (!target?.is_mentor) throw new HttpError(400, 'Make this user an expert first.');
     res.json({ profile: await saveProfile(target._id, parse(profileSchema, req.body)) });
   });
 
@@ -66,11 +66,11 @@ export function mentorsRouter(database: Database): Router {
     if (mentor_uid === founder._id) throw new HttpError(400, "You can't request yourself.");
     const mentor = (await database.col('users').findOne({ _id: mentor_uid })) as UserDoc | null;
     const profile = await profiles.findOne({ _id: mentor_uid });
-    if (!mentor?.is_mentor || !profile?.accepting) throw new HttpError(400, "This mentor isn't accepting requests right now.");
+    if (!mentor?.is_mentor || !profile?.accepting) throw new HttpError(400, "This expert isn't accepting requests right now.");
     const active = await requests.countDocuments({ mentor_uid, status: 'accepted' });
-    if (active >= (profile.capacity as number)) throw new HttpError(409, 'This mentor is at capacity.');
+    if (active >= (profile.capacity as number)) throw new HttpError(409, 'This expert is at capacity.');
     if (await requests.findOne({ mentor_uid, founder_uid: founder._id, status: { $in: ['pending', 'accepted'] } })) {
-      throw new HttpError(400, 'You already have an open request with this mentor.');
+      throw new HttpError(400, 'You already have an open request with this expert.');
     }
     const doc = {
       _id: newId('mreq'),
@@ -83,7 +83,7 @@ export function mentorsRouter(database: Database): Router {
       created_at: now(),
     };
     await requests.insertOne(doc);
-    await notify(database, [mentor_uid], 'mentorship', 'New mentorship request', `${founder.name}: ${message.slice(0, 120)}`, '/mentoring');
+    await notify(database, [mentor_uid], 'mentorship', 'New expert request', `${founder.name}: ${message.slice(0, 120)}`, '/mentoring');
     res.status(201).json({ request: out(doc) });
   });
 
@@ -95,7 +95,7 @@ export function mentorsRouter(database: Database): Router {
     let thread_id: string | undefined;
     if (accept) {
       const thread = await createThread(database, {
-        subject: `Mentorship — ${mentor.name} & ${request.founder_name}`,
+        subject: `Expert chat — ${mentor.name} & ${request.founder_name}`,
         context: { type: 'mentorship', id: request._id },
         participant_uids: [mentor._id, request.founder_uid as string],
         admin_visible: false,
@@ -107,7 +107,7 @@ export function mentorsRouter(database: Database): Router {
       database,
       [request.founder_uid as string],
       'mentorship',
-      accept ? 'Mentorship request accepted 🎉' : 'Mentorship request update',
+      accept ? 'Request accepted 🎉' : 'Request update',
       accept ? `${mentor.name} accepted — say hello in your new conversation.` : `${mentor.name} can't take this on right now.`,
       thread_id ? `/messages/${thread_id}` : '/mentors',
     );

@@ -177,7 +177,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBack, initialMode = 'log
 
               {mode === 'signup' && (
                 <>
-                <p className="text-xs text-[var(--nxt-ink-soft)] pt-1">Optional — helps us match you with the right problems and mentors.</p>
+                <p className="text-xs text-[var(--nxt-ink-soft)] pt-1">Optional — helps us match you with the right problems and experts.</p>
                 <div className="grid grid-cols-2 gap-3 items-end">
                   <div>
                     <label className="block text-xs font-semibold text-[var(--nxt-ink-soft)] mb-1 truncate">Background</label>

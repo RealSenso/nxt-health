@@ -8,6 +8,9 @@ import { STARTER_CATEGORIES } from '../starterContent.js';
 import { syncStarterContent } from '../syncContent.js';
 import { newId, now, parse } from '../util.js';
 
+/** Only https links: these end up in <a href> and <img src>. */
+const httpsLink = z.string().trim().max(500).refine(u => /^https:\/\/[^\s]+$/i.test(u), 'must be an https:// link').or(z.literal(''));
+
 const text = (max: number) => z.string().trim().max(max);
 const optionalUrl = z.string().trim().url().max(500).or(z.literal('')).optional();
 
@@ -18,6 +21,9 @@ const schemas = {
     department: text(200).min(1),
     funded: z.boolean(),
     funding_amount: text(200).optional(),
+    sponsor_name: text(120).optional(),
+    sponsor_linkedin: httpsLink.optional(),
+    sponsor_photo_url: httpsLink.optional(),
   }),
   categories: z.object({
     name: text(200).min(1),

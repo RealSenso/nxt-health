@@ -85,6 +85,10 @@ export interface ProblemStatement {
   department: string;
   funded: boolean;
   funding_amount?: string;
+  /** The person who posted the problem. */
+  sponsor_name?: string;
+  sponsor_linkedin?: string;
+  sponsor_photo_url?: string;
   created_by_admin: string;
   created_at: string;
 }
@@ -331,6 +335,14 @@ export interface MentorProfile {
   session_times?: string[];
   /** Private video-call link — only present on your own profile (or for admins). */
   meeting_url?: string;
+}
+
+/** An onboarded expert shown in the list: name, role and LinkedIn. */
+export interface ListedExpert {
+  id: string;
+  name: string;
+  title: string;
+  linkedin: string;
 }
 
 export interface PublicExpert {

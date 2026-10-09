@@ -36,7 +36,7 @@ export const AdminMembers: React.FC<{ currentUser: User }> = ({ currentUser }) =
         <h3 className="font-display text-base font-bold text-[var(--nxt-ink)] flex items-center gap-2">
           <UserCheck className="w-5 h-5 text-[var(--nxt-mint-strong)]" /> Membership requests ({requests.length})
         </h3>
-        <p className="text-sm text-[var(--nxt-ink-soft)] mt-1">Approving gives full access to roadmaps, resources, funding applications and mentors. The founder is notified either way.</p>
+        <p className="text-sm text-[var(--nxt-ink-soft)] mt-1">Approving gives full access to roadmaps, resources, funding applications and experts. The founder is notified either way.</p>
         {requests.length === 0 ? (
           <p className="text-sm text-[var(--nxt-ink-soft)] mt-4">No pending requests.</p>
         ) : (
@@ -68,7 +68,7 @@ export const AdminMembers: React.FC<{ currentUser: User }> = ({ currentUser }) =
         <div className="p-5 sm:p-6 border-b border-[var(--nxt-line)] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h3 className="font-display text-base font-bold text-[var(--nxt-ink)]">All users ({users.length})</h3>
-            <p className="text-sm text-[var(--nxt-ink-soft)]">Change membership, pick mentors, and manage admin access.</p>
+            <p className="text-sm text-[var(--nxt-ink-soft)]">Change membership, pick experts, and manage admin access.</p>
           </div>
           <div className="relative sm:w-64">
             <Search className="w-4 h-4 text-[var(--nxt-ink-soft)] absolute left-3 top-1/2 -translate-y-1/2" />
@@ -83,7 +83,7 @@ export const AdminMembers: React.FC<{ currentUser: User }> = ({ currentUser }) =
                   <p className="text-sm font-bold text-[var(--nxt-ink)] flex items-center gap-2 flex-wrap">
                     {u.name}
                     {u.role === 'admin' && <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[var(--nxt-lavender)] text-[var(--nxt-lavender-strong)]">Admin</span>}
-                    {u.is_mentor && <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[var(--nxt-mint)] text-[var(--nxt-mint-deep)]">Mentor</span>}
+                    {u.is_mentor && <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[var(--nxt-mint)] text-[var(--nxt-mint-deep)]">Expert</span>}
                   </p>
                   <p className="text-xs text-[var(--nxt-ink-soft)]">{u.email}</p>
                   <button onClick={() => copyId(u.id)} className="mt-1 inline-flex items-center gap-1 text-[11px] font-mono text-[var(--nxt-ink-soft)] hover:text-[var(--nxt-mint-strong)]" title="Copy user ID">
@@ -105,11 +105,11 @@ export const AdminMembers: React.FC<{ currentUser: User }> = ({ currentUser }) =
                     onClick={() => store.setMentor(u.id, !u.is_mentor)}
                     className={`px-3 py-1.5 rounded-full text-sm font-semibold inline-flex items-center gap-1.5 border ${u.is_mentor ? 'border-[var(--nxt-mint-strong)]/40 text-[var(--nxt-mint-deep)]' : 'border-[var(--nxt-line)] text-[var(--nxt-ink-soft)]'}`}
                   >
-                    <GraduationCap className="w-4 h-4" /> {u.is_mentor ? 'Remove mentor' : 'Make mentor'}
+                    <GraduationCap className="w-4 h-4" /> {u.is_mentor ? 'Remove expert' : 'Make expert'}
                   </button>
                   {u.is_mentor && (
                     <button onClick={() => setEditingMentor(editingMentor === u.id ? null : u.id)} className="px-3 py-1.5 rounded-full text-sm font-semibold text-[var(--nxt-mint-strong)] hover:underline">
-                      {editingMentor === u.id ? 'Close profile' : 'Edit mentor profile'}
+                      {editingMentor === u.id ? 'Close profile' : 'Edit expert profile'}
                     </button>
                   )}
                   {u.role === 'admin' ? (

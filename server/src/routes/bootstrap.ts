@@ -1,3 +1,4 @@
+import { listedExperts } from './expertPipeline.js';
 import { Router } from 'express';
 import { isAdmin, scopeKeyOf, UserDoc } from '../auth.js';
 import type { Database } from '../db.js';
@@ -56,6 +57,7 @@ export function bootstrapRouter(database: Database): Router {
         resources: visibleResources,
         slack_url: (slack?.url as string) || DEFAULT_SLACK_URL,
         booked_slots: bookedSlots,
+        listed_experts: await listedExperts(database),
       },
       me: null,
       needs_profile: !!req.auth && !req.user,

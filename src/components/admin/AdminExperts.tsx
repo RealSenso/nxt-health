@@ -11,6 +11,7 @@ interface PipelineExpert {
   linkedin: string;
   fit: 'Strong' | 'Medium' | '';
   stage: 'onboarding' | 'outreach';
+  listed?: boolean;
 }
 
 const STAGES = { onboarding: 'Onboarding', outreach: 'Approached' } as const;
@@ -70,7 +71,7 @@ export const AdminExperts: React.FC = () => {
         <div>
           <h2 className="font-display text-xl font-bold flex items-center gap-2"><Users className="w-5 h-5" /> Experts</h2>
           <p className="text-sm text-[var(--nxt-ink-soft)] mt-1 max-w-xl">
-            The experts NXT is talking to. This list is private to admins. An expert appears in the public directory only once you make them a mentor (Members) and fill in their profile.
+            The experts NXT is talking to. This list is private to admins. Tick "In expert list" to show someone's name, role and LinkedIn to founders and visitors. They are bookable in the directory only once you make them a mentor (Members) and fill in their profile.
           </p>
         </div>
         <div>
@@ -110,6 +111,10 @@ export const AdminExperts: React.FC = () => {
               </p>
             </div>
             <div className="shrink-0 flex items-center gap-2 text-sm">
+              <label className="inline-flex items-center gap-1.5 cursor-pointer">
+                <input type="checkbox" checked={!!item.listed} onChange={(e) => void change(item, { listed: e.target.checked })} aria-label={`Show ${item.name} in the expert list`} />
+                <span className="text-xs font-semibold">In expert list</span>
+              </label>
               <select value={item.fit} onChange={(e) => void change(item, { fit: e.target.value as PipelineExpert['fit'] })} className="rounded-full border border-[var(--nxt-line)] bg-transparent px-3 py-1.5" aria-label={`Fit for ${item.name}`}>
                 <option value="">Fit: —</option>
                 <option value="Strong">Strong fit</option>

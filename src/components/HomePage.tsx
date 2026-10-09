@@ -30,7 +30,7 @@ const AUDIENCES: Audience[] = [
     who: 'Physician-founders and startups',
     title: 'Know what to do next, every week.',
     intro: 'You have the idea and the clinical know-how. What nobody gave you is the route. We give you real problems with money behind them, and a step-by-step path to market.',
-    points: ['A route built for your product and your country', "The right mentor for the step you're on", "Ask anything in private, including what you wouldn't ask out loud"],
+    points: ['A route built for your product and your country', "The right expert for the step you're on", "Ask anything in private, including what you wouldn't ask out loud"],
     cta: 'Join free',
     to: '/signup',
   },
@@ -85,7 +85,7 @@ const PLATFORM = [
   { title: 'Problem library', text: 'Funded and open problems, each with its own page.' },
   { title: 'Funding applications', text: 'Apply, get screened, and get feedback if you need to resubmit.' },
   { title: 'Stage-gate roadmaps', text: 'Steps, deadlines and resources for each type of product.' },
-  { title: 'Mentor matching', text: 'Recommended experts, paid bookings and built-in chat.' },
+  { title: 'Expert matching', text: 'Recommended experts, paid bookings and built-in chat.' },
   { title: 'Team workspace', text: 'Invite co-founders and share a live progress log.' },
   { title: 'Progress view', text: 'Sponsors see each team move, gate by gate.' },
 ];
@@ -178,7 +178,7 @@ export const HomePage: React.FC = () => {
           <Step n="02" title="Apply for funding">Each fund screens in its own way. You get a yes, a no, or a clear ask for more.</Step>
           <Step n="03" title="Pick a roadmap">{routeCount} routes to market, from marketplaces to devices to AI, each with the steps for your country{openCount > 0 && openCount < routeCount ? ` — ${openCount} open now` : ''}.</Step>
           <Step n="04" title="Clear each gate">Every step has a deadline and needs evidence. Clear it, and the next one opens.</Step>
-          <Step n="05" title="Get matched help">Mentors, hospitals, lawyers and incubators, recommended for the step you're on.</Step>
+          <Step n="05" title="Get matched help">Experts, hospitals, lawyers and incubators, recommended for the step you're on.</Step>
         </div>
       </section>
 
@@ -220,7 +220,7 @@ export const HomePage: React.FC = () => {
         <div className="mt-10 grid gap-6 lg:grid-cols-3">
           <PriceCard label="Community" price="Free" note="always" points={['Problem headlines', 'Community and podcasts', 'Monthly founder town hall', 'Starter templates']} cta="Join free" to="/signup" outline />
           <PriceCard label="Founder member" price="₹2,000" note="per month · about $22 · at cost" points={['Full problem statements', 'Apply for funded problems', 'Stage-gate roadmaps and resources', 'Founder and co-founder workspace']} cta="Become a member" to="/signup" featured />
-          <PriceCard label="Add-ons" price="₹22,500" note="per month · about $250 · project coordinator" points={['A coordinator who keeps you on track', 'Mentor sessions, priced by the mentor', 'From free to $500 an hour']} cta="Find an expert" to="/experts" outline />
+          <PriceCard label="Add-ons" price="₹22,500" note="per month · about $250 · project coordinator" points={['A coordinator who keeps you on track', 'Expert sessions, priced by the mentor', 'From free to $500 an hour']} cta="Find an expert" to="/experts" outline />
         </div>
 
         <div className="mt-20">

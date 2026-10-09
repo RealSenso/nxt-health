@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CheckCircle2, Search } from 'lucide-react';
-import type { PublicExpert } from '../../types';
+import type { ListedExpert, PublicExpert } from '../../types';
 import { api } from '../../services/api';
 import { EXPERT_AREAS, formatRate, initials } from '../../data/experts';
+import { ListedExperts } from '../ui/ListedExperts';
 import { PublicLayout } from './PublicLayout';
 import { Btn, Eyebrow, H1, H2, Step } from './ui';
 
@@ -16,14 +17,15 @@ export const ExpertPhoto: React.FC<{ expert: Pick<PublicExpert, 'name' | 'photo_
 
 export const ExpertsPage: React.FC = () => {
   const [experts, setExperts] = useState<PublicExpert[] | null>(null);
+  const [listed, setListed] = useState<ListedExpert[]>([]);
   const [error, setError] = useState('');
   const [area, setArea] = useState<string>('All experts');
   const [query, setQuery] = useState('');
 
   useEffect(() => {
     let alive = true;
-    api.get<{ experts: PublicExpert[] }>('/public/experts')
-      .then(r => { if (alive) setExperts(r.experts); })
+    api.get<{ experts: PublicExpert[]; listed?: ListedExpert[] }>('/public/experts')
+      .then(r => { if (alive) { setExperts(r.experts); setListed(r.listed || []); } })
       .catch(e => { if (alive) setError(e instanceof Error ? e.message : 'Could not load experts.'); });
     return () => { alive = false; };
   }, []);
@@ -143,6 +145,7 @@ export const ExpertsPage: React.FC = () => {
             {experts.length > 0 && <Btn variant="outline" size="sm" className="mt-5" onClick={() => { setArea('All experts'); setQuery(''); }}>Show all experts</Btn>}
           </div>
         )}
+        <ListedExperts experts={listed} className="mt-16" />
       </section>
 
       {/* How it works */}

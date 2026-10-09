@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import type { Database } from '../db.js';
 import { HttpError } from '../auth.js';
+import { listedExperts as listedForDisplay } from './expertPipeline.js';
 
 import { openSlotsFor, DEFAULT_RATE_USD } from './consultations.js';
 
@@ -37,7 +38,7 @@ export function expertsRouter(database: Database): Router {
     const items = await Promise.all(experts.map(async ({ user, profile }) =>
       publicExpert(user, profile, (await openSlotsFor(database, profile, user._id)).length)));
     items.sort((a, b) => a.name.localeCompare(b.name));
-    res.json({ experts: items });
+    res.json({ experts: items, listed: await listedForDisplay(database) });
   });
 
   r.get('/public/experts/:id', async (req, res) => {

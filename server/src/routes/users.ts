@@ -168,7 +168,7 @@ export function usersRouter(database: Database): Router {
       }
     }
     if (body.is_mentor === true && !target.is_mentor) {
-      await notify(database, [id], 'mentorship', "You're now a mentor", 'An admin added you as a mentor. Set up your mentor profile so founders can find you.', '/mentoring');
+      await notify(database, [id], 'mentorship', "You're now an expert", 'An admin added you as an expert. Set up your expert profile so founders can find you.', '/mentoring');
     }
     res.json({ user: out(await users.findOne({ _id: id })) });
   });

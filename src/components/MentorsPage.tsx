@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { ListedExperts } from './ui/ListedExperts';
 import { useNavigate } from 'react-router-dom';
 import { GraduationCap, Sparkles, Check, X, Clock, MessageSquare, AlertCircle, Users, Send, CalendarClock, Video } from 'lucide-react';
 import { Consultation, MentorProfile, User } from '../types';
@@ -47,8 +48,8 @@ export const MentorsPage: React.FC<{ currentUser: User }> = ({ currentUser }) =>
     <div className="space-y-8 lg:space-y-10">
       <PageHeader
         icon={GraduationCap}
-        eyebrow="Mentors"
-        title="Find a mentor who's been there"
+        eyebrow="Experts"
+        title="Find an expert who's been there"
         subtitle="Matches are ranked by the categories you're building in, the stage of your current roadmap steps, and backgrounds that complement yours."
         illustration="resources"
       />
@@ -114,8 +115,8 @@ export const MentorsPage: React.FC<{ currentUser: User }> = ({ currentUser }) =>
       {matches.length === 0 ? (
         <div className="rounded-3xl border border-dashed border-[var(--nxt-line)] p-10 text-center">
           <Users className="w-10 h-10 mx-auto text-[var(--nxt-ink-soft)]" />
-          <p className="text-base font-bold text-[var(--nxt-ink)] mt-3">No mentors are available right now</p>
-          <p className="text-sm text-[var(--nxt-ink-soft)] mt-1">We're adding mentors regularly — check back soon.</p>
+          <p className="text-base font-bold text-[var(--nxt-ink)] mt-3">No experts are available right now</p>
+          <p className="text-sm text-[var(--nxt-ink-soft)] mt-1">We're adding experts regularly — check back soon.</p>
         </div>
       ) : (
         <div className="grid md:grid-cols-2 gap-6 lg:gap-8">
@@ -161,10 +162,10 @@ export const MentorsPage: React.FC<{ currentUser: User }> = ({ currentUser }) =>
                     <CalendarClock className="w-4 h-4" /> Book a session · {formatRate(mentor.rate_usd ?? 200)}{(mentor.rate_usd ?? 200) > 0 && '/hr'}
                   </button>
                   {existing ? (
-                    <span className={`text-xs font-semibold px-3 py-1.5 rounded-full capitalize ${STATUS_CHIP[existing.status]}`}>Mentorship {existing.status}</span>
+                    <span className={`text-xs font-semibold px-3 py-1.5 rounded-full capitalize ${STATUS_CHIP[existing.status]}`}>Request {existing.status}</span>
                   ) : (
                     <button onClick={() => setRequesting(mentor)} className="px-4 py-2 rounded-full border border-[var(--nxt-line)] hover:bg-[var(--nxt-bg-soft)] text-[var(--nxt-ink)] text-sm font-semibold">
-                      Request mentorship
+                      Request this expert
                     </button>
                   )}
                 </div>
@@ -173,6 +174,8 @@ export const MentorsPage: React.FC<{ currentUser: User }> = ({ currentUser }) =>
           })}
         </div>
       )}
+
+      <ListedExperts experts={store.getListedExperts()} className="pt-4" />
 
       {requesting && <RequestDialog mentor={requesting} onClose={() => setRequesting(null)} />}
       {paying && (
@@ -246,7 +249,7 @@ export const MentoringPage: React.FC<{ currentUser: User }> = ({ currentUser }) 
 
   return (
     <div className="space-y-8 lg:space-y-10">
-      <PageHeader icon={GraduationCap} eyebrow="Mentoring" title="Your mentoring" subtitle="Keep your profile current so founders find you, and respond to requests." />
+      <PageHeader icon={GraduationCap} eyebrow="Experts" title="Your expert profile" subtitle="Keep your profile current so founders find you, and respond to requests." />
       {error && <p className="text-sm text-[var(--nxt-peach-deep)] font-semibold">{error}</p>}
 
       <div className="grid lg:grid-cols-2 gap-6 lg:gap-8 items-start">
@@ -288,14 +291,14 @@ export const MentoringPage: React.FC<{ currentUser: User }> = ({ currentUser }) 
                 {r.thread_id && (
                   <button onClick={() => navigate(`/messages/${r.thread_id}`)} className="text-xs font-semibold text-[var(--nxt-mint-strong)] hover:underline">Open chat</button>
                 )}
-                <button onClick={() => { if (window.confirm(`End your mentorship with ${r.founder_name}?`)) void store.endMentorship(r.id); }} className="text-xs font-semibold text-[var(--nxt-ink-soft)] hover:text-[var(--nxt-peach-deep)]">End</button>
+                <button onClick={() => { if (window.confirm(`End your connection with ${r.founder_name}?`)) void store.endMentorship(r.id); }} className="text-xs font-semibold text-[var(--nxt-ink-soft)] hover:text-[var(--nxt-peach-deep)]">End</button>
               </span>
             </div>
           ))}
         </section>
 
         <section className="rounded-3xl border border-[var(--nxt-line)] bg-[var(--nxt-surface)] p-6">
-          <h2 className="font-display text-base font-bold text-[var(--nxt-ink)] mb-4">Mentor profile</h2>
+          <h2 className="font-display text-base font-bold text-[var(--nxt-ink)] mb-4">Expert profile</h2>
           <MentorProfileForm initial={myProfile} />
         </section>
       </div>

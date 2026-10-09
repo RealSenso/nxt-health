@@ -6,7 +6,7 @@ import {
   AcquisitionSource, AppNotification, ApplicationStatus, Booking, Category, Commitment, Consultation, FounderBackground,
   FounderOutcomes, FundingApplication, Gender, MembershipStatus, MentorProfile, MentorRequest, Message,
   ProblemStatement, PublicFounder, PublicProfileSettings, PublicTeam, Resource, ResourceView, Rsvp,
-  StartupStage, Step, StepRating, StepSubmission, StepWorkspace, SubmissionStatus, Team, TeamInvite,
+  ListedExpert, StartupStage, Step, StepRating, StepSubmission, StepWorkspace, SubmissionStatus, Team, TeamInvite,
   Thread, User, UserProgress, UserRole,
 } from '../types';
 import { api, ApiError } from './api';
@@ -45,6 +45,7 @@ interface BootstrapData {
     resources: Resource[];
     slack_url: string;
     booked_slots: Record<string, string[]>;
+    listed_experts?: ListedExpert[];
   };
   me: RawUser | null;
   needs_profile: boolean;
@@ -412,6 +413,10 @@ class ApiStore {
 
   public setSlackUrl(url: string): Promise<void> {
     return this.mutate(d => { d.content.slack_url = url; }, () => api.put('/admin/settings/slack', { url }));
+  }
+
+  public getListedExperts(): ListedExpert[] {
+    return this.data.content.listed_experts || [];
   }
 
   public isContentEmpty(): boolean {

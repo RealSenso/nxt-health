@@ -114,7 +114,7 @@ export const MembershipModal: React.FC<MembershipModalProps> = ({
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-[var(--nxt-ink)]">Hospitals and matched help</p>
-                  <p className="text-xs text-[var(--nxt-ink-soft)]">Hospital partners, mentors, lawyers and incubators, recommended for the step you're on.</p>
+                  <p className="text-xs text-[var(--nxt-ink-soft)]">Hospital partners, experts, lawyers and incubators, recommended for the step you're on.</p>
                 </div>
               </div>
 

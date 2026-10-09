@@ -29,7 +29,7 @@ const PROBLEMS_MODE: Mode = { id: 'problems', label: 'Problem Statements', icon:
 const ROADMAP_SUBMODES: Mode[] = [
   { id: 'tasks', label: 'Roadmaps', icon: ListTodo, locked: true, preview: true },
   { id: 'resources', label: 'Resources', icon: BookMarked, locked: true, preview: true },
-  { id: 'mentors', label: 'Mentors', icon: GraduationCap, locked: true },
+  { id: 'mentors', label: 'Experts', icon: GraduationCap, locked: true },
 ];
 const FUNDS_MODE: Mode = { id: 'funds', label: 'Funds & Grants', icon: DollarSign, locked: true };
 const ADMIN_MODE: Mode = { id: 'admin', label: 'Admin Panel', icon: Shield };
@@ -330,7 +330,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                               className="w-full text-left px-3 py-2 rounded-xl text-sm text-[var(--nxt-ink-soft)] hover:bg-[var(--nxt-bg-soft)] font-medium flex items-center gap-1.5"
                             >
                               <GraduationCap className="w-3.5 h-3.5" />
-                              Mentoring
+                              Expert profile
                             </button>
                           )}
                           <button

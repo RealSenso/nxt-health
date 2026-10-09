@@ -487,7 +487,12 @@ describe('uploads and profiles', () => {
       const list = await request(app).get('/api/admin/expert-pipeline').set('Authorization', token('boss')).expect(200);
       expect(list.body.experts).toEqual([expect.objectContaining({ id: 'exp-test-person', stage: 'onboarding', email: 'tp@example.com' })]);
 
-      expect((await request(app).get('/api/public/experts').expect(200)).body.experts).toEqual([]);
+      expect((await request(app).get('/api/public/experts').expect(200)).body).toMatchObject({ experts: [], listed: [] });
+      await request(app).patch('/api/admin/expert-pipeline/exp-test-person').set('Authorization', token('boss')).send({ listed: true }).expect(200);
+      const shown = (await request(app).get('/api/public/experts').expect(200)).body.listed;
+      expect(shown).toEqual([{ id: 'exp-test-person', name: 'Test Person', title: 'Surgeon', linkedin: '' }]);
+      expect(JSON.stringify(shown)).not.toContain('tp@example.com');
+      await request(app).patch('/api/admin/expert-pipeline/exp-test-person').set('Authorization', token('boss')).send({ listed: false }).expect(200);
       await request(app).post('/api/admin/expert-pipeline/import').set('Authorization', token('boss')).send({ experts: [{ ...entry, stage: 'bogus' }] }).expect(400);
       await request(app).delete('/api/admin/expert-pipeline/exp-test-person').set('Authorization', token('boss')).expect(200);
     });
