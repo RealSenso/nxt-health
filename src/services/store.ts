@@ -6,7 +6,7 @@ import {
   AcquisitionSource, AppNotification, ApplicationStatus, Booking, Category, Commitment, Consultation, FounderBackground,
   FounderOutcomes, FundingApplication, Gender, MembershipStatus, MentorProfile, MentorRequest, Message,
   ProblemStatement, PublicFounder, PublicProfileSettings, PublicTeam, Resource, ResourceView, Rsvp,
-  ListedExpert, ProblemVote, VoteTally, StartupStage, Step, StepRating, StepSubmission, StepWorkspace, SubmissionStatus, Team, TeamInvite,
+  ListedExpert, ProblemVote, VoteBreakdown, VoteTally, StartupStage, Step, StepRating, StepSubmission, StepWorkspace, SubmissionStatus, Team, TeamInvite,
   Thread, User, UserProgress, UserRole,
 } from '../types';
 import { api, ApiError } from './api';
@@ -76,6 +76,7 @@ interface BootstrapData {
     step_ratings: StepRating[];
     rsvps: Rsvp[];
     bookings: Booking[];
+    problem_votes?: VoteBreakdown;
   };
 }
 
@@ -421,26 +422,54 @@ class ApiStore {
     return this.data.content.problem_votes?.[problemId] || { agree: 0, disagree: 0 };
   }
 
+  /** Visitors who aren't signed in vote under a random id kept in this browser, and remember their own votes here. */
+  private guestVotes(): { id: string; mine: Record<string, ProblemVote> } {
+    try {
+      const saved = JSON.parse(localStorage.getItem('nxt-guest-votes') || 'null');
+      if (saved && typeof saved.id === 'string' && saved.mine) return saved;
+    } catch { /* storage unavailable: votes still count, they just aren't remembered */ }
+    const bytes = crypto.getRandomValues(new Uint8Array(16));
+    return { id: Array.from(bytes, b => b.toString(16).padStart(2, '0')).join(''), mine: {} };
+  }
+
+  private saveGuestVotes(state: { id: string; mine: Record<string, ProblemVote> }): void {
+    try { localStorage.setItem('nxt-guest-votes', JSON.stringify(state)); } catch { /* ignore */ }
+  }
+
   public getMyVote(problemId: string): ProblemVote | null {
+    if (!this.isAuthenticated()) return this.guestVotes().mine[problemId] || null;
     return this.data.my_votes?.[problemId] || null;
   }
 
   /** Votes agree/disagree on a problem statement; voting the same way again takes the vote back. */
   public voteOnProblem(problemId: string, vote: ProblemVote): Promise<void> {
+    const signedIn = this.isAuthenticated();
+    const guest = signedIn ? null : this.guestVotes();
     const previous = this.getMyVote(problemId);
     const next = previous === vote ? null : vote;
+    if (guest) {
+      if (next) guest.mine[problemId] = next; else delete guest.mine[problemId];
+      this.saveGuestVotes(guest);
+    }
     return this.mutate(
       d => {
         const tally = { ...(d.content.problem_votes?.[problemId] || { agree: 0, disagree: 0 }) };
         if (previous) tally[previous] = Math.max(0, tally[previous] - 1);
         if (next) tally[next] += 1;
         d.content.problem_votes = { ...d.content.problem_votes, [problemId]: tally };
-        const mine = { ...d.my_votes };
-        if (next) mine[problemId] = next; else delete mine[problemId];
-        d.my_votes = mine;
+        if (signedIn) {
+          const mine = { ...d.my_votes };
+          if (next) mine[problemId] = next; else delete mine[problemId];
+          d.my_votes = mine;
+        }
       },
-      () => api.put(`/problems/${problemId}/vote`, { vote: next }),
+      () => api.put(`/problems/${problemId}/vote`, { vote: next, ...(guest ? { voter_id: guest.id } : {}) }),
     );
+  }
+
+  /** Admin: votes per problem statement, split by signed-in members and guests. */
+  public getVoteBreakdown(): VoteBreakdown {
+    return this.data.admin?.problem_votes || [];
   }
 
   public getListedExperts(): ListedExpert[] {

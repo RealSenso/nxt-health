@@ -176,29 +176,39 @@ describe('step costs', () => {
 });
 
 describe('problem votes', () => {
-  it('lets signed-in people agree or disagree once, change their mind, and shows the totals to everyone', async () => {
+  it('lets anyone vote without an account, one vote each, and shows totals to everyone and a breakdown to admins', async () => {
     await admin('boss');
     await signup('ann');
-    await signup('bob');
     await request(app).post('/api/admin/problems').set('Authorization', token('boss')).send({ title: 'T', description: 'd', department: 'x', funded: false }).expect(201);
-    const problems = (await request(app).get('/api/bootstrap').expect(200)).body.content.problems;
-    const id = problems.find((p: { title: string }) => p.title === 'T').id;
-    const put = (uid: string | null, vote: string | null) => {
-      const r = request(app).put(`/api/problems/${id}/vote`);
-      return (uid ? r.set('Authorization', token(uid)) : r).send({ vote });
+    const feed = async (uid?: string) => {
+      const r = request(app).get('/api/bootstrap');
+      return (await (uid ? r.set('Authorization', token(uid)) : r).expect(200)).body;
     };
-    await put(null, 'agree').expect(401);
-    await put('ann', 'maybe').expect(400);
-    await request(app).put('/api/problems/nope/vote').set('Authorization', token('ann')).send({ vote: 'agree' }).expect(404);
-    await put('ann', 'agree').expect(200);
-    await put('bob', 'disagree').expect(200);
-    await put('ann', 'disagree').expect(200); // changing a vote doesn't add another
-    const anon = (await request(app).get('/api/bootstrap').expect(200)).body.content.problem_votes[id];
-    expect(anon).toEqual({ agree: 0, disagree: 2 });
-    const mine = (await request(app).get('/api/bootstrap').set('Authorization', token('ann')).expect(200)).body.my_votes;
-    expect(mine).toEqual({ [id]: 'disagree' });
-    await put('ann', null).expect(200);
-    expect((await request(app).get('/api/bootstrap').expect(200)).body.content.problem_votes[id]).toEqual({ agree: 0, disagree: 1 });
+    const id = (await feed()).content.problems.find((p: { title: string }) => p.title === 'T').id;
+    const guestA = 'a'.repeat(32);
+    const guestB = 'b'.repeat(32);
+    const put = (vote: string | null, who: { uid?: string; voter?: string }) => {
+      const r = request(app).put(`/api/problems/${id}/vote`);
+      return (who.uid ? r.set('Authorization', token(who.uid)) : r).send({ vote, ...(who.voter ? { voter_id: who.voter } : {}) });
+    };
+    await put('agree', {}).expect(400); // a guest needs a voter id
+    await put('agree', { voter: 'short' }).expect(400);
+    await put('maybe', { voter: guestA }).expect(400);
+    await request(app).put('/api/problems/nope/vote').send({ vote: 'agree', voter_id: guestA }).expect(404);
+
+    await put('agree', { voter: guestA }).expect(200);
+    await put('disagree', { voter: guestB }).expect(200);
+    await put('agree', { uid: 'ann' }).expect(200);
+    await put('disagree', { voter: guestA }).expect(200); // changing a vote doesn't add another
+    await put('disagree', { voter: guestA }).expect(200);
+    expect((await feed()).content.problem_votes[id]).toEqual({ agree: 1, disagree: 2 });
+    expect((await feed('ann')).my_votes).toEqual({ [id]: 'agree' });
+
+    expect((await feed('boss')).admin.problem_votes).toEqual([{ problem_id: id, agree: 1, disagree: 2, members: 1, guests: 2 }]);
+    expect((await feed()).admin).toBeUndefined();
+
+    await put(null, { voter: guestA }).expect(200);
+    expect((await feed()).content.problem_votes[id]).toEqual({ agree: 1, disagree: 1 });
   });
 });
 

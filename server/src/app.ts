@@ -26,9 +26,10 @@ export interface AppOptions {
   allowedOrigins: string[];
   rateLimitPerMinute?: number;
   inquiryLimitPerHour?: number;
+  voteLimitPerHour?: number;
 }
 
-export function createApp({ database, verifyToken, allowedOrigins, rateLimitPerMinute = 300, inquiryLimitPerHour = 12 }: AppOptions) {
+export function createApp({ database, verifyToken, allowedOrigins, rateLimitPerMinute = 300, inquiryLimitPerHour = 12, voteLimitPerHour = 60 }: AppOptions) {
   const app = express();
   app.set('trust proxy', 1);
   app.disable('x-powered-by');
@@ -59,7 +60,7 @@ export function createApp({ database, verifyToken, allowedOrigins, rateLimitPerM
   api.use(expertsRouter(database));
   api.use(inquiriesRouter(database, inquiryLimitPerHour));
   api.use(expertPipelineRouter(database));
-  api.use(votesRouter(database));
+  api.use(votesRouter(database, voteLimitPerHour));
   app.use('/api', api);
 
   app.use('/api', (_req, res) => { res.status(404).json({ error: 'Not found.' }); });

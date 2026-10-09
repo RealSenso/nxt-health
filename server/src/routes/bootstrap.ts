@@ -1,5 +1,5 @@
 import { listedExperts } from './expertPipeline.js';
-import { voteTally } from './votes.js';
+import { voteBreakdown, voteTally } from './votes.js';
 import { Router } from 'express';
 import { isAdmin, scopeKeyOf, UserDoc } from '../auth.js';
 import type { Database } from '../db.js';
@@ -151,6 +151,7 @@ export function bootstrapRouter(database: Database): Router {
         col('bookings').find().toArray(),
       ]);
       payload.admin = {
+        problem_votes: await voteBreakdown(database),
         users: outAll(users),
         teams: outAll(teams),
         scopes: outAll(scopes),

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   Filter, Activity, Users, Route, BookMarked, ShieldCheck, TrendingDown, AlertTriangle, Clock, Star,
-  Trophy, Megaphone, UserCheck, Hourglass, MessageSquare, IndianRupee,
+  Trophy, Megaphone, UserCheck, Hourglass, MessageSquare, IndianRupee, ThumbsUp,
 } from 'lucide-react';
 import { store } from '../../services/store';
 import { getStepGuide } from '../../data/stepGuides';
@@ -140,7 +140,47 @@ const CostsPanel: React.FC = () => {
   );
 };
 
-type Tab = 'growth' | 'founders' | 'roadmaps' | 'costs' | 'quality';
+/** Agree / disagree votes on each problem statement, from signed-in members and from guests. */
+const VotesPanel: React.FC = () => {
+  const problems = store.getProblems();
+  const byProblem = new Map(store.getVoteBreakdown().map(v => [v.problem_id, v]));
+  const rows = problems.map(p => {
+    const v = byProblem.get(p.id) ?? { problem_id: p.id, agree: 0, disagree: 0, members: 0, guests: 0 };
+    return { problem: p, ...v, total: v.agree + v.disagree };
+  }).sort((a, b) => b.total - a.total);
+  const total = rows.reduce((n, r) => n + r.total, 0);
+  const agree = rows.reduce((n, r) => n + r.agree, 0);
+  const guests = rows.reduce((n, r) => n + r.guests, 0);
+
+  return (
+    <>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <StatTile icon={ThumbsUp} label="Votes" value={total} sub={`across ${problems.length} problems`} />
+        <StatTile icon={Activity} label="Agree" value={`${pct(agree, total)}%`} sub={`${agree} of ${total}`} />
+        <StatTile icon={Users} label="From members" value={total - guests} />
+        <StatTile icon={Megaphone} label="From guests" value={guests} sub="no account" />
+      </div>
+      <Panel title="Votes by problem" hint="Visitors can vote without an account, so guest votes are counted separately. Each browser gets one vote per problem, and votes are limited per connection.">
+        {total === 0 && <p className="text-sm text-[var(--nxt-ink-soft)] mb-4">No votes yet. They will appear here as people respond to each problem.</p>}
+        <Table head={['Problem', 'Agree', "Don't agree", 'Agree %', 'Total', 'Members', 'Guests']}>
+          {rows.map(r => (
+            <tr key={r.problem.id}>
+              <td className="py-2.5 px-1 pr-3 text-[var(--nxt-ink)]">{r.problem.title}</td>
+              <td className="py-2.5 px-1 text-right tabular-nums">{r.agree}</td>
+              <td className="py-2.5 px-1 text-right tabular-nums">{r.disagree}</td>
+              <td className="py-2.5 px-1 text-right tabular-nums font-semibold">{r.total ? `${pct(r.agree, r.total)}%` : '—'}</td>
+              <td className="py-2.5 px-1 text-right tabular-nums">{r.total}</td>
+              <td className="py-2.5 px-1 text-right tabular-nums">{r.members}</td>
+              <td className="py-2.5 px-1 text-right tabular-nums">{r.guests}</td>
+            </tr>
+          ))}
+        </Table>
+      </Panel>
+    </>
+  );
+};
+
+type Tab = 'growth' | 'founders' | 'roadmaps' | 'costs' | 'votes' | 'quality';
 
 export const BusinessAnalytics: React.FC = () => {
   const [tab, setTab] = useState<Tab>('growth');
@@ -364,6 +404,7 @@ export const BusinessAnalytics: React.FC = () => {
             { id: 'founders', label: 'Founders', icon: Users },
             { id: 'roadmaps', label: 'Roadmap health', icon: Route },
             { id: 'costs', label: 'Costs', icon: IndianRupee },
+            { id: 'votes', label: 'Problem votes', icon: ThumbsUp },
             { id: 'quality', label: 'Resources & quality', icon: ShieldCheck },
           ]}
           active={tab}
@@ -554,6 +595,7 @@ export const BusinessAnalytics: React.FC = () => {
       )}
 
       {tab === 'costs' && <CostsPanel />}
+      {tab === 'votes' && <VotesPanel />}
 
       {tab === 'quality' && (
         <>

@@ -5,26 +5,18 @@ import { store } from '../../services/store';
 
 interface Props {
   problemId: string;
-  signedIn: boolean;
-  onOpenLogin: () => void;
   /** Narrow side column: the two choices stack and there is no bottom margin. */
   stacked?: boolean;
 }
 
 /** "Do you agree this is a real problem?" with live results. One vote each; pressing the same button again takes it back. */
-export const VotePanel: React.FC<Props> = ({ problemId, signedIn, onOpenLogin, stacked }) => {
+export const VotePanel: React.FC<Props> = ({ problemId, stacked }) => {
   const tally = store.getVotes(problemId);
   const mine = store.getMyVote(problemId);
   const total = tally.agree + tally.disagree;
   const pct = (n: number) => (total ? Math.round((n / total) * 100) : 0);
-  const [message, setMessage] = React.useState('');
 
-  const vote = (choice: ProblemVote) => {
-    if (!signedIn) { onOpenLogin(); return; }
-    if (!store.isEmailVerified()) { setMessage('Please verify your email address to vote.'); return; }
-    setMessage('');
-    void store.voteOnProblem(problemId, choice);
-  };
+  const vote = (choice: ProblemVote) => { void store.voteOnProblem(problemId, choice); };
 
   const options: { choice: ProblemVote; label: string; icon: React.ElementType; count: number }[] = [
     { choice: 'agree', label: 'I agree', icon: ThumbsUp, count: tally.agree },
@@ -57,8 +49,7 @@ export const VotePanel: React.FC<Props> = ({ problemId, signedIn, onOpenLogin, s
         })}
       </div>
       <p className="mt-3 text-xs text-[var(--nxt-ink-soft)]" role="status">
-        {message || (total === 0 ? 'No votes yet — be the first.' : `${total} vote${total === 1 ? '' : 's'}.`)}
-        {!signedIn && ' Sign in to vote.'}
+        {total === 0 ? 'No votes yet — be the first.' : `${total} vote${total === 1 ? '' : 's'}.`} No account needed.
       </p>
     </section>
   );

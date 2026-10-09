@@ -360,6 +360,7 @@ export interface ListedExpertProfile extends ListedExpert {
 }
 
 export type ProblemVote = 'agree' | 'disagree';
+export type VoteBreakdown = { problem_id: string; agree: number; disagree: number; members: number; guests: number }[];
 export type VoteTally = Record<string, { agree: number; disagree: number }>;
 
 export interface PublicExpert {
