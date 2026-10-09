@@ -348,7 +348,7 @@ describe('uploads and profiles', () => {
       return (await (uid ? req.set('Authorization', token(uid)) : req).expect(200)).body.content;
     };
 
-    it('loads 25 categories (7 open) and the problem statements, and can be re-run safely', async () => {
+    it('loads 25 categories (8 open) and the problem statements, and can be re-run safely', async () => {
       await admin('boss');
       const first = await request(app).post('/api/admin/starter-content').set('Authorization', token('boss')).expect(201);
       // The test fixtures contain cat-1 and prob-1, which are old starter ids, so one of each goes.
@@ -358,7 +358,7 @@ describe('uploads and profiles', () => {
       expect(loaded.categories).toHaveLength(25);
       expect(loaded.categories.filter((c: { coming_soon: boolean }) => !c.coming_soon).map((c: { name: string }) => c.name)).toEqual([
         'Marketplace / Network', 'Healthcare Services', 'Patient Education / Engagement',
-        'Workflow / Operational Tech', 'Training / Simulation', 'Clinical Infrastructure / Platform', 'SaMD',
+        'Workflow / Operational Tech', 'Training / Simulation', 'Clinical Infrastructure / Platform', 'Medical Device', 'SaMD',
       ]);
       expect(loaded.problems.map((p: { title: string }) => p.title)).toEqual(['In women, what is “psychological” and what is not?', 'Solve Migraine']);
 
@@ -435,7 +435,7 @@ describe('uploads and profiles', () => {
       await admin('boss');
       await member('founder');
       await request(app).post('/api/admin/starter-content').set('Authorization', token('boss')).expect(201);
-      const blocked = await request(app).put('/api/scope/locks/prob-1').set('Authorization', token('founder')).send({ category_id: 'cat-medical-device' }).expect(409);
+      const blocked = await request(app).put('/api/scope/locks/prob-1').set('Authorization', token('founder')).send({ category_id: 'cat-ivd' }).expect(409);
       expect(blocked.body.error).toMatch(/coming soon/i);
       await request(app).put('/api/scope/locks/prob-1').set('Authorization', token('founder')).send({ category_id: 'cat-marketplace-network' }).expect(200);
     });

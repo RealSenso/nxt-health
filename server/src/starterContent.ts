@@ -94,8 +94,8 @@ export const LIVE_CATEGORY_COUNT = 6;
 
 /** Categories that are open because they have a checklist written for them, in addition to the first six. */
 const DEDICATED_ROADMAP_SLUGS = ['medical-device', 'samd'];
-/** Of those, the ones whose checklist is complete and are open to founders. Medical Device opens once its full checklist is imported. */
-const OPEN_DEDICATED_SLUGS = ['samd'];
+/** Of those, the ones whose checklist is complete and are open to founders. Medical Device is open with the part of its checklist that has been imported. */
+const OPEN_DEDICATED_SLUGS = ['samd', 'medical-device'];
 
 const categoryId = (slug: string) => `cat-${slug}`;
 
