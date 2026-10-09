@@ -348,7 +348,7 @@ describe('uploads and profiles', () => {
       return (await (uid ? req.set('Authorization', token(uid)) : req).expect(200)).body.content;
     };
 
-    it('loads 25 categories (6 open) and the problem statements, and can be re-run safely', async () => {
+    it('loads 25 categories (7 open) and the problem statements, and can be re-run safely', async () => {
       await admin('boss');
       const first = await request(app).post('/api/admin/starter-content').set('Authorization', token('boss')).expect(201);
       // The test fixtures contain cat-1 and prob-1, which are old starter ids, so one of each goes.
@@ -358,7 +358,7 @@ describe('uploads and profiles', () => {
       expect(loaded.categories).toHaveLength(25);
       expect(loaded.categories.filter((c: { coming_soon: boolean }) => !c.coming_soon).map((c: { name: string }) => c.name)).toEqual([
         'Marketplace / Network', 'Healthcare Services', 'Patient Education / Engagement',
-        'Workflow / Operational Tech', 'Training / Simulation', 'Clinical Infrastructure / Platform',
+        'Workflow / Operational Tech', 'Training / Simulation', 'Clinical Infrastructure / Platform', 'SaMD',
       ]);
       expect(loaded.problems.map((p: { title: string }) => p.title)).toEqual(['In women, what is “psychological” and what is not?', 'Solve Migraine']);
 
@@ -371,7 +371,7 @@ describe('uploads and profiles', () => {
       await admin('boss');
       await request(app).post('/api/admin/starter-content').set('Authorization', token('boss')).expect(201);
       const res = await importRoadmap('boss').expect(201);
-      expect(res.body.steps).toBe(30); // 6 open categories × 5 phases
+      expect(res.body.steps).toBe(30); // the 6 general categories × 5 phases; SaMD has a checklist of its own
 
       const imported = await content('boss');
       const steps = imported.steps.filter((st: { category_id: string }) => st.category_id === 'cat-marketplace-network');
@@ -389,6 +389,20 @@ describe('uploads and profiles', () => {
       expect(refreshed.categories.find((c: { id: string }) => c.id === 'cat-marketplace-network').playbook).toBeTruthy();
       expect((await importRoadmap('boss').expect(201)).body.steps).toBe(30);
       expect((await content('boss')).steps).toHaveLength(30);
+    });
+
+    it('builds a dedicated roadmap for the category a checklist names, without touching the others', async () => {
+      await admin('boss');
+      await request(app).post('/api/admin/starter-content').set('Authorization', token('boss')).expect(201);
+      await importRoadmap('boss').expect(201);
+      const res = await importRoadmap('boss', { ...fixture, category: 'cat-samd', playbook: { model: [], cost_inputs: [], how_to_use: ['SaMD tip.'] } }).expect(201);
+      expect(res.body.steps).toBe(5);
+      const loaded = await content('boss');
+      expect(loaded.steps).toHaveLength(35);
+      expect(loaded.steps.filter((st: { category_id: string }) => st.category_id === 'cat-samd')).toHaveLength(5);
+      expect(loaded.categories.find((c: { id: string }) => c.id === 'cat-samd')).toMatchObject({ coming_soon: false, playbook: { how_to_use: ['SaMD tip.'] } });
+      expect(loaded.categories.find((c: { id: string }) => c.id === 'cat-marketplace-network').playbook.how_to_use).toEqual(['Start at the top.']);
+      await importRoadmap('boss', { ...fixture, category: 'cat-nope' }).expect(400);
     });
 
     it('only lets admins import, and rejects malformed files', async () => {
@@ -436,6 +450,29 @@ describe('uploads and profiles', () => {
         expect(steps.slice(0, 3).every((st: { tasks: unknown[] }) => st.tasks.length > 0)).toBe(true);
         expect(steps.slice(3).every((st: { tasks: unknown[]; locked?: boolean }) => st.tasks.length === 0 && st.locked)).toBe(true);
       }
+    });
+  });
+
+  describe('expert pipeline', () => {
+    const entry = { id: 'exp-test-person', name: 'Test Person', title: 'Surgeon', email: 'tp@example.com', phone: '', linkedin: '', fit: 'Strong', stage: 'outreach' };
+    it('is private to admins, imports without overwriting edits, and never reaches the public directory', async () => {
+      await admin('boss');
+      await member('founder');
+      await request(app).get('/api/admin/expert-pipeline').expect(401);
+      await request(app).get('/api/admin/expert-pipeline').set('Authorization', token('founder')).expect(403);
+      await request(app).post('/api/admin/expert-pipeline/import').set('Authorization', token('founder')).send({ experts: [entry] }).expect(403);
+
+      const first = await request(app).post('/api/admin/expert-pipeline/import').set('Authorization', token('boss')).send({ experts: [entry] }).expect(201);
+      expect(first.body).toMatchObject({ added: 1, total: 1 });
+      await request(app).patch('/api/admin/expert-pipeline/exp-test-person').set('Authorization', token('boss')).send({ stage: 'onboarding' }).expect(200);
+      const again = await request(app).post('/api/admin/expert-pipeline/import').set('Authorization', token('boss')).send({ experts: [entry] }).expect(201);
+      expect(again.body.added).toBe(0);
+      const list = await request(app).get('/api/admin/expert-pipeline').set('Authorization', token('boss')).expect(200);
+      expect(list.body.experts).toEqual([expect.objectContaining({ id: 'exp-test-person', stage: 'onboarding', email: 'tp@example.com' })]);
+
+      expect((await request(app).get('/api/public/experts').expect(200)).body.experts).toEqual([]);
+      await request(app).post('/api/admin/expert-pipeline/import').set('Authorization', token('boss')).send({ experts: [{ ...entry, stage: 'bogus' }] }).expect(400);
+      await request(app).delete('/api/admin/expert-pipeline/exp-test-person').set('Authorization', token('boss')).expect(200);
     });
   });
 

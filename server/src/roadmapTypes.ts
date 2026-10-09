@@ -28,6 +28,8 @@ export const playbookSchema = z.object({
  * (Admin console → Categories → Import roadmap file) or loaded from server/content/ by the scripts.
  */
 export const roadmapContentSchema = z.object({
+  /** Id of the category this checklist is written for (e.g. cat-samd). Without it, it is the general checklist used by the other open categories. */
+  category: z.string().regex(/^cat-[a-z0-9-]+$/).max(60).optional(),
   phases: z.array(z.object({
     no: z.number().int().min(0).max(99),
     name: text(80).min(1),

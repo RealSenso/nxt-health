@@ -10,7 +10,7 @@ export const COLLECTIONS = [
   'applications', 'submissions', 'notifications',
   'threads', 'messages',
   'rsvps', 'bookings',
-  'mentorProfiles', 'mentorRequests', 'consultations', 'inquiries',
+  'mentorProfiles', 'mentorRequests', 'consultations', 'inquiries', 'expertPipeline',
   'resourceViews', 'stepRatings',
 ] as const;
 
@@ -65,6 +65,7 @@ export async function ensureIndexes({ col }: Database): Promise<void> {
       { unique: true, partialFilterExpression: { slot: { $exists: true }, status: { $in: ['awaiting_payment', 'paid'] } } },
     ),
     col('inquiries').createIndex({ created_at: -1 }),
+    col('expertPipeline').createIndex({ name: 1 }),
     col('stepRatings').createIndex({ user_id: 1, step_id: 1 }, { unique: true }),
   ]);
 }

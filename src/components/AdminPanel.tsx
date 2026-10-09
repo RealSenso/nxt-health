@@ -17,6 +17,7 @@ import { SimpleBarChart, SimpleLineChart, HBarList } from './ui/Charts';
 import { BusinessAnalytics } from './admin/BusinessAnalytics';
 import { AdminMembers } from './admin/AdminMembers';
 import { AdminInquiries } from './admin/AdminInquiries';
+import { AdminExperts } from './admin/AdminExperts';
 import { DiscussButton } from './ui/DiscussButton';
 
 interface AdminPanelProps {
@@ -25,11 +26,11 @@ interface AdminPanelProps {
 
 const TAB_TO_SECTION: Record<AdminTab, string> = {
   applications: 'funding', problems: 'problems', categories: 'categories', steps: 'steps',
-  resources: 'resources', submissions: 'evidence', users: 'members', analytics: 'analytics', inquiries: 'inquiries',
+  resources: 'resources', submissions: 'evidence', users: 'members', analytics: 'analytics', inquiries: 'inquiries', experts: 'experts',
 };
 const SECTION_TO_TAB = Object.fromEntries(Object.entries(TAB_TO_SECTION).map(([tab, section]) => [section, tab])) as Record<string, AdminTab>;
 
-type AdminTab = 'applications' | 'problems' | 'categories' | 'steps' | 'resources' | 'users' | 'analytics' | 'submissions' | 'inquiries';
+type AdminTab = 'applications' | 'problems' | 'categories' | 'steps' | 'resources' | 'users' | 'analytics' | 'submissions' | 'inquiries' | 'experts';
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser }) => {
   const navigate = useNavigate();
@@ -45,7 +46,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser }) => {
 
   const handleImportRoadmap = async (file: File | undefined) => {
     if (!file) return;
-    if (!window.confirm(`Import "${file.name}"?\n\nThis builds the roadmap steps for every open category from the file. Steps with the same ids are overwritten — any edits you made to them are lost.`)) return;
+    if (!window.confirm(`Import "${file.name}"?\n\nThis builds the roadmap steps from the file, for the category it is written for (or for the open categories that have no checklist of their own). Steps with the same ids are overwritten — any edits you made to them are lost.`)) return;
     setLoadingStarter(true);
     setImportMessage(null);
     try {
@@ -249,6 +250,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser }) => {
     { id: 'users', label: `Members (${allUsers.filter(u => u.membership_status === 'requested').length} requests)`, icon: Users },
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
     { id: 'inquiries', label: 'Enquiries', icon: Inbox },
+    { id: 'experts', label: 'Experts', icon: Users },
   ];
 
   return (
@@ -1300,6 +1302,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser }) => {
       {adminTab === 'users' && <AdminMembers currentUser={currentUser} />}
 
       {adminTab === 'inquiries' && <AdminInquiries />}
+      {adminTab === 'experts' && <AdminExperts />}
 
       {adminTab === 'submissions' && (
         <div className="space-y-4">

@@ -35,7 +35,7 @@ export async function syncStarterContent(database: Database, adminId: string, ro
       await col('steps').replaceOne({ _id: doc._id }, doc, { upsert: true });
       stepCount++;
     }
-    if (roadmap.playbook) await col('categories').updateOne({ _id: ROADMAP_SOURCE_CATEGORY }, { $set: { playbook: roadmap.playbook } });
+    if (roadmap.playbook) await col('categories').updateOne({ _id: roadmap.category ?? ROADMAP_SOURCE_CATEGORY }, { $set: { playbook: roadmap.playbook } });
   }
 
   let problemsAdded = 0;

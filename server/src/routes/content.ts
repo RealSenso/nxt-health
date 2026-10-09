@@ -4,6 +4,7 @@ import { HttpError, requireAdmin, requireUser } from '../auth.js';
 import type { CollectionName, Database } from '../db.js';
 import { out } from '../db.js';
 import { roadmapTaskSchema, playbookSchema, roadmapContentSchema } from '../roadmapTypes.js';
+import { STARTER_CATEGORIES } from '../starterContent.js';
 import { syncStarterContent } from '../syncContent.js';
 import { newId, now, parse } from '../util.js';
 
@@ -128,10 +129,11 @@ export function contentRouter(database: Database): Router {
     res.status(201).json({ ok: true, ...(await syncStarterContent(database, admin._id)) });
   });
 
-  /** Imports a roadmap checklist (the JSON file an admin chooses) and builds the roadmap for every open category. */
+  /** Imports a roadmap checklist (the JSON file an admin chooses) and builds the roadmap for the category it names, or for the open categories that have none of their own. */
   r.post('/admin/roadmap-import', async (req, res) => {
     const admin = requireAdmin(req);
     const roadmap = parse(roadmapContentSchema, req.body);
+    if (roadmap.category && !STARTER_CATEGORIES.some(c => c.id === roadmap.category)) throw new HttpError(400, `Unknown category "${roadmap.category}".`);
     res.status(201).json({ ok: true, ...(await syncStarterContent(database, admin._id, roadmap)) });
   });
 

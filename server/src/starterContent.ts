@@ -89,13 +89,19 @@ const CATEGORY_DEFS: CategoryDef[] = [
   { slug: 'care-service', name: 'Care-as-a-Service', description: 'Delivers an entire care pathway', example: 'Chronic disease management' },
 ];
 
-/** How many categories are open to founders today (the six priority "green" categories). */
+/** How many of the first categories are open to founders (the six priority "green" categories). */
 export const LIVE_CATEGORY_COUNT = 6;
+
+/** Categories that are open because they have a checklist written for them, in addition to the first six. */
+const DEDICATED_ROADMAP_SLUGS = ['medical-device', 'samd'];
+/** Of those, the ones whose checklist is complete and are open to founders. Medical Device opens once its full checklist is imported. */
+const OPEN_DEDICATED_SLUGS = ['samd'];
 
 const categoryId = (slug: string) => `cat-${slug}`;
 
 export const STARTER_CATEGORIES: Doc[] = CATEGORY_DEFS.map((def, index) => {
-  const live = index < LIVE_CATEGORY_COUNT;
+  const dedicated = DEDICATED_ROADMAP_SLUGS.includes(def.slug);
+  const live = index < LIVE_CATEGORY_COUNT || OPEN_DEDICATED_SLUGS.includes(def.slug);
   return {
     id: categoryId(def.slug),
     name: def.name,
@@ -103,9 +109,9 @@ export const STARTER_CATEGORIES: Doc[] = CATEGORY_DEFS.map((def, index) => {
     example: def.example,
     order: index + 1,
     coming_soon: !live,
-    ...(live ? { priority: index + 1 } : {}),
+    ...(index < LIVE_CATEGORY_COUNT ? { priority: index + 1 } : {}),
     ...(def.complexity ? { complexity: def.complexity, complexity_note: def.complexity_note } : {}),
-    ...(live && index > 0
+    ...(live && !dedicated && index > 0
       ? { roadmap_note: 'This starter roadmap is built from the Marketplace checklist. A checklist written for this category is coming.' }
       : {}),
   };
@@ -116,9 +122,9 @@ export const STARTER_CATEGORIES: Doc[] = CATEGORY_DEFS.map((def, index) => {
  * "Ongoing" and anything unrecognised returns null.
  */
 export function durationInWeeks(text: string): [number, number] | null {
-  const match = text.match(/^(\d+)(?:[–-](\d+))?\s*(day|week)s?$/i);
+  const match = text.match(/^(\d+)(?:[–-](\d+))?\+?\s*(day|week|month)s?$/i);
   if (!match) return null;
-  const unit = match[3].toLowerCase() === 'day' ? 1 / 5 : 1;
+  const unit = { day: 1 / 5, week: 1, month: 4 }[match[3].toLowerCase() as 'day' | 'week' | 'month'];
   const low = Number(match[1]) * unit;
   return [low, Number(match[2] ?? match[1]) * unit];
 }
@@ -126,9 +132,13 @@ export function durationInWeeks(text: string): [number, number] | null {
 /** Id of the category whose checklist the roadmap content is written for. */
 export const ROADMAP_SOURCE_CATEGORY = 'cat-marketplace-network';
 
-/** One roadmap step per checklist phase, for every open category. */
+/** One roadmap step per checklist phase: for the category the checklist names, or else for every open category without a checklist of its own. */
 export function buildRoadmapSteps(roadmap: RoadmapContent): Doc[] {
-  return STARTER_CATEGORIES.filter(c => !c.coming_soon).flatMap(category =>
+  const own = new Set(DEDICATED_ROADMAP_SLUGS.map(categoryId));
+  const targets = roadmap.category
+    ? STARTER_CATEGORIES.filter(c => c.id === roadmap.category)
+    : STARTER_CATEGORIES.filter(c => !c.coming_soon && !own.has(String(c.id)));
+  return targets.flatMap(category =>
     roadmap.phases.map(phase => {
       const weeks = phase.tasks.map(t => durationInWeeks(t.duration)).filter((w): w is [number, number] => !!w);
       const low = Math.max(1, Math.round(weeks.reduce((n, w) => n + w[0], 0)));
