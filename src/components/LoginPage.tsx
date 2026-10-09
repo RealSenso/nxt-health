@@ -94,17 +94,17 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBack, initialMode = 'log
       </aside>
       <div className="flex items-center justify-center p-4 py-10">
       <div className="w-full max-w-md">
-        <div className="flex items-center justify-between mb-4">
-          {onBack ? (
+        <div className="flex items-center justify-end mb-4">
+          {onBack && (
             <button
               id="btn-back-to-home"
               onClick={onBack}
-              className="flex items-center gap-1.5 text-xs font-semibold text-[var(--nxt-ink-soft)] hover:text-[var(--nxt-ink)] transition-colors"
+              className="fixed top-5 left-5 sm:top-7 sm:left-8 z-20 flex items-center gap-2 text-sm font-semibold text-[var(--nxt-ink-soft)] hover:text-[var(--nxt-ink)] transition-colors"
             >
-              <ArrowLeft className="w-3.5 h-3.5" />
+              <ArrowLeft className="w-4 h-4" />
               <span>Back to Home</span>
             </button>
-          ) : <span />}
+          )}
           <ThemeToggle />
         </div>
         <div className="flex items-center justify-center gap-2.5 mb-6">
