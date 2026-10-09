@@ -2,13 +2,17 @@ import React from 'react';
 import { Linkedin } from 'lucide-react';
 import type { ProblemStatement } from '../../types';
 import { initials } from '../../data/experts';
+import { API_URL } from '../../services/api';
+
+/** Uploaded photos are served by the API; links are used as they are. */
+const photoSrc = (url: string) => (url.startsWith('/') ? `${API_URL}${url}` : url);
 
 /** The person who posted a problem: photo (or initials), name and LinkedIn. */
 export const Sponsor: React.FC<{ problem: ProblemStatement; size?: 'sm' | 'lg'; variant?: 'inline' | 'panel' }> = ({ problem, size = 'lg', variant = 'inline' }) => {
   if (!problem.sponsor_name) return null;
   const dim = size === 'lg' ? 'w-14 h-14 text-lg' : 'w-6 h-6 text-[10px]';
   const avatar = problem.sponsor_photo_url
-    ? <img src={problem.sponsor_photo_url} alt={problem.sponsor_name} className={`${dim} rounded-full object-cover shrink-0`} loading="lazy" />
+    ? <img src={photoSrc(problem.sponsor_photo_url)} alt={problem.sponsor_name} className={`${dim} rounded-full object-cover shrink-0`} loading="lazy" />
     : <span className={`${dim} rounded-full shrink-0 bg-[var(--nxt-bg-soft)] text-[var(--nxt-ink-soft)] font-display font-bold flex items-center justify-center`} aria-hidden="true">{initials(problem.sponsor_name)}</span>;
   if (size === 'sm') {
     return <p className="flex items-center gap-2 text-xs text-[var(--nxt-ink-soft)]">{avatar}<span>Posted by <span className="font-semibold text-[var(--nxt-ink)]">{problem.sponsor_name}</span></span></p>;
@@ -19,7 +23,7 @@ export const Sponsor: React.FC<{ problem: ProblemStatement; size?: 'sm' | 'lg'; 
         <p className="text-xs uppercase tracking-wider text-[var(--nxt-ink-soft)]">Posted by</p>
         <div className="mt-4 flex justify-center">
           {problem.sponsor_photo_url
-            ? <img src={problem.sponsor_photo_url} alt={problem.sponsor_name} className="w-28 h-28 rounded-full object-cover" loading="lazy" />
+            ? <img src={photoSrc(problem.sponsor_photo_url)} alt={problem.sponsor_name} className="w-28 h-28 rounded-full object-cover" loading="lazy" />
             : <span className="w-28 h-28 rounded-full bg-[var(--nxt-surface)] border border-[var(--nxt-line)] text-[var(--nxt-ink-soft)] font-display font-bold text-3xl flex items-center justify-center" aria-hidden="true">{initials(problem.sponsor_name)}</span>}
         </div>
         <p className="mt-4 font-display text-xl font-bold text-[var(--nxt-ink)]">{problem.sponsor_name}</p>

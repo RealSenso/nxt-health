@@ -202,6 +202,38 @@ describe('problem votes', () => {
   });
 });
 
+describe('problem photos', () => {
+  const jpeg = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(64, 1)]);
+  it('stores an uploaded photo in the database, serves it publicly, and keeps the bytes out of the data feed', async () => {
+    await admin('boss');
+    await member('founder');
+    const created = await request(app).post('/api/admin/problems').set('Authorization', token('boss')).send({ title: 'P', description: 'd', department: 'x', funded: false }).expect(201);
+    const id = created.body.item.id;
+    const put = (uid: string | null, body: Buffer, type = 'image/jpeg') => {
+      const r = request(app).put(`/api/admin/problems/${id}/photo`).set('Content-Type', type);
+      return (uid ? r.set('Authorization', token(uid)) : r).send(body);
+    };
+    await put(null, jpeg).expect(401);
+    await put('founder', jpeg).expect(403);
+    await put('boss', Buffer.from('<svg onload=alert(1)>'), 'image/jpeg').expect(400); // not really a JPEG
+    const ok = await put('boss', jpeg).expect(200);
+    expect(ok.body.sponsor_photo_url).toMatch(new RegExp(`^/api/public/problem-photos/${id}\\?v=`));
+
+    const photo = await request(app).get(`/api/public/problem-photos/${id}`).expect(200);
+    expect(photo.headers['content-type']).toBe('image/jpeg');
+    expect(photo.headers['x-content-type-options']).toBe('nosniff');
+    expect(Buffer.from(photo.body).equals(jpeg)).toBe(true);
+
+    const feed = (await request(app).get('/api/bootstrap').expect(200)).body.content.problems.find((p: { id: string }) => p.id === id);
+    expect(feed.sponsor_photo_url).toBe(ok.body.sponsor_photo_url);
+    expect(JSON.stringify(feed)).not.toContain('sponsor_photo"');
+    // Saving the problem again with that photo link must still validate and keep the photo.
+    await request(app).put(`/api/admin/problems/${id}`).set('Authorization', token('boss')).send({ title: 'P2', description: 'd', department: 'x', funded: false, sponsor_photo_url: ok.body.sponsor_photo_url }).expect(200);
+    await request(app).get(`/api/public/problem-photos/${id}`).expect(200);
+    await request(app).get('/api/public/problem-photos/nope').expect(404);
+  });
+});
+
 describe('events', () => {
   it('enforces RSVP capacity under concurrent requests', async () => {
     await Promise.all(['u1', 'u2', 'u3', 'u4'].map(member));

@@ -23,7 +23,7 @@ export function bootstrapRouter(database: Database): Router {
 
   r.get('/bootstrap', async (req, res) => {
     const [problems, categories, steps, resources, slack, allBookings] = await Promise.all([
-      col('problems').find().sort({ created_at: -1 }).toArray(),
+      col('problems').find({}, { projection: { sponsor_photo: 0 } }).sort({ created_at: -1 }).toArray(),
       col('categories').find().sort({ order: 1 }).toArray(),
       col('steps').find().sort({ order: 1 }).toArray(),
       col('resources').find().sort({ _id: 1 }).toArray(),

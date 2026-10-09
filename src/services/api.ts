@@ -55,6 +55,14 @@ export const api = {
   patch: <T>(path: string, body?: unknown) => send<T>('PATCH', path, body ?? {}),
   delete: <T>(path: string) => send<T>('DELETE', path),
 
+  /** Sends a file as the raw request body (for image uploads). */
+  async upload<T>(path: string, file: File): Promise<T> {
+    const res = await fetch(`${API_URL}/api${path}`, { method: 'PUT', headers: { ...(await headers(false)), 'Content-Type': file.type }, body: file });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new ApiError(res.status, data.error || `Upload failed (${res.status}).`);
+    return data as T;
+  },
+
   async download(path: string, filename: string): Promise<void> {
     const res = await fetch(`${API_URL}/api${path}`, { headers: await headers(false) });
     if (!res.ok) throw new ApiError(res.status, "Couldn't download that file.");

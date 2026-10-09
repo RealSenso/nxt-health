@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import express, { Router } from 'express';
 import { z } from 'zod';
 import { HttpError, requireAdmin, requireUser } from '../auth.js';
 import type { CollectionName, Database } from '../db.js';
@@ -10,6 +10,11 @@ import { newId, now, parse } from '../util.js';
 
 /** Only https links: these end up in <a href> and <img src>. */
 const httpsLink = z.string().trim().max(500).refine(u => /^https:\/\/[^\s]+$/i.test(u), 'must be an https:// link').or(z.literal(''));
+
+/** A photo is either an https link or one the admin uploaded here (served by this API). */
+const photoLink = z.string().trim().max(500)
+  .refine(u => /^https:\/\/[^\s]+$/i.test(u) || /^\/api\/public\/problem-photos\/[A-Za-z0-9_-]+(\?v=[a-z0-9]+)?$/.test(u), 'must be an https:// link')
+  .or(z.literal(''));
 
 const text = (max: number) => z.string().trim().max(max);
 const optionalUrl = z.string().trim().url().max(500).or(z.literal('')).optional();
@@ -23,7 +28,7 @@ const schemas = {
     funding_amount: text(200).optional(),
     sponsor_name: text(120).optional(),
     sponsor_linkedin: httpsLink.optional(),
-    sponsor_photo_url: httpsLink.optional(),
+    sponsor_photo_url: photoLink.optional(),
   }),
   categories: z.object({
     name: text(200).min(1),
@@ -97,7 +102,7 @@ export function contentRouter(database: Database): Router {
       const body = parse(schemas[kind], req.body);
       const result = await col.updateOne({ _id: String(req.params.id) }, { $set: body });
       if (!result.matchedCount) throw new HttpError(404, 'Not found.');
-      res.json({ item: out(await col.findOne({ _id: String(req.params.id) })) });
+      res.json({ item: out(await col.findOne({ _id: String(req.params.id) }, { projection: { sponsor_photo: 0 } })) });
     });
 
     r.delete(`/admin/${kind}/:id`, async (req, res) => {
@@ -122,6 +127,31 @@ export function contentRouter(database: Database): Router {
       res.json({ ok: true });
     });
   }
+
+  /** Uploads the photo of the person who posted a problem. Stored in the database, served publicly. */
+  r.put('/admin/problems/:id/photo', express.raw({ type: ['image/jpeg', 'image/png', 'image/webp'], limit: '2mb' }), async (req, res) => {
+    requireAdmin(req);
+    const id = String(req.params.id);
+    const data = req.body as Buffer;
+    if (!Buffer.isBuffer(data) || data.length === 0) throw new HttpError(400, 'Choose a JPEG, PNG or WebP image (up to 2 MB).');
+    const type = data.subarray(0, 3).equals(Buffer.from([0xff, 0xd8, 0xff])) ? 'image/jpeg'
+      : data.subarray(0, 4).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47])) ? 'image/png'
+      : data.subarray(0, 4).toString() === 'RIFF' && data.subarray(8, 12).toString() === 'WEBP' ? 'image/webp' : '';
+    if (!type) throw new HttpError(400, "That file isn't a JPEG, PNG or WebP image.");
+    const url = `/api/public/problem-photos/${id}?v=${Date.now().toString(36)}`;
+    const result = await database.col('problems').updateOne({ _id: id }, { $set: { sponsor_photo: data, sponsor_photo_type: type, sponsor_photo_url: url } });
+    if (!result.matchedCount) throw new HttpError(404, 'Problem not found.');
+    res.json({ sponsor_photo_url: url });
+  });
+
+  r.get('/public/problem-photos/:id', async (req, res) => {
+    const doc = await database.col('problems').findOne({ _id: String(req.params.id) }, { projection: { sponsor_photo: 1, sponsor_photo_type: 1 } });
+    const photo = doc?.sponsor_photo as { buffer?: Buffer } | Buffer | undefined;
+    const bytes = photo && ('buffer' in photo ? photo.buffer : photo);
+    if (!bytes) throw new HttpError(404, 'No photo.');
+    res.set({ 'Content-Type': String(doc?.sponsor_photo_type || 'image/jpeg'), 'Cache-Control': 'public, max-age=86400', 'X-Content-Type-Options': 'nosniff', 'Cross-Origin-Resource-Policy': 'cross-origin' });
+    res.send(Buffer.from(bytes as Buffer));
+  });
 
   r.put('/admin/settings/slack', async (req, res) => {
     requireAdmin(req);

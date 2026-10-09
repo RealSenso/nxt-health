@@ -13,6 +13,7 @@ import {
 } from '../types';
 import { PageHeader, SegmentedTabs } from './ui/PageHeader';
 import { store } from '../services/store';
+import { api } from '../services/api';
 import { SimpleBarChart, SimpleLineChart, HBarList } from './ui/Charts';
 import { BusinessAnalytics } from './admin/BusinessAnalytics';
 import { AdminMembers } from './admin/AdminMembers';
@@ -122,6 +123,20 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser }) => {
       sponsor_photo_url: editingProblem.sponsor_photo_url?.trim() || undefined,
     });
     setEditingProblem(null);
+  };
+
+  const [photoMessage, setPhotoMessage] = useState('');
+  const handleProblemPhoto = async (file: File | undefined) => {
+    if (!file || !editingProblem?.id) return;
+    setPhotoMessage('Uploading…');
+    try {
+      const { sponsor_photo_url } = await api.upload<{ sponsor_photo_url: string }>(`/admin/problems/${editingProblem.id}/photo`, file);
+      setEditingProblem(p => (p ? { ...p, sponsor_photo_url } : p));
+      setPhotoMessage('Photo saved.');
+      void store.refresh();
+    } catch (e) {
+      setPhotoMessage(e instanceof Error ? e.message : 'Could not upload that photo.');
+    }
   };
 
   const handleDeleteProblem = (id: string) => {
@@ -569,6 +584,21 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser }) => {
                     />
                   </div>
                 ))}
+                <div className="sm:col-span-3 flex flex-wrap items-center gap-3 text-xs">
+                  <label className={`inline-flex items-center gap-1.5 rounded-full border border-[var(--nxt-line)] px-3 py-1.5 font-semibold ${editingProblem.id ? 'cursor-pointer hover:bg-[var(--nxt-bg-soft)]' : 'opacity-60'}`}>
+                    <Paperclip className="w-3.5 h-3.5" /> Upload photo
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="hidden"
+                      id="input-problem-photo"
+                      disabled={!editingProblem.id}
+                      onChange={(e) => void handleProblemPhoto(e.target.files?.[0])}
+                    />
+                  </label>
+                  <span className="text-[var(--nxt-ink-soft)]">{editingProblem.id ? 'JPEG, PNG or WebP, up to 2 MB. It is saved straight away.' : 'Save the problem first, then edit it to upload a photo.'}</span>
+                  {photoMessage && <span className="font-semibold" role="status">{photoMessage}</span>}
+                </div>
               </div>
 
               <div>
