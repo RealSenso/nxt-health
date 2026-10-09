@@ -12,6 +12,7 @@ const NAV: Record<PublicVariant, { items: NavItem[]; cta: NavItem; subBrand?: st
   home: {
     items: [
       { label: 'How it works', to: '/#how-it-works' },
+      { label: 'Problem statements', to: '/problems' },
       { label: "Who it's for", to: '/#who-its-for' },
       { label: 'Pricing', to: '/#pricing' },
       { label: 'Find an expert', to: '/experts' },
@@ -22,6 +23,7 @@ const NAV: Record<PublicVariant, { items: NavItem[]; cta: NavItem; subBrand?: st
     subBrand: 'Experts',
     items: [
       { label: 'Find an expert', to: '/experts#find' },
+      { label: 'Problem statements', to: '/problems' },
       { label: 'Become an expert', to: '/experts/join' },
       { label: 'Our mission', to: '/experts#mission' },
     ],
@@ -31,6 +33,7 @@ const NAV: Record<PublicVariant, { items: NavItem[]; cta: NavItem; subBrand?: st
     subBrand: 'Experts',
     items: [
       { label: 'Find an expert', to: '/experts' },
+      { label: 'Problem statements', to: '/problems' },
       { label: 'Why experts join', to: '/experts/join#why' },
       { label: 'What you build', to: '/experts/join#build' },
     ],
@@ -43,11 +46,13 @@ const FOOTER_LINKS: Record<PublicVariant, NavItem[]> = {
     { label: 'How it works', to: '/#how-it-works' },
     { label: "Who it's for", to: '/#who-its-for' },
     { label: 'Pricing', to: '/#pricing' },
+    { label: 'Problem statements', to: '/problems' },
     { label: 'Find an expert', to: '/experts' },
     { label: 'Become an expert', to: '/experts/join' },
   ],
   experts: [
     { label: 'Find an expert', to: '/experts#find' },
+    { label: 'Problem statements', to: '/problems' },
     { label: 'Become an expert', to: '/experts/join' },
     { label: 'Back to NXT Health', to: '/' },
   ],

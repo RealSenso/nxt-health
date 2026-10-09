@@ -118,6 +118,7 @@ export const HomePage: React.FC = () => {
         <div className="mt-9 flex flex-wrap gap-3">
           <Btn to="/#start">Seed a problem</Btn>
           <Btn variant="outline" to="/signup">Join free as a founder</Btn>
+          <Btn variant="outline" to="/problems">Browse problem statements</Btn>
         </div>
         <p className="mt-12 text-sm text-[var(--nxt-ink-soft)]">Jump to what's in it for you</p>
         <div className="mt-3 flex flex-wrap gap-2.5">
