@@ -49,7 +49,7 @@ export const VotePanel: React.FC<Props> = ({ problemId, stacked }) => {
         })}
       </div>
       <p className="mt-3 text-xs text-[var(--nxt-ink-soft)]" role="status">
-        {total === 0 ? 'No votes yet — be the first.' : `${total} vote${total === 1 ? '' : 's'}.`} No account needed.
+        {total === 0 ? 'No votes yet — be the first.' : `${total} vote${total === 1 ? '' : 's'}.`}
       </p>
     </section>
   );
