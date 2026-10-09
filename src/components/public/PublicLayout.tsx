@@ -17,7 +17,7 @@ const NAV: Record<PublicVariant, { items: NavItem[]; cta: NavItem; subBrand?: st
       { label: 'Pricing', to: '/#pricing' },
       { label: 'Find an expert', to: '/experts' },
     ],
-    cta: { label: 'Seed a problem', to: '/#start' },
+    cta: { label: 'Log in / Sign up', to: '/login' },
   },
   experts: {
     subBrand: 'Experts',

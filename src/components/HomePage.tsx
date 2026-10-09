@@ -117,7 +117,6 @@ export const HomePage: React.FC = () => {
         </p>
         <div className="mt-9 flex flex-wrap gap-3">
           <Btn to="/#start">Seed a problem</Btn>
-          <Btn variant="outline" to="/signup">Join free as a founder</Btn>
           <Btn variant="outline" to="/problems">Browse problem statements</Btn>
         </div>
         <p className="mt-12 text-sm text-[var(--nxt-ink-soft)]">Jump to what's in it for you</p>
@@ -194,7 +193,7 @@ export const HomePage: React.FC = () => {
               <h3 className="font-display font-bold text-[1.65rem] leading-[1.1] mt-4 tracking-[-0.025em]">{a.title}</h3>
               <p className="mt-4 text-[15px] leading-relaxed text-[var(--nxt-ink-soft)]">{a.intro}</p>
               <RuleList items={a.points} className="mt-5 mb-7" />
-              <Btn to={a.to} full className="mt-auto">{a.cta}</Btn>
+              {a.to !== '/signup' && <Btn to={a.to} full className="mt-auto">{a.cta}</Btn>}
             </article>
           ))}
         </div>
@@ -243,9 +242,6 @@ export const HomePage: React.FC = () => {
             <p className="mt-6 text-xl leading-relaxed text-white/85 max-w-xl">
               Seed one funded problem and watch physician-founders take it through each gate. Or join free and find a problem worth solving.
             </p>
-            <p className="mt-6 text-white/60">
-              Already a founder? <Link to="/signup" className="underline underline-offset-2 text-white">Create a free account</Link>.
-            </p>
           </div>
           <div className="rounded-[18px] bg-white p-6 sm:p-8">
             <InquiryForm kind="lead" initialRole={initialRole} />
@@ -264,6 +260,6 @@ const PriceCard: React.FC<{
     <p className="font-display font-bold text-[2.5rem] leading-none tracking-[-0.04em] mt-6">{price}</p>
     <p className="mt-2 text-sm text-[var(--nxt-ink-soft)]">{note}</p>
     <RuleList items={points} className="mt-6 mb-8" />
-    <Btn to={to} variant={outline ? 'outline' : 'solid'} full className="mt-auto">{cta}</Btn>
+    {to !== '/signup' && <Btn to={to} variant={outline ? 'outline' : 'solid'} full className="mt-auto">{cta}</Btn>}
   </article>
 );
