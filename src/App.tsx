@@ -286,9 +286,7 @@ function Shell({ currentUser, modals }: { currentUser: User | null; modals: Moda
               <button onClick={modals.openMembership} className="hover:text-[var(--nxt-ink)] transition-colors">
                 Membership: <span className="font-semibold text-[var(--nxt-ink)]">{currentUser.is_member ? 'Active' : currentUser.membership_status === 'requested' ? 'Requested' : 'Not active'}</span>
               </button>
-            ) : (
-              <button onClick={modals.goToLogin} className="font-semibold text-[var(--nxt-mint-strong)] hover:underline">Log in / Register</button>
-            )}
+            ) : null}
           </div>
         </div>
       </footer>

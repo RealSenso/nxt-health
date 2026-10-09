@@ -296,11 +296,7 @@ export const ProblemStatementsList: React.FC<ProblemStatementsListProps> = ({
         illustration="problems"
         actions={
           <>
-            {!currentUser ? (
-              <PillButton tone="mint" onClick={onOpenLogin} className="px-5 py-2.5 text-sm" id="btn-banner-login">
-                <Sparkles className="w-4 h-4" /> Log in to apply for grants
-              </PillButton>
-            ) : !currentUser.is_member ? (
+            {!currentUser ? null : !currentUser.is_member ? (
               <PillButton tone="mint" onClick={onOpenMembershipModal} className="px-5 py-2.5 text-sm" id="btn-banner-join">
                 <Sparkles className="w-4 h-4" /> Become a member to apply
               </PillButton>
@@ -330,19 +326,21 @@ export const ProblemStatementsList: React.FC<ProblemStatementsListProps> = ({
               </p>
               <p className="text-xs text-[var(--nxt-ink-soft)]">
                 {currentUser
-                  ? 'You are currently previewing problem statements as a visitor. Membership is required to submit funding applications and access the 21-category task management roadmaps & hospital connections.'
-                  : 'Problem statements are open to everyone. Create a free account and become a member to submit funding applications and access the 21-category task management roadmaps & hospital connections.'}
+                  ? 'You are currently previewing problem statements as a visitor. Membership is required to submit funding applications and access the step-by-step roadmaps and hospital connections.'
+                  : 'Problem statements are open to everyone. Log in from the top of the page and become a member to submit funding applications and access the step-by-step roadmaps and hospital connections.'}
               </p>
             </div>
           </div>
-          <PillButton
-            tone="mint"
-            id="btn-banner-activate-membership"
-            onClick={currentUser ? onOpenMembershipModal : onOpenLogin}
-            className="shrink-0 px-3.5 py-1.5 text-xs"
-          >
-            {currentUser ? (currentUser.membership_status === 'requested' ? 'Membership requested' : 'Request membership') : 'Log In / Register'}
-          </PillButton>
+          {currentUser && (
+            <PillButton
+              tone="mint"
+              id="btn-banner-activate-membership"
+              onClick={onOpenMembershipModal}
+              className="shrink-0 px-3.5 py-1.5 text-xs"
+            >
+              {currentUser.membership_status === 'requested' ? 'Membership requested' : 'Request membership'}
+            </PillButton>
+          )}
         </Reveal>
       )}
 
