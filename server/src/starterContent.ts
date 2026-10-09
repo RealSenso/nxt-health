@@ -17,7 +17,7 @@ export const STARTER_PROBLEMS: Doc[] = [
       'So I have a question: Can we solve this?',
       'If you are working on a solution to help women recognise what is actually happening to them and get the right help at the right time, I would genuinely be happy!',
       'I can offer (only when I am free) my perspective, ask questions, give feedback, review what you are building or simply help as a husband, son, brother and fellow human being.',
-      '— Ashwath',
+      '— Aswath',
     ].join('\n\n'),
     department: "Women's Health",
     funded: false,

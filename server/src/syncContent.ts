@@ -118,5 +118,11 @@ export async function removeObsoleteStarterContent(database: Database): Promise<
     ]);
   }
 
+  // Spelling correction for the sponsor's name on the first problem statement (starter problems are never overwritten).
+  await col('problems').updateMany(
+    { _id: 'prob-womens-psychological', description: { $regex: '— Ashwath$' } },
+    [{ $set: { description: { $replaceOne: { input: '$description', find: '— Ashwath', replacement: '— Aswath' } } } }],
+  );
+
   return { removed_categories: oldCategories.length, removed_problems: oldProblems.length };
 }
