@@ -51,13 +51,15 @@ export const RouteComparison: React.FC = () => (
   </section>
 );
 
-/** "1 in 5" shown as twenty people, one of them lit. */
+/** "1 in 5" shown as twenty-five people, five with an idea, one who starts. */
 export const OneInFive: React.FC = () => (
   <section className="nxt-container py-16 sm:py-20 border-b border-[var(--nxt-line)]">
     <div className="grid gap-10 md:grid-cols-[auto_1fr] md:gap-16 items-center">
       <div className="grid grid-cols-5 gap-3 w-fit" aria-hidden="true">
-        {Array.from({ length: 20 }).map((_, i) => {
-          const lit = i === 7 || i === 3 || i === 12 || i === 17;
+        {Array.from({ length: 25 }).map((_, i) => {
+          // 25 people, 1 in 5 with an idea (the diagonal), and one of them is the one who starts.
+          const idea = i % 6 === 0;
+          const starts = i === 12;
           return (
             <motion.span
               key={i}
@@ -65,7 +67,7 @@ export const OneInFive: React.FC = () => (
               whileInView={{ scale: 1, opacity: 1 }}
               viewport={{ once: true, margin: '-60px' }}
               transition={{ delay: i * 0.04, duration: 0.35 }}
-              className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full ${lit ? 'bg-[var(--nxt-mint-strong)]' : 'bg-[var(--nxt-line)]'}`}
+              className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full ${starts ? 'bg-[var(--nxt-mint-strong)]' : idea ? 'bg-[var(--nxt-ink-fixed)]' : 'bg-[var(--nxt-line)]'}`}
             />
           );
         })}
