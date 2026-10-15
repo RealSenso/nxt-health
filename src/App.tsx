@@ -9,6 +9,7 @@ import { ExpertsPage } from './components/public/ExpertsPage';
 import { ListedExpertPage } from './components/public/ListedExpertPage';
 import { PublicLayout } from './components/public/PublicLayout';
 import { AnnouncementBar } from './components/ui/AnnouncementBar';
+import { InAppShell } from './components/ui/shellContext';
 import { BlogListPage, BlogPostPage } from './components/public/BlogPages';
 import { GuidePage } from './components/public/GuidePage';
 import { ExpertDetailPage } from './components/public/ExpertDetailPage';
@@ -46,7 +47,9 @@ const TAB_PATHS: Record<string, string> = {
 
 function tabForPath(pathname: string): string {
   const first = pathname.split('/')[1] || 'problems';
-  return first === 'roadmaps' ? 'tasks' : first;
+  if (first === 'roadmaps') return 'tasks';
+  if (first === 'experts') return 'mentors';
+  return first;
 }
 
 function useStoreVersion(): number {
@@ -118,10 +121,7 @@ export default function App() {
         <Route path="/blog" element={<BlogListPage />} />
         <Route path="/blog/:id" element={<BlogPostPage />} />
         <Route path="/start-in-india" element={<GuidePage />} />
-        <Route path="/experts" element={<MembersOnly><ExpertsPage /></MembersOnly>} />
         <Route path="/experts/join" element={<BecomeExpertPage />} />
-        <Route path="/experts/network/:id" element={<MembersOnly><ListedExpertPage /></MembersOnly>} />
-        <Route path="/experts/:expertId" element={<MembersOnly><ExpertDetailPage /></MembersOnly>} />
         {(['login', 'signup', 'reset-password'] as const).map(path => (
           <React.Fragment key={path}><Route
             path={`/${path}`}
@@ -136,6 +136,9 @@ export default function App() {
         ))}
 
         <Route element={<Shell currentUser={currentUser} modals={modals} />}>
+          <Route path="/experts" element={<MembersOnly><ExpertsPage /></MembersOnly>} />
+          <Route path="/experts/network/:id" element={<MembersOnly><ListedExpertPage /></MembersOnly>} />
+          <Route path="/experts/:expertId" element={<MembersOnly><ExpertDetailPage /></MembersOnly>} />
           <Route path="/problems/:problemId?" element={
             <ProblemStatementsList
               currentUser={currentUser}
@@ -280,7 +283,9 @@ function Shell({ currentUser, modals }: { currentUser: User | null; modals: Moda
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
         >
-          <Outlet />
+          <InAppShell.Provider value>
+            <div className="nxt-in-shell"><Outlet /></div>
+          </InAppShell.Provider>
         </motion.div>
       </main>
 

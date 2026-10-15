@@ -4,6 +4,7 @@ import logo from '../../assets/nxt-health-logo.png';
 import { store } from '../../services/store';
 import { Btn } from './ui';
 import { AnnouncementBar } from '../ui/AnnouncementBar';
+import { useInAppShell } from '../ui/shellContext';
 
 export type PublicVariant = 'home' | 'experts' | 'join';
 
@@ -79,6 +80,9 @@ function useAnchorScroll() {
 
 export const PublicLayout: React.FC<{ variant: PublicVariant; children: React.ReactNode }> = ({ variant, children }) => {
   useAnchorScroll();
+  const inApp = useInAppShell();
+  // Inside the signed-in app the app's own navigation is already on screen.
+  if (inApp) return <>{children}</>;
   const nav = NAV[variant];
   const signedIn = store.isAuthenticated();
   // Expert pages are for members, so everyone else only sees the way to apply as an expert.

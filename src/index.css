@@ -264,3 +264,9 @@ body {
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
+/* Pages built for the public site, shown inside the signed-in app: the app's container already provides the margins. */
+.nxt-in-shell .nxt-container { max-width: none; padding-inline: 0; }
+.nxt-in-shell section.bg-black { border-radius: 1.5rem; overflow: hidden; }
+.nxt-in-shell section.bg-black > .nxt-container { padding-inline: clamp(1.25rem, 3vw, 3rem); }
+.nxt-in-shell section.bg-black + section.bg-black { border-top: 0; }
