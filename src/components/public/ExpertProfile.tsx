@@ -73,3 +73,16 @@ export const ExpertProfile: React.FC<Props> = ({ expertId, firstName, name, phot
     </div>
   );
 };
+
+export const ChoiceButton: React.FC<{ on: boolean; onClick: () => void; children: React.ReactNode }> = ({ on, onClick, children }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    aria-pressed={on}
+    className={`h-11 rounded-xl border text-[15px] transition-colors ${
+      on ? 'bg-[var(--nxt-ink-fixed)] text-white border-transparent font-semibold' : 'border-[var(--nxt-ink)]/80 hover:bg-[var(--nxt-bg-soft)]'
+    }`}
+  >
+    {children}
+  </button>
+);

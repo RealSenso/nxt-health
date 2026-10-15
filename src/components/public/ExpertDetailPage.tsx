@@ -7,7 +7,7 @@ import { store } from '../../services/store';
 import { firstName, GATES, formatRate, istDateKey, istDayLabel, istTime } from '../../data/experts';
 import { PublicLayout } from './PublicLayout';
 import { ExpertActivity, ExpertHero } from './ExpertParts';
-import { SAMPLE } from './ExpertProfile';
+import { ChoiceButton, SAMPLE } from './ExpertProfile';
 import { PayConsultationDialog } from './PayConsultationDialog';
 import { Btn, RuleList } from './ui';
 
@@ -171,8 +171,10 @@ export const ExpertDetailPage: React.FC = () => {
 
                   <p className="mt-6 text-sm text-[var(--nxt-ink-soft)]">Time, India Standard Time</p>
                   <div className="mt-2 grid grid-cols-3 gap-2.5">
-                    {times.map(s => (
-                      <ChoiceButton key={s} on={slot === s} onClick={() => setSlot(s)}>{istTime(s)}</ChoiceButton>
+                    {times.map((s, i) => (
+                      <div key={s} className={i === times.length - 1 && times.length % 3 === 1 ? 'col-span-3' : ''}>
+                        <ChoiceButton on={slot === s} onClick={() => setSlot(s)}><span className="block w-full">{istTime(s)}</span></ChoiceButton>
+                      </div>
                     ))}
                   </div>
 
@@ -204,16 +206,3 @@ export const ExpertDetailPage: React.FC = () => {
     </PublicLayout>
   );
 };
-
-const ChoiceButton: React.FC<{ on: boolean; onClick: () => void; children: React.ReactNode }> = ({ on, onClick, children }) => (
-  <button
-    type="button"
-    onClick={onClick}
-    aria-pressed={on}
-    className={`h-11 rounded-xl border text-[15px] transition-colors ${
-      on ? 'bg-[var(--nxt-mint-strong)] text-white border-[var(--nxt-mint-strong)] font-semibold' : 'border-[var(--nxt-ink)]/80 hover:bg-[var(--nxt-bg-soft)]'
-    }`}
-  >
-    {children}
-  </button>
-);
