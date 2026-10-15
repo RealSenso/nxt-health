@@ -31,5 +31,10 @@ export const istTime = (iso: string) =>
 
 export const formatRate = (usd: number) => (usd === 0 ? 'Free' : `$${usd}`);
 export const bookingMinutes = (c: Pick<Consultation, 'minutes' | 'hours'>) => c.minutes ?? (c.hours ?? 1) * 60;
+import { API_URL } from '../services/api';
+
+/** Photos uploaded to the platform are served by the API; links are used as they are. */
+export const assetUrl = (url: string) => (url.startsWith('/') ? `${API_URL}${url}` : url);
+
 export const initials = (name: string) =>
   name.replace(/^(dr|prof)\.?\s+/i, '').split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]?.toUpperCase()).join('');

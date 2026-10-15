@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Linkedin, Mail, Phone, Trash2, Upload, Users } from 'lucide-react';
 import { api } from '../../services/api';
 import { ExpertItems } from './ExpertItems';
+import { assetUrl } from '../../data/experts';
 import { store } from '../../services/store';
 import { STAGE_TAGS } from '../../data/stepGuides';
 
@@ -29,11 +30,18 @@ interface PipelineExpert {
   category_ids?: string[];
   expertise_stages?: string[];
   background?: string;
+  tagline?: string;
+  location?: string;
+  tags?: string[];
+  facts?: { title: string; text: string }[];
+  photo_source?: string;
 }
 
 const PROFILE_FIELDS: { key: keyof PipelineExpert; label: string; long?: boolean; placeholder?: string }[] = [
   { key: 'photo_url', label: 'Photo link', placeholder: 'https://…' },
   { key: 'intro_video_url', label: 'Introduction video link', placeholder: 'https://…' },
+  { key: 'tagline', label: 'Tagline (one line under the name)' },
+  { key: 'location', label: 'Location' },
   { key: 'specialisation', label: 'Specialisation' },
   { key: 'organisation', label: 'Organisation / practice' },
   { key: 'city', label: 'City' },
@@ -55,6 +63,62 @@ const ProfileForm: React.FC<{ item: PipelineExpert; onSave: (fields: Partial<Pip
           : <input defaultValue={(item[key] as string) || ''} placeholder={placeholder} onBlur={(e) => { if (e.target.value !== ((item[key] as string) || '')) onSave({ [key]: e.target.value }); }} className="mt-1 w-full rounded-lg border border-[var(--nxt-line)] bg-[var(--nxt-surface)] p-2 text-sm font-normal text-[var(--nxt-ink)]" />}
       </label>
     ))}
+
+    <label className="sm:col-span-2 block text-xs font-semibold text-[var(--nxt-ink-soft)]">
+      Areas of expertise (separate with commas)
+      <input
+        key={`tags-${item.id}`}
+        defaultValue={(item.tags || []).join(', ')}
+        onBlur={(e) => {
+          const next = e.target.value.split(',').map(t => t.trim()).filter(Boolean);
+          if (next.join('|') !== (item.tags || []).join('|')) onSave({ tags: next });
+        }}
+        className="mt-1 w-full rounded-lg border border-[var(--nxt-line)] bg-[var(--nxt-surface)] p-2 text-sm font-normal text-[var(--nxt-ink)]"
+      />
+    </label>
+
+    <div className="sm:col-span-2">
+      <p className="text-xs font-semibold text-[var(--nxt-ink-soft)] mb-1">Fast facts (label and value, up to five)</p>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {[0, 1, 2, 3, 4].map(i => {
+          const f = item.facts?.[i] || { title: '', text: '' };
+          const update = (field: 'title' | 'text', value: string) => {
+            const next = [0, 1, 2, 3, 4].map(j => (j === i ? { ...f, [field]: value } : item.facts?.[j] || { title: '', text: '' }));
+            onSave({ facts: next.filter(x => x.title || x.text) });
+          };
+          return (
+            <div key={`${item.id}-f${i}`} className="grid grid-cols-[8rem_1fr] gap-2">
+              <input defaultValue={f.title} placeholder="Label" onBlur={(e) => { if (e.target.value !== f.title) update('title', e.target.value); }} className="rounded-lg border border-[var(--nxt-line)] bg-[var(--nxt-surface)] p-2 text-sm" />
+              <input defaultValue={f.text} placeholder="Value" onBlur={(e) => { if (e.target.value !== f.text) update('text', e.target.value); }} className="rounded-lg border border-[var(--nxt-line)] bg-[var(--nxt-surface)] p-2 text-sm" />
+            </div>
+          );
+        })}
+      </div>
+    </div>
+
+    <div className="sm:col-span-2 flex flex-wrap items-center gap-3">
+      {item.photo_url && <img src={assetUrl(item.photo_url)} alt="" className="w-16 h-20 rounded-lg object-cover" />}
+      <label className="inline-flex items-center gap-1.5 rounded-full border border-[var(--nxt-line)] px-3 py-1.5 text-xs font-semibold cursor-pointer hover:bg-[var(--nxt-surface)]">
+        Upload photo
+        <input
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          className="hidden"
+          onChange={async (e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            try {
+              const { photo_url } = await api.upload<{ photo_url: string }>(`/admin/expert-pipeline/${item.id}/photo`, file);
+              onSave({ photo_url });
+            } catch (err) {
+              window.alert(err instanceof Error ? err.message : 'Could not upload that photo.');
+            }
+          }}
+        />
+      </label>
+      {item.photo_source && <a href={item.photo_source} target="_blank" rel="noreferrer" className="text-xs font-semibold underline">Open the photo in Drive</a>}
+      <span className="text-xs text-[var(--nxt-ink-soft)]">JPEG, PNG or WebP, up to 2 MB.</span>
+    </div>
 
     <div className="sm:col-span-2">
       <p className="text-xs font-semibold text-[var(--nxt-ink-soft)] mb-1">Three things to know (shown under the video)</p>
@@ -163,8 +227,13 @@ export const AdminExperts: React.FC = () => {
     setMessage(null);
     try {
       const data = JSON.parse(await file.text());
-      const result = await api.post<{ added: number; total: number }>('/admin/expert-pipeline/import', data);
-      setMessage({ ok: true, text: `${result.added} added, ${result.total - result.added} already there.` });
+      if (Array.isArray(data.profiles)) {
+        const result = await api.post<{ added: number; updated: number }>('/admin/expert-pipeline/profiles', data);
+        setMessage({ ok: true, text: `${result.added} added, ${result.updated} completed. They are now in the expert list.` });
+      } else {
+        const result = await api.post<{ added: number; total: number }>('/admin/expert-pipeline/import', data);
+        setMessage({ ok: true, text: `${result.added} added, ${result.total - result.added} already there.` });
+      }
       await load();
     } catch (e) {
       setMessage({ ok: false, text: e instanceof SyntaxError ? "That file isn't valid JSON." : e instanceof Error ? e.message : 'Could not import that file.' });

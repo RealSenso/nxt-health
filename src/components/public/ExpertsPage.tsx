@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { CheckCircle2, Search } from 'lucide-react';
 import type { ListedExpert, PublicExpert } from '../../types';
 import { api } from '../../services/api';
-import { EXPERT_AREAS, formatRate, initials } from '../../data/experts';
+import { assetUrl, EXPERT_AREAS, formatRate, initials } from '../../data/experts';
 import { ListedExperts } from '../ui/ListedExperts';
 import { PublicLayout } from './PublicLayout';
 import { Btn, Eyebrow, H1, H2, Step } from './ui';
@@ -11,7 +11,7 @@ import { Btn, Eyebrow, H1, H2, Step } from './ui';
 /** Photo or, when there isn't one, the expert's initials on a grey tile. */
 export const ExpertPhoto: React.FC<{ expert: Pick<PublicExpert, 'name' | 'photo_url'>; className?: string }> = ({ expert, className = '' }) => (
   expert.photo_url
-    ? <img src={expert.photo_url} alt={expert.name} className={`object-cover ${className}`} loading="lazy" />
+    ? <img src={assetUrl(expert.photo_url)} alt={expert.name} className={`object-cover ${className}`} loading="lazy" />
     : <div className={`flex items-center justify-center bg-[var(--nxt-bg-soft)] text-[var(--nxt-ink-soft)] font-display font-bold tracking-wide ${className}`} aria-hidden="true">{initials(expert.name)}</div>
 );
 

@@ -374,6 +374,10 @@ export interface ListedExpertProfile extends ListedExpert {
   photo_url: string;
   intro_video_url: string;
   highlights: { title: string; text: string }[];
+  tagline: string;
+  location: string;
+  tags: string[];
+  facts: { title: string; text: string }[];
   bio: string;
   specialisation: string;
   organisation: string;

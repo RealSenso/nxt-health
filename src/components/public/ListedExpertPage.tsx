@@ -7,7 +7,6 @@ import { ExpertActivity, ExpertHero, ExpertStory } from './ExpertParts';
 import { Btn } from './ui';
 
 const FACTS: [keyof ListedExpertProfile, string][] = [
-  ['specialisation', 'Specialisation'],
   ['organisation', 'Organisation'],
   ['city', 'Based in'],
   ['years_experience', 'Experience'],
@@ -49,7 +48,7 @@ export const ListedExpertPage: React.FC = () => {
   const facts = expert ? FACTS.filter(([key]) => expert[key]) : [];
   const first = expert ? expert.name.split(' ')[0] : '';
   const highlights = expert
-    ? (expert.highlights.length ? expert.highlights : [
+    ? (expert.highlights.length ? expert.highlights : expert.facts.length ? expert.facts : [
         expert.specialisation && { title: 'Specialisation', text: expert.specialisation },
         expert.organisation && { title: 'Organisation', text: expert.organisation },
         expert.years_experience && { title: 'Experience', text: expert.years_experience },
@@ -66,7 +65,9 @@ export const ListedExpertPage: React.FC = () => {
           <ExpertHero
             name={expert.name}
             title={expert.title}
-            eyebrow="NXT expert network"
+            tagline={expert.tagline}
+            location={expert.location}
+            eyebrow={expert.specialisation ? `NXT expert network · ${expert.specialisation}` : 'NXT expert network'}
             photoUrl={expert.photo_url}
             videoUrl={expert.intro_video_url}
             linkedin={expert.linkedin}
@@ -80,6 +81,27 @@ export const ListedExpertPage: React.FC = () => {
           />
           <div className="nxt-container pt-14 pb-24 grid gap-12 lg:grid-cols-[1fr_24rem] lg:gap-20 items-start">
             <div>
+              {expert.tags.length > 0 && (
+                <div className="mb-10">
+                  <h2 className="font-display font-bold text-xl tracking-[-0.02em]">Areas of expertise</h2>
+                  <ul className="mt-4 flex flex-wrap gap-2">
+                    {expert.tags.map(t => <li key={t} className="rounded-full border border-[var(--nxt-line)] px-3.5 py-1.5 text-[14px]">{t}</li>)}
+                  </ul>
+                </div>
+              )}
+              {expert.facts.length > 0 && (
+                <div className="mb-10">
+                  <h2 className="font-display font-bold text-xl tracking-[-0.02em]">Fast facts</h2>
+                  <dl className="mt-4 max-w-2xl divide-y divide-[var(--nxt-line)] border-y border-[var(--nxt-line)]">
+                    {expert.facts.map((f, i) => (
+                      <div key={i} className="grid sm:grid-cols-[11rem_1fr] gap-1 sm:gap-6 py-3.5">
+                        <dt className="text-sm uppercase tracking-wider text-[var(--nxt-ink-soft)]">{f.title}</dt>
+                        <dd className="text-[16px]">{f.text}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
+              )}
               {facts.length > 0 && (
                 <dl className="max-w-2xl divide-y divide-[var(--nxt-line)] border-y border-[var(--nxt-line)]">
                   {facts.map(([key, label]) => (

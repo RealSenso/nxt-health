@@ -361,6 +361,42 @@ describe('archiving and deleting members', () => {
   });
 });
 
+describe('expert profiles from the new-platform sheet', () => {
+  const jpeg = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(32, 2)]);
+  it('adds or completes profiles without overwriting edits, shows them to members, and serves uploaded photos', async () => {
+    await admin('boss');
+    await member('founder');
+    const profile = {
+      name: 'Dr. Geeta Nayyar, MD, MBA', title: 'Chief Medical Officer', tagline: 'Board Director', location: 'Miami', specialisation: 'AI in Healthcare',
+      linkedin: 'https://www.linkedin.com/in/drgnayyar/', tags: ['Governance', 'AI'], bio: 'Physician-executive.', facts: [{ title: 'Experience', text: '15+ Years' }],
+      photo_source: 'https://drive.google.com/file/d/abc/view',
+    };
+    await request(app).post('/api/admin/expert-pipeline/profiles').set('Authorization', token('founder')).send({ profiles: [profile] }).expect(403);
+
+    // Someone already on the list, with an edited role, is matched by name and only completed.
+    await request(app).post('/api/admin/expert-pipeline/import').set('Authorization', token('boss')).send({ experts: [{ id: 'exp-geeta-nayyar', name: 'Geeta Nayyar', title: 'My edit', email: 'g@example.org', phone: '', linkedin: '', fit: 'Strong', stage: 'outreach' }] }).expect(201);
+    const res = await request(app).post('/api/admin/expert-pipeline/profiles').set('Authorization', token('boss')).send({ profiles: [profile, { ...profile, name: 'New Person', title: 'Founder' }] }).expect(201);
+    expect(res.body).toMatchObject({ added: 1, updated: 1 });
+
+    const list = (await request(app).get('/api/admin/expert-pipeline').set('Authorization', token('boss')).expect(200)).body.experts;
+    const geeta = list.find((e: { id: string }) => e.id === 'exp-geeta-nayyar');
+    expect(geeta).toMatchObject({ title: 'My edit', tagline: 'Board Director', location: 'Miami', listed: true, email: 'g@example.org' });
+    expect(list).toHaveLength(2);
+
+    const page = await request(app).get('/api/public/listed-experts/exp-geeta-nayyar').set('Authorization', token('founder')).expect(200);
+    expect(page.body.expert).toMatchObject({ tagline: 'Board Director', tags: ['Governance', 'AI'], facts: [{ title: 'Experience', text: '15+ Years' }] });
+    expect(JSON.stringify(page.body)).not.toContain('g@example.org');
+
+    await request(app).put('/api/admin/expert-pipeline/exp-geeta-nayyar/photo').set('Authorization', token('founder')).set('Content-Type', 'image/jpeg').send(jpeg).expect(403);
+    const up = await request(app).put('/api/admin/expert-pipeline/exp-geeta-nayyar/photo').set('Authorization', token('boss')).set('Content-Type', 'image/jpeg').send(jpeg).expect(200);
+    expect(up.body.photo_url).toMatch(/^\/api\/public\/expert-photos\/exp-geeta-nayyar\?v=/);
+    const img = await request(app).get('/api/public/expert-photos/exp-geeta-nayyar').expect(200);
+    expect(img.headers['content-type']).toBe('image/jpeg');
+    expect(JSON.stringify((await request(app).get('/api/admin/expert-pipeline').set('Authorization', token('boss')).expect(200)).body)).not.toContain('"photo":');
+    await request(app).get('/api/public/expert-photos/nobody').expect(404);
+  });
+});
+
 describe('events', () => {
   it('enforces RSVP capacity under concurrent requests', async () => {
     await Promise.all(['u1', 'u2', 'u3', 'u4'].map(member));

@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Linkedin } from 'lucide-react';
 import type { ListedExpert } from '../../types';
-import { initials } from '../../data/experts';
+import { assetUrl, initials } from '../../data/experts';
 
 /** Onboarded experts who can't be booked on the platform yet: name, role and LinkedIn. */
 export const ListedExperts: React.FC<{ experts: ListedExpert[]; reasons?: Record<string, string[]>; title?: string; hint?: string; className?: string }> = ({
@@ -17,7 +17,7 @@ export const ListedExperts: React.FC<{ experts: ListedExpert[]; reasons?: Record
         {experts.map(x => (
           <li key={x.id} className="flex items-start gap-4 rounded-2xl border border-[var(--nxt-line)] bg-[var(--nxt-surface)] p-5">
             {x.photo_url
-              ? <img src={x.photo_url} alt="" className="w-12 h-12 shrink-0 rounded-xl object-cover" loading="lazy" />
+              ? <img src={assetUrl(x.photo_url)} alt="" className="w-12 h-12 shrink-0 rounded-xl object-cover" loading="lazy" />
               : <div className="w-12 h-12 shrink-0 rounded-xl bg-[var(--nxt-bg-soft)] text-[var(--nxt-ink-soft)] font-display font-bold flex items-center justify-center" aria-hidden="true">{initials(x.name)}</div>}
             <div className="min-w-0">
               <Link to={`/experts/network/${x.id}`} className="font-semibold text-[var(--nxt-ink)] hover:underline">{x.name}</Link>

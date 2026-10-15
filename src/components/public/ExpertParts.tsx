@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { ChevronLeft, ExternalLink, Linkedin, Play } from 'lucide-react';
 import type { ExpertItem, ExpertItemKind } from '../../types';
 import { api } from '../../services/api';
-import { initials } from '../../data/experts';
+import { assetUrl, initials } from '../../data/experts';
 
 /** A neutral stand-in portrait for experts who have not added a photo yet: a soft studio backdrop and a silhouette. */
 export function placeholderPortrait(name: string): string {
@@ -21,21 +21,26 @@ interface HeroProps {
   linkedin?: string;
   highlights: { title: string; text: string }[];
   backTo: string;
+  /** A short line shown above the role, and where they are based. */
+  tagline?: string;
+  location?: string;
 }
 
 /** The dark opening of an expert's page: portrait, name, role, an introduction video and three things to know. */
-export const ExpertHero: React.FC<HeroProps> = ({ name, title, eyebrow, photoUrl, videoUrl, linkedin, highlights, backTo }) => {
+export const ExpertHero: React.FC<HeroProps> = ({ name, title, eyebrow, photoUrl, videoUrl, linkedin, highlights, backTo, tagline, location }) => {
   const first = name.split(' ')[0];
   return (
     <section className="bg-black text-white">
       <div className="nxt-container pt-8 pb-16 sm:pb-20">
         <Link to={backTo} className="inline-flex items-center gap-1 text-[15px] text-white/70 hover:text-white"><ChevronLeft className="w-4 h-4" /> All experts</Link>
         <div className="mt-10 grid gap-10 lg:grid-cols-[22rem_1fr] lg:gap-20 items-start">
-          <img src={photoUrl || placeholderPortrait(name)} alt={name} className="w-full max-w-[22rem] aspect-[4/5] rounded-[8px] object-cover object-top bg-[#111]" />
+          <img src={photoUrl ? assetUrl(photoUrl) : placeholderPortrait(name)} alt={name} className="w-full max-w-[22rem] aspect-[4/5] rounded-[8px] object-cover object-top bg-[#111]" />
           <div>
             <p className="text-[12px] sm:text-[13px] uppercase tracking-[0.14em] text-white/60">{eyebrow}</p>
             <h1 className="font-display font-bold text-[clamp(2.5rem,5.2vw,4.25rem)] leading-[1.02] tracking-[-0.04em] mt-4">{name}</h1>
-            {title && <p className="mt-3 text-xl text-white/85 max-w-2xl">{title}</p>}
+            {tagline && <p className="mt-3 text-xl font-semibold text-white">{tagline}</p>}
+            {title && <p className={`${tagline ? 'mt-1.5 text-lg' : 'mt-3 text-xl'} text-white/80 max-w-2xl`}>{title}</p>}
+            {location && <p className="mt-2 text-[15px] text-white/60">{location}</p>}
             {linkedin && (
               <a href={linkedin} target="_blank" rel="noreferrer" className="mt-4 inline-flex items-center gap-1.5 text-[15px] font-semibold underline underline-offset-2">
                 <Linkedin className="w-4 h-4" /> LinkedIn
