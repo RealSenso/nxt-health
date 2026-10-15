@@ -59,8 +59,10 @@ export const TaskManagementPage: React.FC<TaskManagementPageProps> = ({
   const isMember = !!currentUser?.is_member;
   // Free accounts can work on the free guide project only; members can work on any problem.
   const pickableProblems = isMember ? allProblems : allProblems.filter(p => p.guide);
-  const workingProblems = pickableProblems.filter(p => workingProblemIds.includes(p.id));
-  const unselectedProblems = pickableProblems.filter(p => !workingProblemIds.includes(p.id));
+  // The free guide is on everyone's list from the start, ahead of the problems they pick themselves.
+  const ownProblems = pickableProblems.filter(p => !p.guide && workingProblemIds.includes(p.id));
+  const workingProblems = guideProject ? [guideProject, ...ownProblems] : ownProblems;
+  const unselectedProblems = pickableProblems.filter(p => !p.guide && !workingProblemIds.includes(p.id));
 
   const appliedProblemIds = new Set(
     currentUser
@@ -149,6 +151,7 @@ export const TaskManagementPage: React.FC<TaskManagementPageProps> = ({
   };
 
   const handleRemoveProblem = (problemId: string) => {
+    if (problemId === guideProject?.id) return; // the free guide always stays on the list
     store.removeWorkingProblem(scopeKey, problemId);
     if (problemId === selectedProblemId) goTo(null);
   };
@@ -219,18 +222,19 @@ export const TaskManagementPage: React.FC<TaskManagementPageProps> = ({
           )}
         />
 
-        {workingProblems.length === 0 ? (
+        {ownProblems.length === 0 && isMember && (
           <div className="space-y-5">
             <Reveal className="bg-[var(--nxt-blue)] border border-[var(--nxt-blue-strong)]/20 rounded-2xl p-4 text-sm text-[var(--nxt-blue-deep)] font-medium flex items-center gap-2.5">
               <AlertCircle className="w-5 h-5 shrink-0" />
               <span>You haven't picked a problem yet — choose one below to start your first project.</span>
             </Reveal>
-            <ProblemPickerGrid problems={pickableProblems} onPick={handleAddProblem} appliedIds={appliedProblemIds} savedIds={savedProblemIds} />
           </div>
-        ) : (
+        )}
+
+        {workingProblems.length > 0 && (
           <RevealGroup className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8" stagger={0.05}>
             {workingProblems.map(problem => {
-              const lockedId = store.getLockedCategoryId(scopeKey, problem.id);
+              const lockedId = store.getLockedCategoryId(scopeKey, problem.id) || (problem.guide ? guideCategory?.id ?? null : null);
               const lockedCategory = allCategories.find(c => c.id === lockedId) || null;
               const lockedSteps = lockedId ? store.getSteps(lockedId) : [];
               const lockedProgress = lockedId ? store.getUserProgress(scopeKey, lockedId) : {};
@@ -302,6 +306,10 @@ export const TaskManagementPage: React.FC<TaskManagementPageProps> = ({
               );
             })}
           </RevealGroup>
+        )}
+
+        {ownProblems.length === 0 && isMember && (
+          <ProblemPickerGrid problems={unselectedProblems} onPick={handleAddProblem} appliedIds={appliedProblemIds} savedIds={savedProblemIds} />
         )}
 
         <AnimatePresence>
