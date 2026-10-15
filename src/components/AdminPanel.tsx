@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import {
@@ -19,6 +19,11 @@ import { BusinessAnalytics } from './admin/BusinessAnalytics';
 import { AdminMembers } from './admin/AdminMembers';
 import { AdminInquiries } from './admin/AdminInquiries';
 import { AdminExperts } from './admin/AdminExperts';
+import { AdminNav, type AdminTab } from './admin/AdminNav';
+import { AdminOverview } from './admin/AdminOverview';
+import { AdminBlogs } from './admin/AdminBlogs';
+import { AdminStartups } from './admin/AdminStartups';
+import { AdminSite } from './admin/AdminSite';
 import { DiscussButton } from './ui/DiscussButton';
 
 interface AdminPanelProps {
@@ -26,19 +31,25 @@ interface AdminPanelProps {
 }
 
 const TAB_TO_SECTION: Record<AdminTab, string> = {
-  applications: 'funding', problems: 'problems', categories: 'categories', steps: 'steps',
-  resources: 'resources', submissions: 'evidence', users: 'members', analytics: 'analytics', inquiries: 'inquiries', experts: 'experts',
+  overview: 'overview', applications: 'funding', problems: 'problems', categories: 'categories', steps: 'steps',
+  resources: 'resources', submissions: 'evidence', users: 'members', analytics: 'analytics', inquiries: 'inquiries',
+  experts: 'experts', blogs: 'blogs', startups: 'startups', site: 'site',
 };
 const SECTION_TO_TAB = Object.fromEntries(Object.entries(TAB_TO_SECTION).map(([tab, section]) => [section, tab])) as Record<string, AdminTab>;
-
-type AdminTab = 'applications' | 'problems' | 'categories' | 'steps' | 'resources' | 'users' | 'analytics' | 'submissions' | 'inquiries' | 'experts';
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser }) => {
   const navigate = useNavigate();
   const { section } = useParams<{ section?: string }>();
-  const adminTab: AdminTab = (section && SECTION_TO_TAB[section]) || 'applications';
+  const adminTab: AdminTab = (section && SECTION_TO_TAB[section]) || 'overview';
   const setAdminTab = (tab: AdminTab) => navigate(`/admin/${TAB_TO_SECTION[tab]}`);
-  const [showSectionMenu, setShowSectionMenu] = useState(false);
+  const [newInquiries, setNewInquiries] = useState(0);
+  useEffect(() => {
+    let alive = true;
+    api.get<{ inquiries: { status: string }[] }>('/admin/inquiries')
+      .then(r => { if (alive) setNewInquiries(r.inquiries.filter(i => i.status === 'new').length); })
+      .catch(() => undefined);
+    return () => { alive = false; };
+  }, [adminTab]);
   const [resetSuccess, setResetSuccess] = useState(false);
   const [loadingStarter, setLoadingStarter] = useState(false);
 
@@ -258,18 +269,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser }) => {
     submissionFilter === 'all' ? true : s.status === submissionFilter
   );
 
-  const ADMIN_SECTIONS: { id: AdminTab; label: string; icon: React.ElementType }[] = [
-    { id: 'applications', label: `Funding Queue (${applications.filter(a => a.status === 'Pending').length} Pending)`, icon: FileText },
-    { id: 'problems', label: `Problem Statements (${problems.length})`, icon: ListFilter },
-    { id: 'categories', label: `Categories (${categories.length} Configurable)`, icon: FolderPlus },
-    { id: 'steps', label: 'Category Steps & Roadmaps', icon: Layers },
-    { id: 'resources', label: 'Step Resources & Hospital Hub', icon: Hospital },
-    { id: 'submissions', label: `Step Submissions (${allSubmissions.filter(s => s.status === 'Submitted').length} Pending)`, icon: Paperclip },
-    { id: 'users', label: `Members (${allUsers.filter(u => u.membership_status === 'requested').length} requests)`, icon: Users },
-    { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-    { id: 'inquiries', label: 'Enquiries', icon: Inbox },
-    { id: 'experts', label: 'Experts', icon: Users },
-  ];
+  const navCounts = {
+    applications: applications.filter(a => a.status === 'Pending').length,
+    submissions: allSubmissions.filter(s => s.status === 'Submitted').length,
+    users: allUsers.filter(u => u.membership_status === 'requested').length,
+    inquiries: newInquiries,
+    blogs: store.getBlogs().filter(b => b.status === 'draft').length,
+  };
 
   return (
     <div className="space-y-6">
@@ -304,65 +310,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser }) => {
         </div>
       )}
 
-      <div className="relative inline-block">
-        <button
-          id="btn-admin-section-switcher"
-          onClick={() => setShowSectionMenu(!showSectionMenu)}
-          className="flex items-center gap-2 px-4 py-2.5 bg-[var(--nxt-surface)] border border-[var(--nxt-line)] rounded-2xl shadow-sm hover:border-[var(--nxt-mint-strong)]/40 transition-colors"
-        >
-          {(() => {
-            const current = ADMIN_SECTIONS.find(s => s.id === adminTab) || ADMIN_SECTIONS[0];
-            const Icon = current.icon;
-            return (
-              <>
-                <span className="p-1 rounded-lg bg-[var(--nxt-mint)] text-[var(--nxt-mint-strong)]">
-                  <Icon className="w-3.5 h-3.5" />
-                </span>
-                <span className="text-xs sm:text-sm font-bold text-[var(--nxt-ink)]">{current.label}</span>
-              </>
-            );
-          })()}
-          <ChevronDown className={`w-3.5 h-3.5 text-[var(--nxt-ink-soft)] transition-transform ${showSectionMenu ? 'rotate-180' : ''}`} />
-        </button>
-
-        <AnimatePresence>
-          {showSectionMenu && (
-            <>
-              <div className="fixed inset-0 z-40" onClick={() => setShowSectionMenu(false)} />
-              <motion.div
-                initial={{ opacity: 0, y: -8, scale: 0.97 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -8, scale: 0.97 }}
-                transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
-                className="absolute left-0 mt-2 w-80 bg-[var(--nxt-surface)] rounded-2xl shadow-lg border border-[var(--nxt-line)] py-2 z-50"
-              >
-                <p className="px-3 pt-1 pb-2 text-xs font-bold uppercase tracking-widest text-[var(--nxt-ink-soft)]">
-                  Editing
-                </p>
-                {ADMIN_SECTIONS.map(section => {
-                  const isActive = adminTab === section.id;
-                  return (
-                    <button
-                      key={section.id}
-                      id={`admin-section-${section.id}`}
-                      onClick={() => { setAdminTab(section.id); setShowSectionMenu(false); }}
-                      className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm transition-colors ${
-                        isActive
-                          ? 'bg-[var(--nxt-mint)]/50 text-[var(--nxt-mint-deep)] font-bold'
-                          : 'text-[var(--nxt-ink-soft)] hover:bg-[var(--nxt-bg-soft)] hover:text-[var(--nxt-ink)]'
-                      }`}
-                    >
-                      <section.icon className="w-4 h-4 shrink-0" />
-                      <span className="flex-1 text-left">{section.label}</span>
-                      {isActive && <Check className="w-3.5 h-3.5 text-[var(--nxt-mint-strong)]" />}
-                    </button>
-                  );
-                })}
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
-      </div>
+      <div className="grid gap-6 lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-8 items-start">
+      <AdminNav active={adminTab} counts={navCounts} onSelect={setAdminTab} />
+      <div className="min-w-0 space-y-6">
+      {adminTab === 'overview' && <AdminOverview counts={navCounts} onNavigate={setAdminTab} />}
+      {adminTab === 'blogs' && <AdminBlogs />}
+      {adminTab === 'startups' && <AdminStartups />}
+      {adminTab === 'site' && <AdminSite />}
 
       {adminTab === 'applications' && (
         <div className="space-y-4">
@@ -1508,6 +1462,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser }) => {
       )}
 
       {adminTab === 'analytics' && <AnalyticsTab />}
+      </div>
+      </div>
     </div>
   );
 };

@@ -30,6 +30,10 @@ const expertSchema = z.object({
   how_to_help: text(2000).optional(),
   intro_video_url: z.string().trim().max(500).refine(u => /^https:\/\/[^\s]+$/i.test(u), 'must be an https:// link').or(z.literal('')).optional(),
   highlights: z.array(z.object({ title: text(80), text: text(200) })).max(4).optional(),
+  // What the expert knows, so founders can be matched to them.
+  category_ids: z.array(text(120)).max(30).optional(),
+  expertise_stages: z.array(text(60)).max(20).optional(),
+  background: z.enum(['clinical', 'engineering', 'science', 'business', 'other', '']).optional(),
 }).strict();
 
 /** The onboarded experts an admin has chosen to show: name, role and LinkedIn only — never contact details. */
@@ -41,6 +45,10 @@ export async function listedExperts(database: Database) {
     title: (d.title as string) || '',
     linkedin: /^https:\/\//i.test((d.linkedin as string) || '') ? (d.linkedin as string) : '',
     photo_url: (d.photo_url as string) || '',
+    specialisation: (d.specialisation as string) || '',
+    category_ids: (d.category_ids as string[]) || [],
+    expertise_stages: (d.expertise_stages as string[]) || [],
+    background: (d.background as string) || '',
   }));
 }
 
@@ -92,6 +100,16 @@ export function expertPipelineRouter(database: Database): Router {
       if (result.upsertedCount) added++;
     }
     res.status(201).json({ ok: true, added, total: experts.length });
+  });
+
+  /** Adds one person by hand. */
+  r.post('/admin/expert-pipeline', async (req, res) => {
+    requireAdmin(req);
+    const body = parse(expertSchema.omit({ id: true }), req.body);
+    const slug = body.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'expert';
+    const id = `exp-${slug}-${Date.now().toString(36)}`;
+    await pipeline.insertOne({ _id: id, ...body });
+    res.status(201).json({ expert: out(await pipeline.findOne({ _id: id })) });
   });
 
   r.patch('/admin/expert-pipeline/:id', async (req, res) => {

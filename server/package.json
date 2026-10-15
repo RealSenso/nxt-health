@@ -9,8 +9,7 @@
     "start": "node dist/index.js",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "make-admin": "tsx src/scripts/makeAdmin.ts",
-    "seed-demo": "tsx scripts/seedDemo.ts"
+    "make-admin": "tsx src/scripts/makeAdmin.ts"
   },
   "engines": {
     "node": ">=20"

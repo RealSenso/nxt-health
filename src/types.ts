@@ -348,6 +348,10 @@ export interface ListedExpert {
   title: string;
   linkedin: string;
   photo_url?: string;
+  specialisation?: string;
+  category_ids?: string[];
+  expertise_stages?: string[];
+  background?: FounderBackground | '';
 }
 
 /** The full public profile of a listed expert. */

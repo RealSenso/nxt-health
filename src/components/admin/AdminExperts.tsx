@@ -1,6 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Linkedin, Mail, Phone, Trash2, Upload, Users } from 'lucide-react';
 import { api } from '../../services/api';
+import { ExpertItems } from './ExpertItems';
+import { store } from '../../services/store';
+import { STAGE_TAGS } from '../../data/stepGuides';
 
 interface PipelineExpert {
   id: string;
@@ -21,10 +24,16 @@ interface PipelineExpert {
   credentials?: string;
   languages?: string;
   how_to_help?: string;
+  intro_video_url?: string;
+  highlights?: { title: string; text: string }[];
+  category_ids?: string[];
+  expertise_stages?: string[];
+  background?: string;
 }
 
 const PROFILE_FIELDS: { key: keyof PipelineExpert; label: string; long?: boolean; placeholder?: string }[] = [
   { key: 'photo_url', label: 'Photo link', placeholder: 'https://…' },
+  { key: 'intro_video_url', label: 'Introduction video link', placeholder: 'https://…' },
   { key: 'specialisation', label: 'Specialisation' },
   { key: 'organisation', label: 'Organisation / practice' },
   { key: 'city', label: 'City' },
@@ -46,6 +55,67 @@ const ProfileForm: React.FC<{ item: PipelineExpert; onSave: (fields: Partial<Pip
           : <input defaultValue={(item[key] as string) || ''} placeholder={placeholder} onBlur={(e) => { if (e.target.value !== ((item[key] as string) || '')) onSave({ [key]: e.target.value }); }} className="mt-1 w-full rounded-lg border border-[var(--nxt-line)] bg-[var(--nxt-surface)] p-2 text-sm font-normal text-[var(--nxt-ink)]" />}
       </label>
     ))}
+
+    <div className="sm:col-span-2">
+      <p className="text-xs font-semibold text-[var(--nxt-ink-soft)] mb-1">Three things to know (shown under the video)</p>
+      <div className="grid gap-2 sm:grid-cols-3">
+        {[0, 1, 2].map(i => {
+          const h = item.highlights?.[i] || { title: '', text: '' };
+          const update = (field: 'title' | 'text', value: string) => {
+            const next = [0, 1, 2].map(j => (j === i ? { ...h, [field]: value } : item.highlights?.[j] || { title: '', text: '' }));
+            onSave({ highlights: next.filter(x => x.title || x.text) });
+          };
+          return (
+            <div key={`${item.id}-${i}`} className="space-y-1.5">
+              <input defaultValue={h.title} placeholder="Short title" onBlur={(e) => { if (e.target.value !== h.title) update('title', e.target.value); }} className="w-full rounded-lg border border-[var(--nxt-line)] bg-[var(--nxt-surface)] p-2 text-sm" />
+              <textarea rows={2} defaultValue={h.text} placeholder="One sentence" onBlur={(e) => { if (e.target.value !== h.text) update('text', e.target.value); }} className="w-full rounded-lg border border-[var(--nxt-line)] bg-[var(--nxt-surface)] p-2 text-sm" />
+            </div>
+          );
+        })}
+      </div>
+    </div>
+
+    <div className="sm:col-span-2 grid gap-4 sm:grid-cols-2">
+      <div>
+        <p className="text-xs font-semibold text-[var(--nxt-ink-soft)] mb-1">Matching: categories this expert knows</p>
+        <div className="flex flex-wrap gap-1.5">
+          {store.getCategories().filter(c => !c.coming_soon).map(c => {
+            const on = (item.category_ids || []).includes(c.id);
+            return (
+              <button key={c.id} type="button" aria-pressed={on}
+                onClick={() => onSave({ category_ids: on ? (item.category_ids || []).filter(x => x !== c.id) : [...(item.category_ids || []), c.id] })}
+                className={`rounded-full border px-3 py-1 text-xs font-semibold ${on ? 'bg-[var(--nxt-ink-fixed)] text-white border-transparent' : 'border-[var(--nxt-line)] text-[var(--nxt-ink-soft)]'}`}>{c.name}</button>
+            );
+          })}
+        </div>
+      </div>
+      <div>
+        <p className="text-xs font-semibold text-[var(--nxt-ink-soft)] mb-1">Matching: stages they help with</p>
+        <div className="flex flex-wrap gap-1.5">
+          {STAGE_TAGS.map(tag => {
+            const on = (item.expertise_stages || []).includes(tag);
+            return (
+              <button key={tag} type="button" aria-pressed={on}
+                onClick={() => onSave({ expertise_stages: on ? (item.expertise_stages || []).filter(x => x !== tag) : [...(item.expertise_stages || []), tag] })}
+                className={`rounded-full border px-3 py-1 text-xs font-semibold ${on ? 'bg-[var(--nxt-ink-fixed)] text-white border-transparent' : 'border-[var(--nxt-line)] text-[var(--nxt-ink-soft)]'}`}>{tag}</button>
+            );
+          })}
+        </div>
+        <label className="mt-3 block text-xs font-semibold text-[var(--nxt-ink-soft)]">
+          Background
+          <select value={item.background || ''} onChange={(e) => onSave({ background: e.target.value })} className="mt-1 w-full rounded-lg border border-[var(--nxt-line)] bg-[var(--nxt-surface)] p-2 text-sm font-normal text-[var(--nxt-ink)]">
+            <option value="">Not set</option>
+            <option value="clinical">Clinical</option>
+            <option value="engineering">Engineering</option>
+            <option value="science">Science</option>
+            <option value="business">Business</option>
+            <option value="other">Other</option>
+          </select>
+        </label>
+      </div>
+    </div>
+
+    <ExpertItems expertId={item.id} />
   </div>
 );
 
@@ -59,6 +129,23 @@ export const AdminExperts: React.FC = () => {
   const [stage, setStage] = useState<'all' | PipelineExpert['stage']>('all');
   const [query, setQuery] = useState('');
   const [editing, setEditing] = useState('');
+  const [adding, setAdding] = useState(false);
+  const [newExpert, setNewExpert] = useState({ name: '', title: '', email: '', phone: '', linkedin: '', fit: '' as PipelineExpert['fit'], stage: 'onboarding' as PipelineExpert['stage'] });
+  const [addError, setAddError] = useState('');
+
+  const addExpert = async () => {
+    if (!newExpert.name.trim()) { setAddError('Add a name.'); return; }
+    try {
+      const { expert } = await api.post<{ expert: PipelineExpert }>('/admin/expert-pipeline', { ...newExpert, name: newExpert.name.trim() });
+      setItems(list => [...(list || []), expert]);
+      setAdding(false);
+      setNewExpert({ name: '', title: '', email: '', phone: '', linkedin: '', fit: '', stage: 'onboarding' });
+      setAddError('');
+      setEditing(expert.id);
+    } catch (e) {
+      setAddError(e instanceof Error ? e.message : 'Could not add.');
+    }
+  };
   const fileRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
@@ -110,7 +197,10 @@ export const AdminExperts: React.FC = () => {
             The experts NXT is talking to. This list is private to admins. Tick "In expert list" to show someone's name, role and LinkedIn to founders and visitors. They are bookable in the directory only once you make them a mentor (Members) and fill in their profile.
           </p>
         </div>
-        <div>
+        <div className="flex flex-wrap items-center gap-2">
+          <button onClick={() => { setAdding(!adding); setAddError(''); }} className="inline-flex items-center gap-2 rounded-full bg-[var(--nxt-ink-fixed)] text-white px-4 py-2 text-sm font-semibold">
+            + Add an expert
+          </button>
           <input ref={fileRef} type="file" accept="application/json,.json" className="hidden" id="input-import-experts" onChange={(e) => void importFile(e.target.files?.[0])} />
           <button onClick={() => fileRef.current?.click()} className="inline-flex items-center gap-2 rounded-full border border-[var(--nxt-ink)] px-4 py-2 text-sm font-semibold hover:bg-[var(--nxt-bg-soft)]">
             <Upload className="w-4 h-4" /> Import experts file
@@ -118,6 +208,22 @@ export const AdminExperts: React.FC = () => {
         </div>
       </div>
       {message && <p className={`mt-3 text-sm font-semibold ${message.ok ? '' : 'text-[var(--nxt-peach-deep)]'}`} role="status">{message.text}</p>}
+
+      {adding && (
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 rounded-2xl bg-[var(--nxt-bg-soft)] p-4">
+          {([['name', 'Name'], ['title', 'Role and organisation'], ['email', 'Email (private)'], ['phone', 'Phone (private)'], ['linkedin', 'LinkedIn link']] as const).map(([key, label]) => (
+            <label key={key} className="block text-xs font-semibold text-[var(--nxt-ink-soft)]">
+              {label}
+              <input value={newExpert[key]} onChange={(e) => setNewExpert({ ...newExpert, [key]: e.target.value })} className="mt-1 w-full rounded-lg border border-[var(--nxt-line)] bg-[var(--nxt-surface)] p-2 text-sm font-normal text-[var(--nxt-ink)]" />
+            </label>
+          ))}
+          <div className="flex items-end gap-2">
+            <button onClick={() => void addExpert()} className="rounded-full bg-[var(--nxt-ink-fixed)] text-white px-4 py-2 text-sm font-semibold">Add</button>
+            <button onClick={() => setAdding(false)} className="px-3 py-2 text-sm font-semibold text-[var(--nxt-ink-soft)]">Cancel</button>
+          </div>
+          {addError && <p className="sm:col-span-2 text-sm font-semibold text-[var(--nxt-peach-deep)]">{addError}</p>}
+        </div>
+      )}
 
       <div className="mt-6 flex flex-wrap items-center gap-3">
         <div className="inline-flex rounded-full border border-[var(--nxt-line)] p-1 text-sm">

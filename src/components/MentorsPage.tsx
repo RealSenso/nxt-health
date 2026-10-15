@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { GraduationCap, Sparkles, Check, X, Clock, MessageSquare, AlertCircle, Users, Send, CalendarClock, Video } from 'lucide-react';
 import { Consultation, MentorProfile, User } from '../types';
 import { store, MentorProfileInput } from '../services/store';
-import { rankMentors } from '../data/mentorMatching';
+import { rankMentors, rankNetworkExperts } from '../data/mentorMatching';
 import { STAGE_TAGS } from '../data/stepGuides';
 import { BACKGROUND_OPTIONS, labelFor } from '../data/profileOptions';
 import { PageHeader } from './ui/PageHeader';
@@ -175,7 +175,19 @@ export const MentorsPage: React.FC<{ currentUser: User }> = ({ currentUser }) =>
         </div>
       )}
 
-      <ListedExperts experts={store.getListedExperts()} className="pt-4" />
+      {(() => {
+        const network = rankNetworkExperts(currentUser);
+        const reasons = Object.fromEntries(network.map(m => [m.expert.id, m.reasons]));
+        return (
+          <ListedExperts
+            experts={network.map(m => m.expert)}
+            reasons={reasons}
+            title="Experts in the NXT network, matched to you"
+            hint="Ranked by your categories, current stage and background. Online booking opens as each expert sets up their sessions."
+            className="pt-4"
+          />
+        );
+      })()}
 
       {requesting && <RequestDialog mentor={requesting} onClose={() => setRequesting(null)} />}
       {paying && (

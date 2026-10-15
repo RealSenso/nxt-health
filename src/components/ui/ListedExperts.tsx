@@ -5,8 +5,8 @@ import type { ListedExpert } from '../../types';
 import { initials } from '../../data/experts';
 
 /** Onboarded experts who can't be booked on the platform yet: name, role and LinkedIn. */
-export const ListedExperts: React.FC<{ experts: ListedExpert[]; title?: string; hint?: string; className?: string }> = ({
-  experts, title = 'More experts in the NXT network', hint = 'Onboarded experts who are helping founders. Online booking opens as they set up their profiles.', className = '',
+export const ListedExperts: React.FC<{ experts: ListedExpert[]; reasons?: Record<string, string[]>; title?: string; hint?: string; className?: string }> = ({
+  experts, reasons = {}, title = 'More experts in the NXT network', hint = 'Onboarded experts who are helping founders. Online booking opens as they set up their profiles.', className = '',
 }) => {
   if (!experts.length) return null;
   return (
@@ -22,6 +22,11 @@ export const ListedExperts: React.FC<{ experts: ListedExpert[]; title?: string; 
             <div className="min-w-0">
               <Link to={`/experts/network/${x.id}`} className="font-semibold text-[var(--nxt-ink)] hover:underline">{x.name}</Link>
               {x.title && <p className="text-sm text-[var(--nxt-ink-soft)] mt-0.5">{x.title}</p>}
+              {(reasons[x.id] || []).length > 0 && (
+                <ul className="mt-2 space-y-0.5 text-[13px] text-[var(--nxt-ink)]">
+                  {reasons[x.id].map(r => <li key={r}>✓ {r}</li>)}
+                </ul>
+              )}
               <Link to={`/experts/network/${x.id}`} className="mt-2 mr-4 inline-block text-sm font-semibold underline">View profile</Link>
               {x.linkedin && (
                 <a href={x.linkedin} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 text-sm font-semibold underline">

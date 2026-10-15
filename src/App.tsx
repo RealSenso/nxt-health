@@ -41,7 +41,7 @@ const TAB_PATHS: Record<string, string> = {
   dashboard: '/dashboard',
   messages: '/messages',
   'start-in-india': '/start-in-india',
-  admin: '/admin/funding',
+  admin: '/admin/overview',
 };
 
 function tabForPath(pathname: string): string {

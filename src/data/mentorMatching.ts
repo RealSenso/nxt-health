@@ -50,3 +50,41 @@ export function rankMentors(founder: User): MentorMatch[] {
     })
     .sort((a, b) => b.score - a.score || a.mentor.active_mentees - b.mentor.active_mentees);
 }
+
+export interface NetworkMatch {
+  expert: import('../types').ListedExpert;
+  score: number;
+  reasons: string[];
+}
+
+const words = (text: string) => text.toLowerCase().split(/[^a-z0-9]+/).filter(w => w.length >= 5);
+
+/**
+ * Matches a founder to the experts in the NXT network (people who are not bookable yet), using what an admin has recorded
+ * about each expert: categories, stages, background and specialisation.
+ */
+export function rankNetworkExperts(founder: User): NetworkMatch[] {
+  const { categoryIds, currentStages } = founderContext(founder);
+  const categories = store.getCategories();
+  const categoryName = new Map(categories.map(c => [c.id, c.name]));
+  const lockedNames = Array.from(categoryIds).map(id => categoryName.get(id)).filter(Boolean) as string[];
+
+  return store.getListedExperts()
+    .map(expert => {
+      const reasons: string[] = [];
+      const sharedCategories = (expert.category_ids || []).filter(id => categoryIds.has(id));
+      const sharedStages = (expert.expertise_stages || []).filter(stage => currentStages.has(stage));
+      const complementary = !!founder.background && !!expert.background && COMPLEMENTS[founder.background].includes(expert.background as FounderBackground);
+
+      const haystack = new Set(words(`${expert.specialisation || ''} ${expert.title}`));
+      const textHits = lockedNames.filter(name => words(name).some(w => haystack.has(w)));
+
+      if (sharedCategories.length) reasons.push(`Knows ${sharedCategories.map(id => categoryName.get(id)).filter(Boolean).join(', ')}`);
+      if (textHits.length && !sharedCategories.length) reasons.push(`Works in an area close to ${textHits.join(', ')}`);
+      if (sharedStages.length) reasons.push(`Expert in your current stage: ${sharedStages.join(', ')}`);
+      if (complementary) reasons.push(`${(expert.background as string)[0].toUpperCase()}${(expert.background as string).slice(1)} background complements yours`);
+
+      return { expert, reasons, score: sharedCategories.length * 3 + sharedStages.length * 2 + textHits.length + (complementary ? 1 : 0) };
+    })
+    .sort((a, b) => b.score - a.score || a.expert.name.localeCompare(b.expert.name));
+}
