@@ -79,7 +79,7 @@ export const ChoiceButton: React.FC<{ on: boolean; onClick: () => void; children
     type="button"
     onClick={onClick}
     aria-pressed={on}
-    className={`h-11 rounded-xl border text-[15px] transition-colors ${
+    className={`h-11 w-full rounded-xl border text-[15px] transition-colors ${
       on ? 'bg-[var(--nxt-ink-fixed)] text-white border-transparent font-semibold' : 'border-[var(--nxt-ink)]/80 hover:bg-[var(--nxt-bg-soft)]'
     }`}
   >

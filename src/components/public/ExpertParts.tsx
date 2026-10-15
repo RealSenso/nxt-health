@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CheckCircle2, ChevronLeft, ExternalLink, Linkedin, Play } from 'lucide-react';
 import type { ExpertItem, ExpertItemKind } from '../../types';
@@ -28,80 +28,77 @@ interface HeroProps {
   verified?: boolean;
 }
 
-/** The dark opening of an expert's page: portrait, name, role, an introduction video and three things to know. */
-export const ExpertHero: React.FC<HeroProps> = ({ name, title, eyebrow, photoUrl, videoUrl, linkedin, highlights, backTo, tagline, location, verified }) => {
+/**
+ * The dark opening of an expert's page, proportioned like the design: a centred block 71% of the page wide, with the
+ * portrait on the left (bottom-aligned with the video), and on the right the name, a 16:9 video and three highlights.
+ */
+export const ExpertHero: React.FC<HeroProps> = ({ name, title, eyebrow, photoUrl, videoUrl, linkedin, highlights, backTo, tagline, verified }) => {
   const first = firstName(name);
-  const headRef = useRef<HTMLDivElement>(null);
-  const videoRef = useRef<HTMLDivElement>(null);
-  const [portrait, setPortrait] = useState<Record<string, string>>({});
-
-  // Size the portrait from the height of the heading plus the video, so it is 9:16 and the two line up exactly.
-  useLayoutEffect(() => {
-    const head = headRef.current;
-    const video = videoRef.current;
-    if (!head || !video) return;
-    const measure = () => {
-      if (window.innerWidth < 1024) { setPortrait({}); return; }
-      const h = Math.round(video.getBoundingClientRect().bottom - head.getBoundingClientRect().top);
-      setPortrait({ '--portrait-h': `${h}px`, '--portrait-w': `${Math.round((h * 9) / 16)}px` });
-    };
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(head); ro.observe(video);
-    window.addEventListener('resize', measure);
-    return () => { ro.disconnect(); window.removeEventListener('resize', measure); };
-  }, [videoUrl, name]);
-
+  const subtitle = tagline || title;
   return (
-    <section className="bg-black text-white">
-      <div className="nxt-container pt-8 pb-16 sm:pb-20">
-        <Link to={backTo} className="inline-flex items-center gap-1 text-[15px] text-white/70 hover:text-white"><ChevronLeft className="w-4 h-4" /> All experts</Link>
-        <div className="mt-10 grid gap-x-16 gap-y-8 lg:grid-cols-[auto_1fr] lg:gap-x-20">
-          {/* The portrait is 9:16 and runs from the top of the eyebrow to the bottom of the video. */}
-          <div className="lg:col-start-1 lg:row-start-1 lg:row-span-2 w-full max-w-[16rem] aspect-[9/16] lg:aspect-auto lg:max-w-none lg:w-[var(--portrait-w)] lg:h-0 relative" style={portrait as React.CSSProperties}>
-            <img src={photoUrl ? assetUrl(photoUrl) : placeholderPortrait(name)} alt={name} className="absolute inset-0 lg:bottom-auto w-full h-full lg:h-[var(--portrait-h)] rounded-[8px] object-cover object-top bg-[#111]" />
+    <section className="relative bg-black text-white lg:min-h-[calc(100svh-4rem)] flex items-center">
+      <div className="absolute top-6 left-0 right-0">
+        <div className="nxt-container">
+          <Link to={backTo} className="inline-flex items-center gap-1 text-[15px] text-white/70 hover:text-white"><ChevronLeft className="w-4 h-4" /> All experts</Link>
+        </div>
+      </div>
+      {/* A block 71% of the page wide, centred, with the same generous space above and below as the design. */}
+      <div className="w-[88%] lg:w-[71%] max-w-[1420px] mx-auto pt-20 pb-16 lg:py-[6.25vw]">
+        <div className="grid gap-y-8 lg:gap-y-0 lg:grid-cols-[23.4%_70.4%] lg:gap-x-[6.2%]">
+          {/* Portrait, bottom-aligned with the video */}
+          <div className="lg:col-start-1 lg:row-start-1 lg:self-end">
+            <img
+              src={photoUrl ? assetUrl(photoUrl) : placeholderPortrait(name)}
+              alt={name}
+              className="w-full max-w-[16rem] lg:max-w-none aspect-[332/535] object-cover object-top bg-[#111]"
+            />
           </div>
 
-          <div ref={headRef} className="lg:col-start-2 lg:row-start-1">
-            <div className="flex flex-wrap items-center gap-3">
-              <p className="text-[12px] sm:text-[13px] uppercase tracking-[0.14em] text-white/60">{eyebrow}</p>
+          {/* Right column: scales its type with its own width */}
+          <div className="lg:col-start-2 lg:row-start-1 [container-type:inline-size]">
+            <p className="text-[clamp(11px,1.5cqw,15px)] uppercase tracking-[0.14em] text-white/60 flex flex-wrap items-center gap-x-3 gap-y-2">
+              <span>{eyebrow}</span>
               {verified && (
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-white/50 px-3 py-1 text-[13px] text-white normal-case tracking-normal">
                   <CheckCircle2 className="w-3.5 h-3.5" /> Verified by NXT
                 </span>
               )}
-            </div>
-            <h1 className="font-display font-bold text-[clamp(2.5rem,5.2vw,4.25rem)] leading-[1.02] tracking-[-0.04em] mt-4">{name}</h1>
+            </p>
+            <h1 className="mt-[2.4cqw] font-display font-bold text-[clamp(2rem,6.2cqw,4.5rem)] leading-[1.05] tracking-[-0.04em]">{name}</h1>
+            {subtitle && <p className="mt-[1.2cqw] text-[clamp(1rem,3.4cqw,2rem)] leading-snug text-white/90 line-clamp-2">{subtitle}</p>}
             {linkedin && (
-              <a href={linkedin} target="_blank" rel="noreferrer" className="mt-4 inline-flex items-center gap-1.5 text-[15px] font-semibold underline underline-offset-2">
+              <a href={linkedin} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-1.5 text-[15px] font-semibold underline underline-offset-2">
                 <Linkedin className="w-4 h-4" /> LinkedIn
               </a>
             )}
-          </div>
 
-          <div ref={videoRef} className="lg:col-start-2 lg:row-start-2">
-            {videoUrl ? (
-              <a href={videoUrl} target="_blank" rel="noreferrer" className="flex flex-col items-center justify-center text-center rounded-[12px] border border-white/15 bg-[#161616] hover:bg-[#1c1c1c] transition-colors aspect-video px-6">
-                <span className="w-16 h-16 rounded-full border-2 border-white flex items-center justify-center"><Play className="w-6 h-6 ml-0.5" /></span>
-                <span className="mt-6 font-bold text-lg">Watch {first}'s introduction</span>
-                <span className="mt-2 text-[12px] uppercase tracking-[0.14em] text-white/60">Introductory video</span>
-              </a>
-            ) : (
-              <div className="flex flex-col items-center justify-center text-center rounded-[12px] border border-white/15 bg-[#161616] aspect-video px-6" aria-label="Introduction video coming soon">
-                <span className="w-16 h-16 rounded-full border-2 border-white/40 flex items-center justify-center text-white/50"><Play className="w-6 h-6 ml-0.5" /></span>
-                <span className="mt-6 font-bold text-lg text-white/80">{first}'s introduction</span>
-                <span className="mt-2 text-[12px] uppercase tracking-[0.14em] text-white/50">Video coming soon</span>
-              </div>
-            )}
+            <div className="mt-[3.4cqw] w-full lg:w-[88.8%]">
+              {videoUrl ? (
+                <a href={videoUrl} target="_blank" rel="noreferrer" className="flex flex-col items-center justify-center text-center rounded-[12px] border border-white/15 bg-[#161616] hover:bg-[#1c1c1c] transition-colors aspect-video px-6">
+                  <span className="w-[8cqw] min-w-12 max-w-20 aspect-square rounded-full border-2 border-white flex items-center justify-center"><Play className="w-1/3 h-1/3 ml-0.5" /></span>
+                  <span className="mt-[3cqw] font-bold text-[clamp(1rem,2.6cqw,1.6rem)]">Watch {first}'s introduction</span>
+                  <span className="mt-2 text-[clamp(10px,1.4cqw,13px)] uppercase tracking-[0.14em] text-white/60">Introductory video</span>
+                </a>
+              ) : (
+                <div className="flex flex-col items-center justify-center text-center rounded-[12px] border border-white/15 bg-[#161616] aspect-video px-6" aria-label="Introduction video coming soon">
+                  <span className="w-[8cqw] min-w-12 max-w-20 aspect-square rounded-full border-2 border-white/40 flex items-center justify-center text-white/50"><Play className="w-1/3 h-1/3 ml-0.5" /></span>
+                  <span className="mt-[3cqw] font-bold text-[clamp(1rem,2.6cqw,1.6rem)] text-white/80">{first}'s introduction</span>
+                  <span className="mt-2 text-[clamp(10px,1.4cqw,13px)] uppercase tracking-[0.14em] text-white/50">Video coming soon</span>
+                </div>
+              )}
+            </div>
+
           </div>
 
           {highlights.length > 0 && (
-            <div className="lg:col-start-2 lg:row-start-3 grid gap-6 sm:grid-cols-3">
-              {highlights.slice(0, 3).map((h, i) => (
-                <div key={i} className="border-t border-white/25 pt-4 text-[15px] leading-relaxed text-white/70">
-                  <strong className="text-white">{h.title}.</strong> {h.text}
-                </div>
-              ))}
+            <div className="lg:col-start-2 lg:row-start-2 [container-type:inline-size] lg:mt-10">
+              <div className="grid gap-6 sm:grid-cols-3 sm:gap-[4.4cqw]">
+                {highlights.slice(0, 3).map((h, i) => (
+                  <div key={i} className="border-t border-white/25 pt-[1.8cqw] text-[clamp(13px,1.9cqw,17px)] leading-relaxed text-white/70">
+                    <strong className="text-white">{h.title}.</strong> {h.text}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
