@@ -51,23 +51,44 @@ export const RouteComparison: React.FC = () => (
   </section>
 );
 
-/** "1 in 5" shown as twenty-five people, five with an idea, one who starts. */
-export const OneInFive: React.FC = () => (
+/** Five dark dots in a 5x5 grid, one of them green, moving through a pattern. Always one in five. */
+const PATTERNS: number[][] = [
+  [0, 6, 12, 18, 24],   // diagonal
+  [4, 8, 12, 16, 20],   // other diagonal
+  [2, 7, 12, 17, 22],   // column
+  [10, 11, 12, 13, 14], // row
+  [2, 10, 12, 14, 22],  // cross
+  [0, 4, 12, 20, 24],   // corners and centre
+];
+
+/** "1 in 5" shown as a grid of people; the one in five with an idea keeps moving, and one of them starts. */
+export const OneInFive: React.FC = () => {
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const t = window.setInterval(() => setTick(n => n + 1), 1500);
+    return () => window.clearInterval(t);
+  }, []);
+  const pattern = PATTERNS[tick % PATTERNS.length];
+  const starts = pattern[tick % pattern.length];
+
+  return (
   <section className="nxt-container py-16 sm:py-20 border-b border-[var(--nxt-line)]">
     <div className="grid gap-10 md:grid-cols-[auto_1fr] md:gap-16 items-center">
       <div className="grid grid-cols-5 gap-3 w-fit" aria-hidden="true">
         {Array.from({ length: 25 }).map((_, i) => {
-          // 25 people, 1 in 5 with an idea (the diagonal), and one of them is the one who starts.
-          const idea = i % 6 === 0;
-          const starts = i === 12;
+          const idea = pattern.includes(i);
+          const green = i === starts;
           return (
             <motion.span
               key={i}
               initial={{ scale: 0.4, opacity: 0 }}
               whileInView={{ scale: 1, opacity: 1 }}
               viewport={{ once: true, margin: '-60px' }}
-              transition={{ delay: i * 0.04, duration: 0.35 }}
-              className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full ${starts ? 'bg-[var(--nxt-mint-strong)]' : idea ? 'bg-[var(--nxt-ink-fixed)]' : 'bg-[var(--nxt-line)]'}`}
+              transition={{ delay: i * 0.03, duration: 0.35 }}
+              className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full transition-[background-color,transform] duration-700 ${
+                green ? 'bg-[var(--nxt-mint-strong)] scale-110' : idea ? 'bg-[var(--nxt-ink-fixed)]' : 'bg-[var(--nxt-line)]'
+              }`}
             />
           );
         })}
@@ -79,7 +100,8 @@ export const OneInFive: React.FC = () => (
       </Rise>
     </div>
   </section>
-);
+  );
+};
 
 /** Five steps shown one at a time; they advance on their own until someone picks one. */
 export const HowItWorks: React.FC<{ steps: { title: string; body: React.ReactNode }[] }> = ({ steps }) => {
