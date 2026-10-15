@@ -242,7 +242,7 @@ export const FundingApplicationModal: React.FC<FundingApplicationModalProps> = (
                   </button>
                 ) : (
                   <button onClick={() => setIndex(i => Math.min(FUNDING_FORM.length - 1, i + 1))} className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--nxt-ink-fixed)] text-white px-5 py-2.5 text-sm font-bold">
-                    Save &amp; next <ChevronRight className="w-4 h-4" />
+                    Next section <ChevronRight className="w-4 h-4" />
                   </button>
                 )}
               </div>

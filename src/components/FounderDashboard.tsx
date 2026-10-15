@@ -40,7 +40,7 @@ export const FounderDashboard: React.FC<FounderDashboardProps> = ({
   const checkInDue = isMember && (!currentUser.outcomes ||
     Date.now() - new Date(currentUser.outcomes.updated_at).getTime() > 90 * 86_400_000);
   const scopeKey = store.getScopeKey(currentUser);
-  const problems = store.getProblems();
+  const problems = store.getRoadmapProblems();
 
   const applications = store.getScopedApplications(currentUser)
     .slice()
@@ -52,7 +52,11 @@ export const FounderDashboard: React.FC<FounderDashboardProps> = ({
   const savedProblems = problems.filter(p => savedProblemIds.includes(p.id));
 
   const workingProblemIds = store.getWorkingProblemIds(scopeKey);
-  const workingProblems = problems.filter(p => workingProblemIds.includes(p.id));
+  const guideProject = problems.find(p => p.guide);
+  const workingProblems = [
+    ...(guideProject ? [guideProject] : []),
+    ...problems.filter(p => !p.guide && workingProblemIds.includes(p.id)),
+  ];
 
   const team = store.getMyTeam(currentUser);
   const teamMembers = team ? store.getUsers().filter(u => team.member_ids.includes(u.id)) : [];

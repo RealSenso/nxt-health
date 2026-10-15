@@ -210,7 +210,7 @@ export const TaskManagementPage: React.FC<TaskManagementPageProps> = ({
           title="Your projects"
           subtitle="Each project pairs a clinical problem with the one product category you're building for it. Open a project to pick up where you left off."
           illustration="roadmap"
-          actions={workingProblems.length > 0 && (
+          actions={isMember && workingProblems.length > 0 && (
             <>
               <PillButton tone="mint" id="btn-add-working-problem" onClick={() => setShowPicker(true)} className="px-5 py-2.5 text-sm">
                 <Plus className="w-4 h-4" /> Add a problem

@@ -311,7 +311,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser }) => {
         </div>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-8 items-start">
+      <div className="grid gap-6 grid-cols-[minmax(0,1fr)] lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-8 items-start">
       <AdminNav active={adminTab} counts={navCounts} onSelect={setAdminTab} />
       <div className="min-w-0 space-y-6">
       {adminTab === 'overview' && <AdminOverview counts={navCounts} onNavigate={setAdminTab} />}
@@ -831,7 +831,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser }) => {
               <select
                 value={selectedCategoryIdForSteps}
                 onChange={(e) => setSelectedCategoryIdForSteps(e.target.value)}
-                className="text-xs bg-[var(--nxt-bg-soft)] border border-[var(--nxt-line)] rounded-lg p-1.5 font-bold text-[var(--nxt-ink)]"
+                className="text-xs bg-[var(--nxt-bg-soft)] border border-[var(--nxt-line)] rounded-lg p-1.5 font-bold text-[var(--nxt-ink)] max-w-full min-w-0"
               >
                 {categories.map(c => (
                   <option key={c.id} value={c.id}>
@@ -930,14 +930,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser }) => {
                 return (
                   <div
                     key={step.id}
-                    className="p-3 bg-[var(--nxt-surface)] rounded-xl border border-[var(--nxt-line)] flex items-center justify-between gap-3 shadow-sm hover:border-[var(--nxt-line)]"
+                    className="p-3 bg-[var(--nxt-surface)] rounded-xl border border-[var(--nxt-line)] flex flex-wrap items-center justify-between gap-3 shadow-sm hover:border-[var(--nxt-line)]"
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
                       <div className="w-6 h-6 rounded bg-[var(--nxt-bg-soft)] text-[var(--nxt-ink-soft)] font-bold flex items-center justify-center text-xs">
                         {step.order}
                       </div>
                       <div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <span className="text-xs font-bold text-[var(--nxt-ink)]">{step.name}</span>
                           {step.stage_tag && (
                             <span className="text-[11px] bg-[var(--nxt-bg-soft)] text-[var(--nxt-ink-soft)] px-1.5 py-0.2 rounded font-semibold">
@@ -1001,7 +1001,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser }) => {
               <select
                 value={selectedStepIdForResources}
                 onChange={(e) => setSelectedStepIdForResources(e.target.value)}
-                className="text-xs bg-[var(--nxt-bg-soft)] border border-[var(--nxt-line)] rounded-lg p-1.5 font-bold text-[var(--nxt-ink)] max-w-xs"
+                className="text-xs bg-[var(--nxt-bg-soft)] border border-[var(--nxt-line)] rounded-lg p-1.5 font-bold text-[var(--nxt-ink)] max-w-full sm:max-w-xs min-w-0"
               >
                 {store.getSteps().map(s => {
                   const cat = categories.find(c => c.id === s.category_id);

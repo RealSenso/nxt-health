@@ -277,7 +277,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                         {currentUser.name.split(' ')[0]}
                       </div>
                       <div className="text-[11px] text-[var(--nxt-ink-soft)] leading-tight">
-                        {currentUser.role === 'admin' ? 'Admin' : currentUser.is_member ? 'Member' : 'Guest'}
+                        {currentUser.role === 'admin' ? 'Admin' : currentUser.is_member ? 'Member' : 'Free account'}
                       </div>
                     </div>
                   </button>

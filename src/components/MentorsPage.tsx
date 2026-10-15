@@ -39,8 +39,6 @@ export const MentorsPage: React.FC<{ currentUser: User }> = ({ currentUser }) =>
   const navigate = useNavigate();
   const matches = rankMentors(currentUser);
   const myRequests = store.getMentorRequests().filter(r => r.founder_uid === currentUser.id);
-  const openRequestFor = (mentorId: string) => myRequests.find(r => r.mentor_uid === mentorId && (r.status === 'pending' || r.status === 'accepted'));
-  const [requesting, setRequesting] = useState<MentorProfile | null>(null);
   const [paying, setPaying] = useState<Consultation | null>(null);
   const myConsultations = store.getConsultations().filter(c => c.founder_uid === currentUser.id && c.status !== 'cancelled');
 
@@ -121,7 +119,6 @@ export const MentorsPage: React.FC<{ currentUser: User }> = ({ currentUser }) =>
       ) : (
         <div className="grid md:grid-cols-2 gap-6 lg:gap-8">
           {matches.map(({ mentor, reasons, score }, index) => {
-            const existing = openRequestFor(mentor.id);
             const background = mentor.background || mentor.user_background;
             return (
               <article key={mentor.id} className="rounded-3xl border border-[var(--nxt-line)] bg-[var(--nxt-surface)] p-6 flex flex-col">
@@ -161,13 +158,6 @@ export const MentorsPage: React.FC<{ currentUser: User }> = ({ currentUser }) =>
                   >
                     <CalendarClock className="w-4 h-4" /> Book a session · {formatRate(mentor.rate_usd ?? 200)}{(mentor.rate_usd ?? 200) > 0 && '/hr'}
                   </button>
-                  {existing ? (
-                    <span className={`text-xs font-semibold px-3 py-1.5 rounded-full capitalize ${STATUS_CHIP[existing.status]}`}>Request {existing.status}</span>
-                  ) : (
-                    <button onClick={() => setRequesting(mentor)} className="px-4 py-2 rounded-full border border-[var(--nxt-line)] hover:bg-[var(--nxt-bg-soft)] text-[var(--nxt-ink)] text-sm font-semibold">
-                      Request this expert
-                    </button>
-                  )}
                 </div>
               </article>
             );
@@ -189,7 +179,6 @@ export const MentorsPage: React.FC<{ currentUser: User }> = ({ currentUser }) =>
         );
       })()}
 
-      {requesting && <RequestDialog mentor={requesting} onClose={() => setRequesting(null)} />}
       {paying && (
         <PayConsultationDialog
           booking={paying}
@@ -197,42 +186,6 @@ export const MentorsPage: React.FC<{ currentUser: User }> = ({ currentUser }) =>
           onPaid={(threadId) => { setPaying(null); if (threadId) navigate(`/messages/${threadId}`); }}
         />
       )}
-    </div>
-  );
-};
-
-const RequestDialog: React.FC<{ mentor: MentorProfile; onClose: () => void }> = ({ mentor, onClose }) => {
-  const [message, setMessage] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
-
-  const handleSend = async () => {
-    setBusy(true);
-    setError('');
-    try {
-      await store.requestMentor(mentor.id, message.trim());
-      onClose();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not send your request.');
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
-      <div onClick={(e) => e.stopPropagation()} className="bg-[var(--nxt-surface)] rounded-3xl max-w-md w-full p-6 border border-[var(--nxt-line)] shadow-2xl">
-        <div className="flex items-start justify-between">
-          <h3 className="font-display text-lg font-bold text-[var(--nxt-ink)]">Ask {mentor.name.split(' ')[0]} to mentor you</h3>
-          <button onClick={onClose} className="text-[var(--nxt-ink-soft)]" aria-label="Close"><X className="w-5 h-5" /></button>
-        </div>
-        <p className="text-sm text-[var(--nxt-ink-soft)] mt-1">Say what you're building and where you're stuck — specific asks get faster yeses.</p>
-        <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={5} maxLength={2000} className={`${inputClass} mt-4`} placeholder="Hi! We're building a continuous sepsis monitor and preparing our FDA Pre-Sub…" />
-        {error && <p className="text-sm text-[var(--nxt-peach-deep)] font-semibold mt-2 flex items-center gap-1.5"><AlertCircle className="w-4 h-4" /> {error}</p>}
-        <button disabled={busy || !message.trim()} onClick={handleSend} className="mt-4 w-full py-3 rounded-full bg-[var(--nxt-mint-strong)] hover:bg-[var(--nxt-mint-deep)] disabled:opacity-50 text-white text-sm font-semibold inline-flex items-center justify-center gap-2">
-          <Send className="w-4 h-4" /> {busy ? 'Sending…' : 'Send request'}
-        </button>
-      </div>
     </div>
   );
 };

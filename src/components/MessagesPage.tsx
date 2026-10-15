@@ -35,7 +35,7 @@ export const MessagesPage: React.FC<{ currentUser: User }> = ({ currentUser }) =
         <aside className={`${threadId ? 'hidden lg:block' : ''} rounded-3xl border border-[var(--nxt-line)] bg-[var(--nxt-surface)] overflow-hidden`}>
           {threads.length === 0 ? (
             <p className="p-6 text-sm text-[var(--nxt-ink-soft)]">
-              No conversations yet. Use "Discuss" on an application or evidence submission, or request a mentor, to start one.
+              No conversations yet. Use "Discuss" on an application or evidence submission, or book a session with an expert, to start one.
             </p>
           ) : (
             <ul className="divide-y divide-[var(--nxt-line)]">

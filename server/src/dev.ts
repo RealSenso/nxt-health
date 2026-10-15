@@ -4,6 +4,7 @@ import { createApp } from './app.js';
 import { connect } from './db.js';
 import { firebaseVerifier } from './firebase.js';
 import { syncStarterContent } from './syncContent.js';
+import { loadBundledContent } from './bundledContent.js';
 import { roadmapContentSchema } from './roadmapTypes.js';
 
 process.env.FIREBASE_AUTH_EMULATOR_HOST ||= '127.0.0.1:9099';
@@ -24,6 +25,8 @@ if (!(await database.col('categories').countDocuments())) {
   const result = await syncStarterContent(database, 'local-dev', roadmap);
   console.log(`Loaded starter content into the local database (${result.categories} categories, ${result.steps} roadmap steps).`);
 }
+
+await loadBundledContent(database);
 
 const app = createApp({
   database,
