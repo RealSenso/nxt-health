@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { AnimatePresence, motion } from 'motion/react';
+import React, { useEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion, useInView } from 'motion/react';
 import { Check } from 'lucide-react';
 import { Eyebrow, H2, RuleList } from './ui';
 
@@ -83,14 +83,17 @@ export const OneInFive: React.FC = () => (
 export const HowItWorks: React.FC<{ steps: { title: string; body: React.ReactNode }[] }> = ({ steps }) => {
   const [index, setIndex] = useState(0);
   const [auto, setAuto] = useState(true);
+  const ref = useRef<HTMLElement>(null);
+  // The walk-through starts when the section scrolls into view, not on page load.
+  const seen = useInView(ref, { once: true, amount: 0.45 });
   useEffect(() => {
-    if (!auto) return;
-    const t = window.setInterval(() => setIndex(i => (i + 1) % steps.length), 4500);
+    if (!auto || !seen) return;
+    const t = window.setInterval(() => setIndex(i => (i + 1) % steps.length), 2600);
     return () => window.clearInterval(t);
-  }, [auto, steps.length]);
+  }, [auto, seen, steps.length]);
 
   return (
-    <section id="how-it-works" className="nxt-container py-20 sm:py-24 border-b border-[var(--nxt-line)] scroll-mt-20">
+    <section ref={ref} id="how-it-works" className="nxt-container py-20 sm:py-24 border-b border-[var(--nxt-line)] scroll-mt-20">
       <Rise>
         <Eyebrow>How it works</Eyebrow>
         <H2 className="mt-5">From problem to market, one gate at a time.</H2>
