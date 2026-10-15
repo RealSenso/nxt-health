@@ -129,7 +129,7 @@ export const HowItWorks: React.FC<{ steps: { title: string; body: React.ReactNod
                 className={`w-full text-left flex items-center gap-3 rounded-xl px-3 py-3 transition-colors ${i === index ? 'bg-[var(--nxt-bg-soft)]' : 'hover:bg-[var(--nxt-bg-soft)]/60'}`}
               >
                 <span className={`w-7 h-7 shrink-0 rounded-full text-[11px] font-bold flex items-center justify-center border ${
-                  i < index ? 'bg-[#16a34a] text-white border-transparent' : i === index ? 'bg-[var(--nxt-ink-fixed)] text-white border-transparent' : 'border-[var(--nxt-ink-soft)] text-[var(--nxt-ink-soft)]'
+                  i < index ? 'bg-[var(--nxt-ink-fixed)] text-white border-transparent' : i === index ? 'bg-[var(--nxt-ink-fixed)] text-white border-transparent' : 'border-[var(--nxt-ink-soft)] text-[var(--nxt-ink-soft)]'
                 }`}>{i < index ? <Check className="w-3.5 h-3.5" /> : i + 1}</span>
                 <span className={`whitespace-nowrap ${i === index ? 'font-semibold' : 'text-[var(--nxt-ink-soft)]'}`}>{s.title}</span>
               </button>
