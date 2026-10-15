@@ -202,18 +202,6 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* Free guide */}
-      <section className="nxt-container py-16 border-b border-[var(--nxt-line)]">
-        <div className="rounded-[18px] bg-[#111] text-white p-8 sm:p-12 grid gap-8 lg:grid-cols-[1fr_auto] items-center">
-          <div>
-            <p className="text-[12px] sm:text-[13px] uppercase tracking-[0.14em] text-white/60">Free for everyone</p>
-            <h2 className="font-display font-bold text-[clamp(1.75rem,3.2vw,2.75rem)] leading-[1.05] tracking-[-0.035em] mt-3 max-w-[22ch]">How to start a startup in India.</h2>
-            <p className="mt-4 text-lg text-white/80 max-w-xl">Every step from idea to an incorporated, recognised and funded company: structure, registrations, Startup India, IP, funding and compliance.</p>
-          </div>
-          <Btn variant="light" to="/start-in-india">Read the guide</Btn>
-        </div>
-      </section>
-
       {/* Blog */}
       {site.show_blogs && blogs.length > 0 && (
         <section id="blog" className="nxt-container py-20 sm:py-24 border-b border-[var(--nxt-line)] scroll-mt-20">
