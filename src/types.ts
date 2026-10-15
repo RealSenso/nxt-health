@@ -253,6 +253,13 @@ export interface StepChecklistItem {
   label: string;
   done: boolean;
   custom: boolean;
+  /** Optional details a founder adds to their own task, shown like a roadmap task's details. */
+  detail?: string;
+  duration?: string;
+  gate?: string;
+  deliverable?: string;
+  experts?: string;
+  resources?: string;
 }
 
 export interface StepLogEntry {

@@ -50,6 +50,8 @@ export const StepPage: React.FC<StepPageProps> = ({
   onViewResources,
 }) => {
   const [newTask, setNewTask] = useState('');
+  const [newDetails, setNewDetails] = useState(NO_DETAILS);
+  const [showDetails, setShowDetails] = useState(false);
   const [newLogEntry, setNewLogEntry] = useState('');
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editingLabel, setEditingLabel] = useState('');
@@ -66,6 +68,13 @@ export const StepPage: React.FC<StepPageProps> = ({
     log: [],
     updated_at: new Date().toISOString(),
   };
+  // A task a founder adds can carry the same details as a roadmap task: what to do, how long, the decision it feeds.
+  workspace.checklist.filter(c => c.custom && (c.detail || c.duration || c.gate || c.deliverable || c.experts || c.resources)).forEach(c => {
+    taskDetails.set(c.id, {
+      id: c.id, label: c.label, detail: c.detail || '', sub_stage: 'Your own task', experts: c.experts || '', resources: c.resources || '',
+      deliverable: c.deliverable || '', depends_on: '', duration: c.duration || '', gate: c.gate || undefined, owner: '',
+    });
+  });
   const displayStatus: StepWorkStatus = isCompleted ? 'done' : workspace.status === 'done' ? 'in_progress' : workspace.status;
 
   const save = (updates: Partial<StepWorkspace>) => {
@@ -106,8 +115,11 @@ export const StepPage: React.FC<StepPageProps> = ({
   const handleAddTask = () => {
     const label = newTask.trim();
     if (!label) return;
-    save({ checklist: [...workspace.checklist, { id: `c-${Date.now()}`, label, done: false, custom: true }] });
+    const extras = Object.fromEntries((Object.entries(newDetails) as [string, string][]).map(([k, v]) => [k, v.trim()]).filter(([, v]) => v));
+    save({ checklist: [...workspace.checklist, { id: `c-${Date.now()}`, label, done: false, custom: true, ...extras }] });
     setNewTask('');
+    setNewDetails(NO_DETAILS);
+    setShowDetails(false);
   };
 
   const handleStartTaskEdit = (id: string, label: string) => {
@@ -398,6 +410,45 @@ export const StepPage: React.FC<StepPageProps> = ({
                 <Plus className="w-3.5 h-3.5" /> Add
               </button>
             </div>
+            <button
+              type="button"
+              onClick={() => setShowDetails(v => !v)}
+              aria-expanded={showDetails}
+              className="mt-2 ml-1 text-xs font-semibold text-[var(--nxt-ink-soft)] hover:text-[var(--nxt-ink)] underline underline-offset-2"
+            >
+              {showDetails ? 'Hide task details' : 'Add details: time, decision, what you end up with'}
+            </button>
+            {showDetails && (
+              <div className="mt-3 grid gap-3 sm:grid-cols-2 rounded-2xl border border-[var(--nxt-line)] p-4">
+                {([
+                  ['duration', 'How long', 'e.g. 1-2 weeks'],
+                  ['gate', 'Decision it feeds', 'e.g. Gate 0, or GO / NO-GO'],
+                  ['deliverable', 'You end up with', 'e.g. Validation report'],
+                  ['experts', 'Who can help', 'e.g. Clinical advisor'],
+                ] as const).map(([key, label, placeholder]) => (
+                  <label key={key} className="block text-xs font-semibold text-[var(--nxt-ink-soft)]">
+                    {label}
+                    <input
+                      value={newDetails[key]}
+                      onChange={(e) => setNewDetails({ ...newDetails, [key]: e.target.value })}
+                      placeholder={placeholder}
+                      maxLength={300}
+                      className="mt-1 w-full text-sm font-normal bg-[var(--nxt-bg-soft)] border border-[var(--nxt-line)] rounded-full px-3.5 py-2 text-[var(--nxt-ink)] focus:outline-hidden focus:ring-2 focus:ring-[var(--nxt-ink)]"
+                    />
+                  </label>
+                ))}
+                <label className="block text-xs font-semibold text-[var(--nxt-ink-soft)] sm:col-span-2">
+                  What to do
+                  <textarea
+                    rows={2}
+                    maxLength={1000}
+                    value={newDetails.detail}
+                    onChange={(e) => setNewDetails({ ...newDetails, detail: e.target.value })}
+                    className="mt-1 w-full text-sm font-normal bg-[var(--nxt-bg-soft)] border border-[var(--nxt-line)] rounded-2xl px-3.5 py-2 text-[var(--nxt-ink)] focus:outline-hidden focus:ring-2 focus:ring-[var(--nxt-ink)]"
+                  />
+                </label>
+              </div>
+            )}
             {missingSuggestions.length > 0 && (
               <button
                 onClick={handleRestoreSuggestions}
@@ -567,6 +618,8 @@ const StepRatingPanel: React.FC<{ stepId: string; userId: string }> = ({ stepId,
     </Section>
   );
 };
+
+const NO_DETAILS = { duration: '', gate: '', deliverable: '', experts: '', detail: '' };
 
 const DETAIL_ROWS: { key: 'detail' | 'deliverable' | 'experts' | 'resources' | 'depends_on' | 'owner'; label: string }[] = [
   { key: 'detail', label: 'What to do' },
