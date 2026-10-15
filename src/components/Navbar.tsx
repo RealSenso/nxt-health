@@ -76,6 +76,10 @@ export const Navbar: React.FC<NavbarProps> = ({
   const ThemeIcon = THEME_ICONS[theme];
 
   const roadmapActive = currentTab === 'tasks' || currentTab === 'resources' || currentTab === 'mentors';
+  // The menu names the page you are on: Roadmaps, Resources or Experts.
+  const activeSubmode = ROADMAP_SUBMODES.find(m => m.id === currentTab);
+  const RoadmapIcon = activeSubmode?.icon ?? ListTodo;
+  const roadmapLabel = activeSubmode?.label ?? 'Roadmaps';
   const unreadThreads = currentUser ? store.getUnreadThreadCount() : 0;
   const mobileModes = [PROBLEMS_MODE, ROADMAP_SUBMODES[0], FUNDS_MODE, ...(currentUser && store.isAdmin(currentUser) ? [ADMIN_MODE] : [])];
 
@@ -134,15 +138,15 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <button
                   id="nav-tab-roadmaps"
                   onClick={() => setShowRoadmapMenu(v => !v)}
-                  title="Roadmaps"
+                  title={roadmapLabel}
                   className={`relative shrink-0 flex items-center gap-1.5 px-3 lg:px-3.5 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-colors ${
                     roadmapActive
                       ? 'bg-[var(--nxt-mint)] text-[var(--nxt-mint-deep)]'
                       : 'text-[var(--nxt-ink-soft)] hover:text-[var(--nxt-ink)] hover:bg-[var(--nxt-bg-soft)]'
                   }`}
                 >
-                  <ListTodo className="w-3.5 h-3.5" />
-                  <span className="hidden lg:inline">Roadmaps</span>
+                  <RoadmapIcon className="w-3.5 h-3.5" />
+                  <span className="hidden lg:inline">{roadmapLabel}</span>
                   <ChevronDown className={`w-3 h-3 transition-transform ${showRoadmapMenu ? 'rotate-180' : ''}`} />
                 </button>
 
