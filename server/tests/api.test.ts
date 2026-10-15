@@ -727,8 +727,11 @@ describe('uploads and profiles', () => {
       expect((await request(app).get('/api/public/experts').set('Authorization', token('boss')).expect(200)).body).toMatchObject({ experts: [], listed: [] });
       await request(app).patch('/api/admin/expert-pipeline/exp-test-person').set('Authorization', token('boss')).send({ listed: true }).expect(200);
       const shown = (await request(app).get('/api/public/experts').set('Authorization', token('boss')).expect(200)).body.listed;
-      expect(shown).toEqual([{ id: 'exp-test-person', name: 'Test Person', title: 'Surgeon', linkedin: '', photo_url: '', specialisation: '', category_ids: [], expertise_stages: [], background: '' }]);
+      expect(shown).toEqual([{ id: 'exp-test-person', name: 'Test Person', title: 'Surgeon', linkedin: '', photo_url: '', specialisation: '', category_ids: [], expertise_stages: [], background: '', rate_usd: expect.any(Number) }]);
       expect(JSON.stringify(shown)).not.toContain('tp@example.com');
+      // A rate an admin sets replaces the starting one.
+      await request(app).patch('/api/admin/expert-pipeline/exp-test-person').set('Authorization', token('boss')).send({ rate_usd: 333 }).expect(200);
+      expect((await request(app).get('/api/public/experts').set('Authorization', token('boss')).expect(200)).body.listed[0].rate_usd).toBe(333);
       await request(app).patch('/api/admin/expert-pipeline/exp-test-person').set('Authorization', token('boss')).send({ bio: 'Operates.', city: 'Pune', photo_url: 'http://insecure' }).expect(400);
       await request(app).patch('/api/admin/expert-pipeline/exp-test-person').set('Authorization', token('boss')).send({ bio: 'Operates.', city: 'Pune' }).expect(200);
       const page = (await request(app).get('/api/public/listed-experts/exp-test-person').set('Authorization', token('boss')).expect(200)).body.expert;
