@@ -19,6 +19,8 @@ const applicationSchema = z.object({
   pitch: z.string().trim().max(5000),
   amount_requested: z.number().min(0).max(1e10),
   supporting_notes: z.string().trim().max(5000),
+  // Answers to the detailed application form, keyed by question id.
+  answers: z.record(z.string().regex(/^[a-z0-9_]{1,60}$/), z.union([z.string().max(5000), z.array(z.string().max(200)).max(30)])).refine(a => Object.keys(a).length <= 150, 'too many answers').optional(),
   status: z.enum(['Draft', 'Pending']),
 });
 

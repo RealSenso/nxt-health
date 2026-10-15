@@ -24,6 +24,7 @@ import { AdminOverview } from './admin/AdminOverview';
 import { AdminBlogs } from './admin/AdminBlogs';
 import { AdminStartups } from './admin/AdminStartups';
 import { AdminSite } from './admin/AdminSite';
+import { ApplicationAnswers } from './admin/ApplicationAnswers';
 import { DiscussButton } from './ui/DiscussButton';
 
 interface AdminPanelProps {
@@ -396,6 +397,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser }) => {
                       {app.pitch}
                     </p>
                   </div>
+
+                  <ApplicationAnswers answers={app.answers} />
 
                   {app.supporting_notes && (
                     <div>

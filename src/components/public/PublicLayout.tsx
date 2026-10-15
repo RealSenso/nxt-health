@@ -89,9 +89,9 @@ export const PublicLayout: React.FC<{ variant: PublicVariant; children: React.Re
     <div className="min-h-screen flex flex-col bg-[var(--nxt-bg)] text-[var(--nxt-ink)]">
       <AnnouncementBar />
       <header className="nxt-bar-dark sticky top-0 z-40 bg-[var(--nxt-bg)] border-b border-[var(--nxt-line)]">
-        <div className="nxt-container flex h-[72px] items-center justify-between gap-4">
+        <div className="nxt-container flex h-16 items-center justify-between gap-4">
           <Link to="/" className="flex items-center gap-4 shrink-0" aria-label="NXT Health home">
-            <img src={logo} alt="NXT Health" className="h-10 w-auto" />
+            <img src={logo} alt="NXT Health" className="h-9 w-auto" />
             {nav.subBrand && (
               <span className="hidden sm:flex items-center gap-4 text-[15px] text-[var(--nxt-ink-soft)]">
                 <span className="h-5 w-px bg-[var(--nxt-line)]" />

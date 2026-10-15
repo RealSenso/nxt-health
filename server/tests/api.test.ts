@@ -311,6 +311,22 @@ describe('website content', () => {
   });
 });
 
+describe('funding application form', () => {
+  it('stores the detailed answers with the application and rejects malformed ones', async () => {
+    await admin('boss');
+    await member('founder');
+    await request(app).post('/api/admin/problems').set('Authorization', token('boss')).send({ title: 'P', description: 'd', department: 'x', funded: true }).expect(201);
+    const problem = (await request(app).get('/api/bootstrap').expect(200)).body.content.problems[0].id;
+    const base = { applicant_name: 'Ann', applicant_email: 'ann@example.org', startup_name: 'S', problem_statement_id: problem, pitch: 'p', amount_requested: 1000, supporting_notes: '', status: 'Pending' };
+    await request(app).post('/api/applications').set('Authorization', token('founder')).send({ ...base, answers: { 'Bad Key': 'x' } }).expect(400);
+    await request(app).post('/api/applications').set('Authorization', token('founder')).send({ ...base, answers: { city: 123 } }).expect(400);
+    const ok = await request(app).post('/api/applications').set('Authorization', token('founder')).send({ ...base, answers: { city: 'Pune', support_needed: ['Clinical validation'] } }).expect(201);
+    expect(ok.body.application.answers).toEqual({ city: 'Pune', support_needed: ['Clinical validation'] });
+    const asAdmin = (await request(app).get('/api/bootstrap').set('Authorization', token('boss')).expect(200)).body.applications;
+    expect(asAdmin[0].answers.city).toBe('Pune');
+  });
+});
+
 describe('events', () => {
   it('enforces RSVP capacity under concurrent requests', async () => {
     await Promise.all(['u1', 'u2', 'u3', 'u4'].map(member));

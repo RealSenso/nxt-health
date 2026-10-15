@@ -106,6 +106,8 @@ export interface FundingApplication {
   pitch: string;
   amount_requested: number;
   supporting_notes: string;
+  /** Answers to the detailed application form, by question id. */
+  answers?: Record<string, string | string[]>;
   status: ApplicationStatus;
   admin_feedback?: string;
   submitted_at: string;

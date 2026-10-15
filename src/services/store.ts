@@ -649,6 +649,7 @@ class ApiStore {
       pitch: appData.pitch,
       amount_requested: Number(appData.amount_requested) || 0,
       supporting_notes: appData.supporting_notes,
+      ...(appData.answers ? { answers: appData.answers } : {}),
       status,
     };
     await this.write(() => (appData.id ? api.patch(`/applications/${appData.id}`, body) : api.post('/applications', body)));
