@@ -371,6 +371,8 @@ export interface ListedExpert {
   category_ids?: string[];
   expertise_stages?: string[];
   background?: FounderBackground | '';
+  /** US dollars for one session. */
+  rate_usd?: number;
 }
 
 /** The full public profile of a listed expert. */

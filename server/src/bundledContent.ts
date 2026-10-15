@@ -1,3 +1,4 @@
+import { defaultRate } from './routes/expertPipeline.js';
 import type { Database } from './db.js';
 import { SEED_BLOGS } from './bundled/seedBlogs.js';
 import { START_IN_INDIA_ROADMAP } from './bundled/startIndiaRoadmap.js';
@@ -48,5 +49,12 @@ export async function loadBundledContent(database: Database): Promise<{ steps: n
     );
     if (result.upsertedCount) blogs++;
   }
+
+  // Give every expert in the network a starting rate, so it can be edited rather than typed from scratch.
+  const unrated = await col('expertPipeline').find({ rate_usd: { $exists: false } }, { projection: { _id: 1 } }).toArray();
+  for (const d of unrated) {
+    await col('expertPipeline').updateOne({ _id: d._id }, { $set: { rate_usd: defaultRate(d._id as string) } });
+  }
+
   return { steps, blogs };
 }

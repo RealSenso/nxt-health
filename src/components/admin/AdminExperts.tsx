@@ -35,6 +35,7 @@ interface PipelineExpert {
   tags?: string[];
   facts?: { title: string; text: string }[];
   photo_source?: string;
+  rate_usd?: number;
 }
 
 const PROFILE_FIELDS: { key: keyof PipelineExpert; label: string; long?: boolean; placeholder?: string }[] = [
@@ -63,6 +64,21 @@ const ProfileForm: React.FC<{ item: PipelineExpert; onSave: (fields: Partial<Pip
           : <input defaultValue={(item[key] as string) || ''} placeholder={placeholder} onBlur={(e) => { if (e.target.value !== ((item[key] as string) || '')) onSave({ [key]: e.target.value }); }} className="mt-1 w-full rounded-lg border border-[var(--nxt-line)] bg-[var(--nxt-surface)] p-2 text-sm font-normal text-[var(--nxt-ink)]" />}
       </label>
     ))}
+
+    <label className="block text-xs font-semibold text-[var(--nxt-ink-soft)]">
+      Session rate (US dollars, 0 for free)
+      <input
+        key={`rate-${item.id}`}
+        type="number"
+        min={0}
+        defaultValue={item.rate_usd ?? ''}
+        onBlur={(e) => {
+          const n = Number(e.target.value);
+          if (e.target.value !== '' && Number.isFinite(n) && n >= 0 && n !== item.rate_usd) onSave({ rate_usd: n });
+        }}
+        className="mt-1 w-full rounded-lg border border-[var(--nxt-line)] bg-[var(--nxt-surface)] p-2 text-sm font-normal text-[var(--nxt-ink)]"
+      />
+    </label>
 
     <label className="sm:col-span-2 block text-xs font-semibold text-[var(--nxt-ink-soft)]">
       Areas of expertise (separate with commas)

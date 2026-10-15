@@ -1,42 +1,52 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Linkedin } from 'lucide-react';
+import { CheckCircle2, Linkedin } from 'lucide-react';
 import type { ListedExpert } from '../../types';
-import { assetUrl, initials } from '../../data/experts';
+import { formatRate } from '../../data/experts';
+import { ExpertPhoto } from '../public/ExpertDirectory';
 
-/** Onboarded experts who can't be booked on the platform yet: name, role and LinkedIn. */
+/** Experts in the NXT network, as photo cards: name, role, what they know and what a session costs. */
 export const ListedExperts: React.FC<{ experts: ListedExpert[]; reasons?: Record<string, string[]>; title?: string; hint?: string; className?: string }> = ({
-  experts, reasons = {}, title = 'More experts in the NXT network', hint = 'Onboarded experts who are helping founders. Online booking opens as they set up their profiles.', className = '',
+  experts, reasons = {}, title = 'More experts in the NXT network', hint = '', className = '',
 }) => {
   if (!experts.length) return null;
   return (
     <section className={className} aria-label={title}>
-      <h2 className="font-display text-xl font-bold text-[var(--nxt-ink)] tracking-tight">{title}</h2>
-      <p className="text-sm text-[var(--nxt-ink-soft)] mt-1">{hint}</p>
-      <ul className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {experts.map(x => (
-          <li key={x.id} className="flex items-start gap-4 rounded-2xl border border-[var(--nxt-line)] bg-[var(--nxt-surface)] p-5">
-            {x.photo_url
-              ? <img src={assetUrl(x.photo_url)} alt="" className="w-12 h-12 shrink-0 rounded-xl object-cover" loading="lazy" />
-              : <div className="w-12 h-12 shrink-0 rounded-xl bg-[var(--nxt-bg-soft)] text-[var(--nxt-ink-soft)] font-display font-bold flex items-center justify-center" aria-hidden="true">{initials(x.name)}</div>}
-            <div className="min-w-0">
-              <Link to={`/experts/network/${x.id}`} className="font-semibold text-[var(--nxt-ink)] hover:underline">{x.name}</Link>
-              {x.title && <p className="text-sm text-[var(--nxt-ink-soft)] mt-0.5">{x.title}</p>}
-              {(reasons[x.id] || []).length > 0 && (
-                <ul className="mt-2 space-y-0.5 text-[13px] text-[var(--nxt-ink)]">
-                  {reasons[x.id].map(r => <li key={r}>✓ {r}</li>)}
-                </ul>
-              )}
-              <Link to={`/experts/network/${x.id}`} className="mt-2 mr-4 inline-block text-sm font-semibold underline">View profile</Link>
-              {x.linkedin && (
-                <a href={x.linkedin} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 text-sm font-semibold underline">
-                  <Linkedin className="w-3.5 h-3.5" /> LinkedIn
-                </a>
-              )}
-            </div>
-          </li>
-        ))}
-      </ul>
+      <h2 className="font-display font-bold text-[clamp(1.6rem,2.6vw,2.25rem)] tracking-[-0.03em]">{title}</h2>
+      {hint && <p className="mt-2 text-[15px] text-[var(--nxt-ink-soft)]">{hint}</p>}
+      <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {experts.map(x => {
+          const why = reasons[x.id] || [];
+          const rate = x.rate_usd ?? 0;
+          return (
+            <Link
+              key={x.id}
+              to={`/experts/network/${x.id}`}
+              className="group rounded-[18px] border border-[var(--nxt-line)] bg-[var(--nxt-surface)] overflow-hidden flex flex-col hover:border-[var(--nxt-ink)] transition-colors"
+            >
+              <ExpertPhoto expert={{ name: x.name, photo_url: x.photo_url || '' }} className="w-full aspect-[3/2] text-4xl" />
+              <div className="p-6 flex flex-col flex-1">
+                <h3 className="font-display font-bold text-xl tracking-[-0.02em] flex items-center gap-2">
+                  <span className="min-w-0">{x.name}</span>
+                  <CheckCircle2 className="w-[18px] h-[18px] shrink-0" aria-label="Verified by NXT" />
+                </h3>
+                {x.title && <p className="mt-3 text-[15px] leading-relaxed">{x.title}</p>}
+                {x.specialisation && <p className="mt-3 text-[13px] leading-snug text-[var(--nxt-ink-soft)] line-clamp-2">{x.specialisation}</p>}
+                {why.length > 0 && <p className="mt-3 text-[13px] leading-snug text-[var(--nxt-ink-soft)]">✓ {why[0]}</p>}
+                <div className="mt-auto pt-5">
+                  <div className="border-t border-[var(--nxt-line)] pt-4 flex items-baseline justify-between gap-3">
+                    <span className="font-bold text-lg">{formatRate(rate)}</span>
+                    <span className="text-sm text-[var(--nxt-ink-soft)]">{rate === 0 ? 'per session' : 'per hour'}</span>
+                  </div>
+                  {x.linkedin && (
+                    <span className="mt-3 inline-flex items-center gap-1 text-sm text-[var(--nxt-ink-soft)]"><Linkedin className="w-3.5 h-3.5" /> LinkedIn</span>
+                  )}
+                </div>
+              </div>
+            </Link>
+          );
+        })}
+      </div>
     </section>
   );
 };

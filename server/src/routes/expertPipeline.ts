@@ -18,6 +18,8 @@ const expertSchema = z.object({
   stage: z.enum(['onboarding', 'outreach']),
   /** Shown in the expert list that founders and visitors see (name, role and LinkedIn only). */
   listed: z.boolean().optional(),
+  /** What one session costs, in US dollars. Edited in the admin console. */
+  rate_usd: z.number().min(0).max(1000).optional(),
   // Public profile (shown on the expert's page when listed). Never contact details.
   photo_url: z.string().trim().max(500).refine(u => /^https:\/\/[^\s]+$/i.test(u) || /^\/api\/public\/expert-photos\/[A-Za-z0-9_-]+(\?v=[a-z0-9]+)?$/.test(u), 'must be an https:// link').or(z.literal('')).optional(),
   bio: text(3000).optional(),
@@ -42,6 +44,14 @@ const expertSchema = z.object({
   background: z.enum(['clinical', 'engineering', 'science', 'business', 'other', '']).optional(),
 }).strict();
 
+const RATE_STEPS = [50, 75, 100, 125, 150, 200];
+/** A plausible starting rate, the same every time for the same person, until an admin sets one. */
+export const defaultRate = (id: string): number => {
+  let h = 0;
+  for (const c of id) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return RATE_STEPS[h % RATE_STEPS.length];
+};
+
 /** The onboarded experts an admin has chosen to show: name, role and LinkedIn only — never contact details. */
 export async function listedExperts(database: Database) {
   const docs = await database.col('expertPipeline').find({ listed: true }, { projection: { photo: 0 } }).sort({ name: 1 }).toArray();
@@ -55,6 +65,7 @@ export async function listedExperts(database: Database) {
     category_ids: (d.category_ids as string[]) || [],
     expertise_stages: (d.expertise_stages as string[]) || [],
     background: (d.background as string) || '',
+    rate_usd: typeof d.rate_usd === 'number' ? (d.rate_usd as number) : defaultRate(d._id as string),
   }));
 }
 
@@ -70,6 +81,7 @@ export async function listedExpert(database: Database, id: string) {
     title: (d.title as string) || '',
     linkedin: /^https:\/\//i.test((d.linkedin as string) || '') ? (d.linkedin as string) : '',
     ...Object.fromEntries(PROFILE_FIELDS.map(f => [f, (d[f] as string) || ''])),
+    rate_usd: typeof d.rate_usd === 'number' ? (d.rate_usd as number) : defaultRate(d._id as string),
     intro_video_url: (d.intro_video_url as string) || '',
     highlights: (d.highlights as { title: string; text: string }[]) || [],
     tags: (d.tags as string[]) || [],
