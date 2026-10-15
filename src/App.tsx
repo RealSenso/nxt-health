@@ -251,7 +251,7 @@ function Shell({ currentUser, modals }: { currentUser: User | null; modals: Moda
   const location = useLocation();
   const currentTab = tabForPath(location.pathname);
   // Expert pages run edge to edge, like the rest of the public site, under the app's own navigation.
-  const bleed = location.pathname.startsWith('/experts/');
+  const bleed = /^\/experts\/[^/]+/.test(location.pathname);
 
   return (
     <div className="min-h-screen bg-[var(--nxt-bg)] text-[var(--nxt-ink)] flex flex-col font-sans">
