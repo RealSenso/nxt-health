@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, Navigate, Outlet, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
-import { AlertCircle, ArrowLeft, Bell, BookMarked, GraduationCap, ListTodo, MailWarning, Stethoscope, X } from 'lucide-react';
+import { AlertCircle, Bell, BookMarked, GraduationCap, ListTodo, MailWarning, Stethoscope, X } from 'lucide-react';
 import { store, PLATFORM_NAME } from './services/store';
 import { Navbar } from './components/Navbar';
 import { HomePage } from './components/HomePage';
@@ -252,9 +252,6 @@ function Shell({ currentUser, modals }: { currentUser: User | null; modals: Moda
   const currentTab = tabForPath(location.pathname);
   // Expert pages run edge to edge, like the rest of the public site, under the app's own navigation.
   const bleed = location.pathname.startsWith('/experts/');
-  // Every page has one parent, so the pages form a tree: the app navigation is the root, and "Back" always goes up one level.
-  const parent = /^\/admin\/(?!overview)[^/]+/.test(location.pathname) ? { to: '/admin/overview', label: 'Admin overview' }
-    : null;
 
   return (
     <div className="min-h-screen bg-[var(--nxt-bg)] text-[var(--nxt-ink)] flex flex-col font-sans">
@@ -279,14 +276,6 @@ function Shell({ currentUser, modals }: { currentUser: User | null; modals: Moda
       />
 
       {currentUser && !store.isEmailVerified() && <VerifyEmailBanner email={currentUser.email} />}
-
-      {parent && (
-        <div className="nxt-container pt-5">
-          <Link to={parent.to} className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--nxt-ink-soft)] hover:text-[var(--nxt-ink)]">
-            <ArrowLeft className="w-4 h-4" /> Back to {parent.label}
-          </Link>
-        </div>
-      )}
 
       <main className={bleed ? 'flex-1 pb-24 md:pb-0' : 'flex-1 nxt-container pt-8 sm:pt-12 pb-28 md:pb-16'}>
         <motion.div
