@@ -179,7 +179,7 @@ export const HomePage: React.FC = () => {
         <H2 className="mt-5">Each side gets something different.</H2>
         <div className="mt-12 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           {AUDIENCES.map(a => (
-            <article key={a.id} id={a.id} className="rounded-[18px] border border-[var(--nxt-line)] bg-[var(--nxt-surface)] p-7 flex flex-col scroll-mt-28">
+            <article key={a.id} id={a.id} className="rounded-[18px] border border-[var(--nxt-line)] bg-[var(--nxt-surface)] p-7 flex flex-col scroll-mt-28 transition-colors duration-300 hover:bg-[var(--nxt-bg-soft)]">
               <p className="text-[15px] text-[var(--nxt-ink-soft)]">{a.who}</p>
               <h3 className="font-display font-bold text-[1.65rem] leading-[1.1] mt-4 tracking-[-0.025em]">{a.title}</h3>
               <p className="mt-4 text-[15px] leading-relaxed text-[var(--nxt-ink-soft)]">{a.intro}</p>
