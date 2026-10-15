@@ -15,12 +15,8 @@ interface NavItem { label: string; to: string }
 const NAV: Record<PublicVariant, { items: NavItem[]; cta: NavItem; subBrand?: string }> = {
   home: {
     items: [
-      { label: 'How it works', to: '/#how-it-works' },
       { label: 'Problem statements', to: '/problems' },
       { label: 'Start in India', to: '/start-in-india' },
-      { label: 'Blog', to: '/blog' },
-      { label: 'Pricing', to: '/#pricing' },
-      { label: 'Find an expert', to: '/experts' },
     ],
     cta: { label: 'Log in / Sign up', to: '/login' },
   },
