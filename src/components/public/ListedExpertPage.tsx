@@ -64,6 +64,7 @@ export const ListedExpertPage: React.FC = () => {
             photoUrl={expert.photo_url}
             videoUrl={expert.intro_video_url}
             linkedin={expert.linkedin}
+            verified
             backTo="/experts#find"
             highlights={highlights.length ? highlights : SAMPLE.highlights}
           />

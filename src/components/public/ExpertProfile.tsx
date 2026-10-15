@@ -1,8 +1,7 @@
 import React from 'react';
-import { CheckCircle2, Play } from 'lucide-react';
+import { Play } from 'lucide-react';
 import { GATES } from '../../data/experts';
 import { ExpertActivity } from './ExpertParts';
-import { ExpertPhoto } from './ExpertDirectory';
 import { RuleList } from './ui';
 
 // Shown until an admin fills in the expert's own words, so every profile reads as a complete page.
@@ -45,19 +44,7 @@ export const ExpertProfile: React.FC<Props> = ({ expertId, firstName, name, phot
     <div className="nxt-container pt-14 pb-24">
       <div className="grid gap-12 lg:grid-cols-[1fr_26rem] xl:grid-cols-[1fr_28rem] lg:gap-20 items-start">
         <div>
-          <div className="flex items-start gap-5 sm:gap-6">
-            <ExpertPhoto expert={{ name, photo_url: photoUrl || '' }} className="w-24 h-24 sm:w-40 sm:h-40 rounded-2xl shrink-0 text-3xl" />
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-3">
-                <h2 className="font-display font-bold text-[clamp(1.9rem,3.5vw,3rem)] leading-[1.05] tracking-[-0.03em]">{name}</h2>
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--nxt-ink)] px-3 py-1 text-sm"><CheckCircle2 className="w-4 h-4" /> Verified by NXT</span>
-              </div>
-              {headline && <p className="mt-2 text-xl">{headline}</p>}
-              {topics.length > 0 && <p className="mt-2 text-[15px] text-[var(--nxt-ink-soft)]">{topics.join(' · ')}</p>}
-            </div>
-          </div>
-
-          <h2 className="font-display font-bold text-2xl mt-12 tracking-[-0.02em]">About</h2>
+          <h2 className="font-display font-bold text-2xl tracking-[-0.02em]">About</h2>
           <p className="mt-3 text-[17px] leading-relaxed text-[var(--nxt-ink)]/85 max-w-2xl whitespace-pre-line">{bio || SAMPLE.bio}</p>
 
           <h2 className="font-display font-bold text-2xl mt-12 tracking-[-0.02em]">Book this expert when you need to</h2>

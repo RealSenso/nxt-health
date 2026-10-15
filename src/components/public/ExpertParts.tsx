@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronLeft, ExternalLink, Linkedin, Play } from 'lucide-react';
+import { CheckCircle2, ChevronLeft, ExternalLink, Linkedin, Play } from 'lucide-react';
 import type { ExpertItem, ExpertItemKind } from '../../types';
 import { api } from '../../services/api';
 import { assetUrl, firstName, initials } from '../../data/experts';
@@ -24,19 +24,32 @@ interface HeroProps {
   /** A short line shown above the role, and where they are based. */
   tagline?: string;
   location?: string;
+  /** Shows the "Verified by NXT" badge next to the eyebrow. */
+  verified?: boolean;
 }
 
 /** The dark opening of an expert's page: portrait, name, role, an introduction video and three things to know. */
-export const ExpertHero: React.FC<HeroProps> = ({ name, title, eyebrow, photoUrl, videoUrl, linkedin, highlights, backTo, tagline, location }) => {
+export const ExpertHero: React.FC<HeroProps> = ({ name, title, eyebrow, photoUrl, videoUrl, linkedin, highlights, backTo, tagline, location, verified }) => {
   const first = firstName(name);
   return (
     <section className="bg-black text-white">
       <div className="nxt-container pt-8 pb-16 sm:pb-20">
         <Link to={backTo} className="inline-flex items-center gap-1 text-[15px] text-white/70 hover:text-white"><ChevronLeft className="w-4 h-4" /> All experts</Link>
-        <div className="mt-10 grid gap-10 lg:grid-cols-[22rem_1fr] lg:gap-20 items-start">
-          <img src={photoUrl ? assetUrl(photoUrl) : placeholderPortrait(name)} alt={name} className="w-full max-w-[22rem] aspect-[4/5] rounded-[8px] object-cover object-top bg-[#111]" />
-          <div>
-            <p className="text-[12px] sm:text-[13px] uppercase tracking-[0.14em] text-white/60">{eyebrow}</p>
+        <div className="mt-10 grid gap-x-16 gap-y-8 lg:grid-cols-[22rem_1fr] lg:gap-x-20">
+          {/* The portrait lines up with the video: it starts at the video's top and ends at its bottom. */}
+          <div className="lg:col-start-1 lg:row-start-2 relative aspect-[4/5] lg:aspect-auto lg:min-h-0 max-w-[22rem] w-full">
+            <img src={photoUrl ? assetUrl(photoUrl) : placeholderPortrait(name)} alt={name} className="absolute inset-0 w-full h-full rounded-[8px] object-cover object-top bg-[#111]" />
+          </div>
+
+          <div className="lg:col-start-2 lg:row-start-1">
+            <div className="flex flex-wrap items-center gap-3">
+              <p className="text-[12px] sm:text-[13px] uppercase tracking-[0.14em] text-white/60">{eyebrow}</p>
+              {verified && (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/50 px-3 py-1 text-[13px] text-white normal-case tracking-normal">
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Verified by NXT
+                </span>
+              )}
+            </div>
             <h1 className="font-display font-bold text-[clamp(2.5rem,5.2vw,4.25rem)] leading-[1.02] tracking-[-0.04em] mt-4">{name}</h1>
             {tagline && <p className="mt-3 text-xl font-semibold text-white">{tagline}</p>}
             {title && <p className={`${tagline ? 'mt-1.5 text-lg' : 'mt-3 text-xl'} text-white/80 max-w-2xl`}>{title}</p>}
@@ -46,31 +59,33 @@ export const ExpertHero: React.FC<HeroProps> = ({ name, title, eyebrow, photoUrl
                 <Linkedin className="w-4 h-4" /> LinkedIn
               </a>
             )}
+          </div>
 
+          <div className="lg:col-start-2 lg:row-start-2">
             {videoUrl ? (
-              <a href={videoUrl} target="_blank" rel="noreferrer" className="mt-8 flex flex-col items-center justify-center text-center rounded-[12px] border border-white/15 bg-[#161616] hover:bg-[#1c1c1c] transition-colors h-56 sm:h-72 px-6">
+              <a href={videoUrl} target="_blank" rel="noreferrer" className="flex flex-col items-center justify-center text-center rounded-[12px] border border-white/15 bg-[#161616] hover:bg-[#1c1c1c] transition-colors aspect-video px-6">
                 <span className="w-16 h-16 rounded-full border-2 border-white flex items-center justify-center"><Play className="w-6 h-6 ml-0.5" /></span>
                 <span className="mt-6 font-bold text-lg">Watch {first}'s introduction</span>
                 <span className="mt-2 text-[12px] uppercase tracking-[0.14em] text-white/60">Introductory video</span>
               </a>
             ) : (
-              <div className="mt-8 flex flex-col items-center justify-center text-center rounded-[12px] border border-white/15 bg-[#161616] h-56 sm:h-72 px-6" aria-label="Introduction video coming soon">
+              <div className="flex flex-col items-center justify-center text-center rounded-[12px] border border-white/15 bg-[#161616] aspect-video px-6" aria-label="Introduction video coming soon">
                 <span className="w-16 h-16 rounded-full border-2 border-white/40 flex items-center justify-center text-white/50"><Play className="w-6 h-6 ml-0.5" /></span>
                 <span className="mt-6 font-bold text-lg text-white/80">{first}'s introduction</span>
                 <span className="mt-2 text-[12px] uppercase tracking-[0.14em] text-white/50">Video coming soon</span>
               </div>
             )}
-
-            {highlights.length > 0 && (
-              <div className="mt-8 grid gap-6 sm:grid-cols-3">
-                {highlights.slice(0, 3).map((h, i) => (
-                  <div key={i} className="border-t border-white/25 pt-4 text-[15px] leading-relaxed text-white/70">
-                    <strong className="text-white">{h.title}.</strong> {h.text}
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
+
+          {highlights.length > 0 && (
+            <div className="lg:col-start-2 lg:row-start-3 grid gap-6 sm:grid-cols-3">
+              {highlights.slice(0, 3).map((h, i) => (
+                <div key={i} className="border-t border-white/25 pt-4 text-[15px] leading-relaxed text-white/70">
+                  <strong className="text-white">{h.title}.</strong> {h.text}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </section>

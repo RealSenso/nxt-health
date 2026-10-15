@@ -7,7 +7,6 @@ import { store } from '../../services/store';
 import { firstName, GATES, formatRate, istDateKey, istDayLabel, istTime } from '../../data/experts';
 import { PublicLayout } from './PublicLayout';
 import { ExpertActivity, ExpertHero } from './ExpertParts';
-import { ExpertPhoto } from './ExpertDirectory';
 import { SAMPLE } from './ExpertProfile';
 import { PayConsultationDialog } from './PayConsultationDialog';
 import { Btn, RuleList } from './ui';
@@ -100,7 +99,8 @@ export const ExpertDetailPage: React.FC = () => {
           <ExpertHero
             name={expert.name}
             title={expert.headline}
-            eyebrow={`Verified by NXT${expert.expert_areas[0] ? ` · ${expert.expert_areas[0]}` : ''}`}
+            eyebrow={expert.expert_areas[0] ? `NXT expert network · ${expert.expert_areas[0]}` : 'NXT expert network'}
+            verified
             photoUrl={expert.photo_url}
             videoUrl={expert.intro_video_url || ''}
             backTo="/experts#find"
@@ -109,19 +109,7 @@ export const ExpertDetailPage: React.FC = () => {
           <div className="nxt-container pt-14 pb-24">
           <div className="grid gap-12 lg:grid-cols-[1fr_26rem] xl:grid-cols-[1fr_28rem] lg:gap-20 items-start">
             <div>
-              <div className="flex items-start gap-5 sm:gap-6">
-                <ExpertPhoto expert={expert} className="w-24 h-24 sm:w-40 sm:h-40 rounded-2xl shrink-0 text-3xl" />
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <h1 className="font-display font-bold text-[clamp(1.9rem,3.5vw,3rem)] leading-[1.05] tracking-[-0.03em]">{expert.name}</h1>
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--nxt-ink)] px-3 py-1 text-sm"><CheckCircle2 className="w-4 h-4" /> Verified by NXT</span>
-                  </div>
-                  <p className="mt-2 text-xl">{expert.headline}</p>
-                  {expert.topics.length > 0 && <p className="mt-2 text-[15px] text-[var(--nxt-ink-soft)]">{expert.topics.join(' · ')}</p>}
-                </div>
-              </div>
-
-              <h2 className="font-display font-bold text-2xl mt-12 tracking-[-0.02em]">About</h2>
+              <h2 className="font-display font-bold text-2xl tracking-[-0.02em]">About</h2>
               <p className="mt-3 text-[17px] leading-relaxed text-[var(--nxt-ink)]/85 max-w-2xl">{expert.bio || SAMPLE.bio}</p>
 
               {(
