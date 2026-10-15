@@ -103,7 +103,7 @@ export const InquiryForm: React.FC<Props> = ({ kind, initialRole = 'pharma', ton
         </>
       )}
       {error && <p className={`text-sm ${dark ? 'text-[#ffb59c]' : 'text-[#a04a2a]'}`} role="alert">{error}</p>}
-      <Btn type="submit" variant={dark ? 'light' : 'solid'} disabled={busy} full={kind === 'lead'} id="btn-inquiry-submit">
+      <Btn type="submit" variant={dark ? 'light' : 'solid'} disabled={busy} full={kind === 'lead'} id="btn-inquiry-submit" className={kind === 'lead' ? '!bg-[#16a34a] hover:!bg-[#15803d] !text-white' : ''}>
         {busy ? 'Sending…' : kind === 'lead' ? 'Get started' : 'Introduce yourself'}
       </Btn>
     </form>
