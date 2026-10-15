@@ -665,17 +665,37 @@ const GuidePart: React.FC<{ icon: React.ElementType; title: string; children: Re
 
 const Section: React.FC<{ icon: React.ElementType; title: string; aside?: string; children: React.ReactNode }> = ({
   icon: Icon, title, aside, children,
-}) => (
-  <Reveal className="bg-[var(--nxt-surface)] rounded-2xl border border-[var(--nxt-line)] p-6 lg:p-7">
-    <div className="flex items-center justify-between gap-2 mb-3">
-      <h2 className="text-xs font-bold text-[var(--nxt-ink)] uppercase tracking-wider flex items-center gap-1.5">
-        <Icon className="w-3.5 h-3.5 text-[var(--nxt-mint-strong)]" /> {title}
-      </h2>
-      {aside && <span className="text-xs font-semibold text-[var(--nxt-ink-soft)]">{aside}</span>}
-    </div>
-    {children}
-  </Reveal>
-);
+}) => {
+  const key = `nxt-section-${title}`;
+  const [open, setOpen] = useState(() => {
+    try { return localStorage.getItem(key) !== 'closed'; } catch { return true; }
+  });
+  const toggle = () => {
+    setOpen(o => {
+      try { localStorage.setItem(key, o ? 'closed' : 'open'); } catch { /* ignore */ }
+      return !o;
+    });
+  };
+  return (
+    <Reveal className="bg-[var(--nxt-surface)] rounded-2xl border border-[var(--nxt-line)] p-6 lg:p-7">
+      <button
+        type="button"
+        onClick={toggle}
+        aria-expanded={open}
+        className={`w-full flex items-center justify-between gap-2 text-left ${open ? 'mb-3' : ''}`}
+      >
+        <h2 className="text-xs font-bold text-[var(--nxt-ink)] uppercase tracking-wider flex items-center gap-1.5">
+          <Icon className="w-3.5 h-3.5 text-[var(--nxt-mint-strong)]" /> {title}
+        </h2>
+        <span className="flex items-center gap-2">
+          {aside && <span className="text-xs font-semibold text-[var(--nxt-ink-soft)]">{aside}</span>}
+          <ChevronDown className={`w-4 h-4 text-[var(--nxt-ink-soft)] transition-transform ${open ? 'rotate-180' : ''}`} />
+        </span>
+      </button>
+      {open && children}
+    </Reveal>
+  );
+};
 
 const BulletList: React.FC<{ items: string[] }> = ({ items }) => (
   <ul className="space-y-1.5">
