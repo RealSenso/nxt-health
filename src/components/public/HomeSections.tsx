@@ -65,7 +65,6 @@ const PATTERNS: number[][] = [
 export const OneInFive: React.FC = () => {
   const [tick, setTick] = useState(0);
   useEffect(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const t = window.setInterval(() => setTick(n => n + 1), 1500);
     return () => window.clearInterval(t);
   }, []);
