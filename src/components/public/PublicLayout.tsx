@@ -45,30 +45,6 @@ const NAV: Record<PublicVariant, { items: NavItem[]; cta: NavItem; subBrand?: st
   },
 };
 
-const FOOTER_LINKS: Record<PublicVariant, NavItem[]> = {
-  home: [
-    { label: 'How it works', to: '/#how-it-works' },
-    { label: "Who it's for", to: '/#who-its-for' },
-    { label: 'Pricing', to: '/#pricing' },
-    { label: 'Problem statements', to: '/problems' },
-    { label: 'Start in India', to: '/start-in-india' },
-    { label: 'Blog', to: '/blog' },
-    { label: 'Find an expert', to: '/experts' },
-    { label: 'Become an expert', to: '/experts/join' },
-  ],
-  experts: [
-    { label: 'Find an expert', to: '/experts#find' },
-    { label: 'Problem statements', to: '/problems' },
-    { label: 'Become an expert', to: '/experts/join' },
-    { label: 'Back to NXT Health', to: '/' },
-  ],
-  join: [
-    { label: 'Find an expert', to: '/experts' },
-    { label: 'Become an expert', to: '/experts/join' },
-    { label: 'Back to NXT Health', to: '/' },
-  ],
-};
-
 /** Scrolls to #anchors on arrival (and back to the top on a plain page change). */
 function useAnchorScroll() {
   const { pathname, hash } = useLocation();
@@ -123,11 +99,6 @@ export const PublicLayout: React.FC<{ variant: PublicVariant; children: React.Re
       <footer className="border-t border-[var(--nxt-line)]">
         <div className="nxt-container py-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-[15px] text-[var(--nxt-ink-soft)]">
           <p>NXT Health · nxthealth.ai · India</p>
-          <nav className="flex flex-wrap gap-x-6 gap-y-2">
-            {FOOTER_LINKS[variant].filter(visible).map(item => (
-              <Link key={item.label} to={item.to} className="underline underline-offset-2 hover:text-[var(--nxt-ink)]">{item.label}</Link>
-            ))}
-          </nav>
         </div>
       </footer>
     </div>
