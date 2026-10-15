@@ -7,6 +7,7 @@ import { store, MentorProfileInput } from '../services/store';
 import { rankMentors, rankNetworkExperts } from '../data/mentorMatching';
 import { STAGE_TAGS } from '../data/stepGuides';
 import { BACKGROUND_OPTIONS, labelFor } from '../data/profileOptions';
+import { ExpertDirectory } from './public/ExpertDirectory';
 import { PageHeader } from './ui/PageHeader';
 import { PayConsultationDialog } from './public/PayConsultationDialog';
 import { EXPERT_AREAS, GATES, WEEKDAYS, bookingMinutes, formatRate, istDayLabel, istTime } from '../data/experts';
@@ -44,14 +45,6 @@ export const MentorsPage: React.FC<{ currentUser: User }> = ({ currentUser }) =>
 
   return (
     <div className="space-y-8 lg:space-y-10">
-      <PageHeader
-        icon={GraduationCap}
-        eyebrow="Experts"
-        title="Find an expert who's been there"
-        subtitle="Matches are ranked by the categories you're building in, the stage of your current roadmap steps, and backgrounds that complement yours."
-        illustration="resources"
-      />
-
       {myConsultations.length > 0 && (
         <section className="rounded-3xl border border-[var(--nxt-line)] bg-[var(--nxt-surface)] p-6">
           <h2 className="text-sm font-bold text-[var(--nxt-ink)] mb-3 flex items-center gap-2"><CalendarClock className="w-4 h-4 text-[var(--nxt-mint-strong)]" /> Your consultations</h2>
@@ -110,60 +103,7 @@ export const MentorsPage: React.FC<{ currentUser: User }> = ({ currentUser }) =>
         </section>
       )}
 
-      {matches.length === 0 ? (
-        <div className="rounded-3xl border border-dashed border-[var(--nxt-line)] p-10 text-center">
-          <Users className="w-10 h-10 mx-auto text-[var(--nxt-ink-soft)]" />
-          <p className="text-base font-bold text-[var(--nxt-ink)] mt-3">No experts are available right now</p>
-          <p className="text-sm text-[var(--nxt-ink-soft)] mt-1">We're adding experts regularly — check back soon.</p>
-        </div>
-      ) : (
-        <div className="grid md:grid-cols-2 gap-6 lg:gap-8">
-          {matches.map(({ mentor, reasons, score }, index) => {
-            const background = mentor.background || mentor.user_background;
-            return (
-              <article key={mentor.id} className="rounded-3xl border border-[var(--nxt-line)] bg-[var(--nxt-surface)] p-6 flex flex-col">
-                <div className="flex items-start gap-3">
-                  <span className="w-12 h-12 rounded-2xl bg-[var(--nxt-mint-strong)] text-white flex items-center justify-center font-display text-lg font-bold shrink-0">
-                    {mentor.name.charAt(0)}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-display text-lg font-bold text-[var(--nxt-ink)]">{mentor.name}</h3>
-                    {mentor.headline && <p className="text-sm text-[var(--nxt-ink-soft)]">{mentor.headline}</p>}
-                  </div>
-                  {index === 0 && score > 0 && (
-                    <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-[var(--nxt-mint)] text-[var(--nxt-mint-deep)] shrink-0 inline-flex items-center gap-1">
-                      <Sparkles className="w-3.5 h-3.5" /> Best match
-                    </span>
-                  )}
-                </div>
-                {mentor.bio && <p className="text-sm text-[var(--nxt-ink-soft)] mt-3 line-clamp-3">{mentor.bio}</p>}
-                {reasons.length > 0 && (
-                  <ul className="mt-3 space-y-1">
-                    {reasons.map(r => (
-                      <li key={r} className="text-sm text-[var(--nxt-ink)] flex items-start gap-2"><Check className="w-4 h-4 mt-0.5 text-[var(--nxt-mint-strong)] shrink-0" /> {r}</li>
-                    ))}
-                  </ul>
-                )}
-                <div className="mt-4 flex flex-wrap gap-1.5">
-                  {background && <span className="text-xs px-2.5 py-1 rounded-full bg-[var(--nxt-bg-soft)] text-[var(--nxt-ink-soft)]">{labelFor(BACKGROUND_OPTIONS, background)}</span>}
-                  {(mentor.expertise_stages || []).slice(0, 4).map(s => (
-                    <span key={s} className="text-xs px-2.5 py-1 rounded-full bg-[var(--nxt-bg-soft)] text-[var(--nxt-ink-soft)]">{s}</span>
-                  ))}
-                </div>
-                <p className="mt-4 text-xs text-[var(--nxt-ink-soft)]">{mentor.availability || 'Availability on request'}</p>
-                <div className="mt-auto pt-5 flex flex-wrap items-center gap-2">
-                  <button
-                    onClick={() => navigate(`/experts/${mentor.id}`)}
-                    className="px-4 py-2 rounded-full bg-[var(--nxt-mint-strong)] hover:bg-[var(--nxt-mint-deep)] text-white text-sm font-semibold inline-flex items-center gap-1.5"
-                  >
-                    <CalendarClock className="w-4 h-4" /> Book a session · {formatRate(mentor.rate_usd ?? 200)}{(mentor.rate_usd ?? 200) > 0 && '/hr'}
-                  </button>
-                </div>
-              </article>
-            );
-          })}
-        </div>
-      )}
+      <ExpertDirectory />
 
       {(() => {
         const network = rankNetworkExperts(currentUser);
