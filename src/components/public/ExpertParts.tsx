@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CheckCircle2, ChevronLeft, ExternalLink, Linkedin, Play } from 'lucide-react';
 import type { ExpertItem, ExpertItemKind } from '../../types';
@@ -35,6 +35,21 @@ interface HeroProps {
 export const ExpertHero: React.FC<HeroProps> = ({ name, title, eyebrow, photoUrl, videoUrl, linkedin, highlights, backTo, tagline, verified }) => {
   const first = firstName(name);
   const subtitle = tagline || title;
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const [portraitW, setPortraitW] = useState<number | null>(null);
+
+  // The portrait is 9:16 and runs from the top of the eyebrow to the bottom of the video, so its width follows that height.
+  useLayoutEffect(() => {
+    const body = bodyRef.current;
+    if (!body) return;
+    const measure = () => setPortraitW(window.innerWidth >= 1024 ? Math.round((body.getBoundingClientRect().height * 9) / 16) : null);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(body);
+    window.addEventListener('resize', measure);
+    return () => { ro.disconnect(); window.removeEventListener('resize', measure); };
+  }, [videoUrl, name]);
+
   return (
     <section className="relative bg-black text-white lg:min-h-[calc(100svh-4rem)] flex items-center">
       <div className="absolute top-6 left-0 right-0">
@@ -44,18 +59,18 @@ export const ExpertHero: React.FC<HeroProps> = ({ name, title, eyebrow, photoUrl
       </div>
       {/* A block 71% of the page wide, centred, with the same generous space above and below as the design. */}
       <div className="w-[88%] lg:w-[71%] max-w-[1420px] mx-auto pt-20 pb-16 lg:py-[6.25vw]">
-        <div className="grid gap-y-8 lg:gap-y-0 lg:grid-cols-[23.4%_70.4%] lg:gap-x-[6.2%]">
-          {/* Portrait, bottom-aligned with the video */}
-          <div className="lg:col-start-1 lg:row-start-1 lg:self-end">
+        <div className="grid gap-y-8 lg:gap-y-0 lg:grid-cols-[auto_minmax(0,1fr)] lg:gap-x-[6.2%]">
+          {/* Portrait: same height as the heading and video together */}
+          <div className="lg:col-start-1 lg:row-start-1 relative w-full max-w-[16rem] aspect-[9/16] lg:max-w-none lg:aspect-auto lg:w-[var(--pw)]" style={{ ['--pw' as string]: portraitW ? `${portraitW}px` : undefined }}>
             <img
               src={photoUrl ? assetUrl(photoUrl) : placeholderPortrait(name)}
               alt={name}
-              className="w-full max-w-[16rem] lg:max-w-none aspect-[332/535] object-cover object-top bg-[#111]"
+              className="absolute inset-0 w-full h-full rounded-[8px] object-cover object-top bg-[#111]"
             />
           </div>
 
           {/* Right column: scales its type with its own width */}
-          <div className="lg:col-start-2 lg:row-start-1 [container-type:inline-size]">
+          <div ref={bodyRef} className="lg:col-start-2 lg:row-start-1 [container-type:inline-size]">
             <p className="text-[clamp(11px,1.5cqw,15px)] uppercase tracking-[0.14em] text-white/60 flex flex-wrap items-center gap-x-3 gap-y-2">
               <span>{eyebrow}</span>
               {verified && (
