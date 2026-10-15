@@ -65,7 +65,7 @@ const shuffle = () => {
 export const OneInFive: React.FC = () => {
   const [{ ideas: pattern, starts }, setPick] = useState(() => ({ ideas: [0, 6, 12, 18, 24], starts: 12 }));
   useEffect(() => {
-    const t = window.setInterval(() => setPick(shuffle()), 1500);
+    const t = window.setInterval(() => setPick(shuffle()), 2600);
     return () => window.clearInterval(t);
   }, []);
 
