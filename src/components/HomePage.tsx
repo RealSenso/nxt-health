@@ -297,7 +297,7 @@ const PriceCard: React.FC<{
 }> = ({ label, price, note, points, cta, to, featured, outline }) => (
   <article className={`rounded-[18px] border bg-[var(--nxt-surface)] p-7 flex flex-col ${featured ? 'border-[var(--nxt-ink)]' : 'border-[var(--nxt-line)]'}`}>
     <Eyebrow>{label}</Eyebrow>
-    <p className="font-display font-bold text-[2.5rem] leading-none tracking-[-0.04em] mt-6">{price}</p>
+    <p className={`font-display font-bold text-[2.5rem] leading-none tracking-[-0.04em] mt-6 ${price === 'Free' ? 'text-[#16a34a]' : ''}`}>{price}</p>
     <p className="mt-2 text-sm text-[var(--nxt-ink-soft)]">{note}</p>
     <RuleList items={points} className="mt-6 mb-8" />
     {to !== '/signup' && <Btn to={to} variant={outline ? 'outline' : 'solid'} full className="mt-auto">{cta}</Btn>}
