@@ -3,6 +3,7 @@ import { Archive, ArchiveRestore, Check, Copy, GraduationCap, Search, Shield, Sh
 import { MembershipStatus, User } from '../../types';
 import { store } from '../../services/store';
 import { MentorProfileForm } from '../MentorsPage';
+import { ExpertItems } from './ExpertItems';
 
 const STATUS_LABEL: Record<MembershipStatus, string> = {
   none: 'Not a member',
@@ -165,6 +166,7 @@ export const AdminMembers: React.FC<{ currentUser: User }> = ({ currentUser }) =
               {editingMentor === u.id && (
                 <div className="mt-4 rounded-2xl border border-[var(--nxt-line)] p-4">
                   <MentorProfileForm initial={mentors.find(m => m.id === u.id)} forUserId={u.id} />
+                  <ExpertItems expertId={u.id} />
                 </div>
               )}
             </li>

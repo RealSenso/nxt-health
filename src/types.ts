@@ -343,6 +343,8 @@ export interface MentorProfile {
   book_when?: string[];
   session_days?: number[];
   session_times?: string[];
+  intro_video_url?: string;
+  highlights?: { title: string; text: string }[];
   /** Private video-call link — only present on your own profile (or for admins). */
   meeting_url?: string;
 }

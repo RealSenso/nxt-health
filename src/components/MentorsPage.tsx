@@ -338,6 +338,8 @@ export const MentorProfileForm: React.FC<{ initial?: MentorProfile; forUserId?: 
     session_days: initial?.session_days || [],
     session_times: initial?.session_times || [],
     meeting_url: initial?.meeting_url || '',
+    intro_video_url: initial?.intro_video_url || '',
+    highlights: initial?.highlights || [],
   });
   const [topicsText, setTopicsText] = useState((initial?.topics || []).join(', '));
   const [bookWhenText, setBookWhenText] = useState((initial?.book_when || []).join('\n'));
@@ -421,6 +423,28 @@ export const MentorProfileForm: React.FC<{ initial?: MentorProfile; forUserId?: 
             Photo link (https://…)
             <input value={form.photo_url || ''} onChange={(e) => setForm({ ...form, photo_url: e.target.value })} placeholder="optional" className={`${inputClass} mt-1`} />
           </label>
+          <label className="text-sm text-[var(--nxt-ink)] sm:col-span-2">
+            Introduction video link (https://…)
+            <input value={form.intro_video_url || ''} onChange={(e) => setForm({ ...form, intro_video_url: e.target.value })} placeholder="optional" className={`${inputClass} mt-1`} />
+          </label>
+          <div className="sm:col-span-2">
+            <p className="text-sm text-[var(--nxt-ink)]">Three things to know about you (shown under the video)</p>
+            <div className="mt-1 grid gap-2 sm:grid-cols-3">
+              {[0, 1, 2].map(i => {
+                const h = form.highlights?.[i] || { title: '', text: '' };
+                const update = (field: 'title' | 'text', value: string) => {
+                  const next = [0, 1, 2].map(j => (j === i ? { ...h, [field]: value } : form.highlights?.[j] || { title: '', text: '' }));
+                  setForm({ ...form, highlights: next.filter(x => x.title || x.text) });
+                };
+                return (
+                  <div key={i} className="space-y-1.5">
+                    <input value={h.title} onChange={(e) => update('title', e.target.value)} placeholder="Short title" className={inputClass} />
+                    <textarea rows={2} value={h.text} onChange={(e) => update('text', e.target.value)} placeholder="One sentence" className={inputClass} />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
         <label className="block text-sm text-[var(--nxt-ink)]">
           Topics shown on your card (comma-separated)

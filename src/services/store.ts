@@ -1092,6 +1092,8 @@ export interface MentorProfileInput {
   session_days?: number[];
   session_times?: string[];
   meeting_url?: string;
+  intro_video_url?: string;
+  highlights?: { title: string; text: string }[];
 }
 
 export const store = new ApiStore();
