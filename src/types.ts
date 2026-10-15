@@ -380,6 +380,8 @@ export interface PublicExpert {
   book_when: string[];
   rate_usd: number;
   photo_url: string;
+  intro_video_url?: string;
+  highlights?: { title: string; text: string }[];
   open_slots: number;
 }
 

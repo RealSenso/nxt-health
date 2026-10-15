@@ -6,7 +6,7 @@ import { api, ApiError } from '../../services/api';
 import { store } from '../../services/store';
 import { GATES, formatRate, istDateKey, istDayLabel, istTime } from '../../data/experts';
 import { PublicLayout } from './PublicLayout';
-import { ExpertPhoto } from './ExpertsPage';
+import { ExpertActivity, ExpertHero, ExpertStory } from './ExpertParts';
 import { PayConsultationDialog } from './PayConsultationDialog';
 import { Btn, RuleList } from './ui';
 
@@ -90,35 +90,29 @@ export const ExpertDetailPage: React.FC = () => {
 
   return (
     <PublicLayout variant="experts">
-      <div className="nxt-container pt-10 pb-24">
-        <Link to="/experts#find" className="inline-flex items-center gap-1 text-[15px] hover:underline"><ChevronLeft className="w-4 h-4" /> All experts</Link>
+      {loadError && <div className="nxt-container pt-10"><p className="font-semibold text-[var(--nxt-peach-deep)]">{loadError}</p></div>}
+      {!expert && !loadError && <div className="nxt-container pt-10"><p className="text-[var(--nxt-ink-soft)]">Loading…</p></div>}
 
-        {loadError && <p className="mt-8 font-semibold text-[var(--nxt-peach-deep)]">{loadError}</p>}
-        {!expert && !loadError && <p className="mt-8 text-[var(--nxt-ink-soft)]">Loading…</p>}
-
-        {expert && (
-          <div className="mt-8 grid gap-12 lg:grid-cols-[1fr_26rem] xl:grid-cols-[1fr_28rem] lg:gap-20 items-start">
+      {expert && (
+        <>
+          <ExpertHero
+            name={expert.name}
+            title={expert.headline}
+            eyebrow={`Verified by NXT${expert.expert_areas[0] ? ` · ${expert.expert_areas[0]}` : ''}`}
+            photoUrl={expert.photo_url}
+            videoUrl={expert.intro_video_url || ''}
+            backTo="/experts#find"
+            highlights={(expert.highlights && expert.highlights.length ? expert.highlights : expert.topics.slice(0, 3).map(t => ({ title: t, text: '' })))}
+          />
+          <ExpertStory
+            eyebrow={`About ${expert.name.split(' ')[0]}`}
+            heading={expert.headline ? `${expert.name.split(' ')[0]} helps founders with ${expert.expert_areas.slice(0, 2).join(' and ').toLowerCase() || 'the hard parts'}.` : ''}
+            paragraphs={[expert.bio]}
+          />
+          <div className="nxt-container pt-14 pb-24">
+          <div className="grid gap-12 lg:grid-cols-[1fr_26rem] xl:grid-cols-[1fr_28rem] lg:gap-20 items-start">
             <div>
-              <div className="flex flex-col sm:flex-row gap-6 sm:items-center">
-                <ExpertPhoto expert={expert} className="w-32 h-32 rounded-[18px] text-3xl shrink-0" />
-                <div>
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                    <h1 className="font-display font-bold text-[clamp(2rem,4vw,3rem)] leading-tight tracking-[-0.03em]">{expert.name}</h1>
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--nxt-ink)] px-3 py-1 text-sm">
-                      <CheckCircle2 className="w-4 h-4" /> Verified by NXT
-                    </span>
-                  </div>
-                  {expert.headline && <p className="mt-2 text-xl">{expert.headline}</p>}
-                  {expert.topics.length > 0 && <p className="mt-2 text-[15px] text-[var(--nxt-ink-soft)]">{expert.topics.join(' · ')}</p>}
-                </div>
-              </div>
-
-              {expert.bio && (
-                <>
-                  <h2 className="font-display font-bold text-xl mt-12 tracking-[-0.02em]">About</h2>
-                  <p className="mt-3 text-[17px] leading-relaxed text-[var(--nxt-ink)]/80 max-w-2xl whitespace-pre-line">{expert.bio}</p>
-                </>
-              )}
+              <ExpertActivity expertId={expert.id} firstName={expert.name.split(' ')[0]} />
 
               {expert.book_when.length > 0 && (
                 <>
@@ -190,8 +184,9 @@ export const ExpertDetailPage: React.FC = () => {
               )}
             </aside>
           </div>
-        )}
-      </div>
+          </div>
+        </>
+      )}
 
       {paying && (
         <PayConsultationDialog

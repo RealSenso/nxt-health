@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { ChevronLeft, Linkedin } from 'lucide-react';
+import { useParams } from 'react-router-dom';
 import type { ListedExpertProfile } from '../../types';
 import { api, ApiError } from '../../services/api';
 import { PublicLayout } from './PublicLayout';
-import { ExpertPhoto } from './ExpertsPage';
+import { ExpertActivity, ExpertHero, ExpertStory } from './ExpertParts';
 import { Btn } from './ui';
 
 const FACTS: [keyof ListedExpertProfile, string][] = [
@@ -48,67 +47,65 @@ export const ListedExpertPage: React.FC = () => {
   }
 
   const facts = expert ? FACTS.filter(([key]) => expert[key]) : [];
+  const first = expert ? expert.name.split(' ')[0] : '';
+  const highlights = expert
+    ? (expert.highlights.length ? expert.highlights : [
+        expert.specialisation && { title: 'Specialisation', text: expert.specialisation },
+        expert.organisation && { title: 'Organisation', text: expert.organisation },
+        expert.years_experience && { title: 'Experience', text: expert.years_experience },
+      ].filter(Boolean) as { title: string; text: string }[])
+    : [];
 
   return (
     <PublicLayout variant="experts">
-      <div className="nxt-container pt-10 pb-24">
-        <Link to="/experts#find" className="inline-flex items-center gap-1 text-[15px] hover:underline"><ChevronLeft className="w-4 h-4" /> All experts</Link>
-        {error && <p className="mt-8 font-semibold text-[var(--nxt-peach-deep)]">{error}</p>}
-        {!expert && !error && <p className="mt-8 text-[var(--nxt-ink-soft)]">Loading…</p>}
+      {error && <div className="nxt-container pt-10"><p className="font-semibold text-[var(--nxt-peach-deep)]">{error}</p></div>}
+      {!expert && !error && <div className="nxt-container pt-10"><p className="text-[var(--nxt-ink-soft)]">Loading…</p></div>}
 
-        {expert && (
-          <div className="mt-8 grid gap-12 lg:grid-cols-[1fr_24rem] lg:gap-20 items-start">
+      {expert && (
+        <>
+          <ExpertHero
+            name={expert.name}
+            title={expert.title}
+            eyebrow="NXT expert network"
+            photoUrl={expert.photo_url}
+            videoUrl={expert.intro_video_url}
+            linkedin={expert.linkedin}
+            backTo="/experts#find"
+            highlights={highlights}
+          />
+          <ExpertStory
+            eyebrow={`About ${first}`}
+            heading={expert.bio || expert.how_to_help ? `${first} is helping founders build.` : ''}
+            paragraphs={[expert.bio, expert.how_to_help]}
+          />
+          <div className="nxt-container pt-14 pb-24 grid gap-12 lg:grid-cols-[1fr_24rem] lg:gap-20 items-start">
             <div>
-              <div className="flex flex-col sm:flex-row gap-6 sm:items-center">
-                <ExpertPhoto expert={expert} className="w-32 h-32 rounded-[18px] text-3xl shrink-0" />
-                <div>
-                  <h1 className="font-display font-bold text-[clamp(2rem,4vw,3rem)] leading-tight tracking-[-0.03em]">{expert.name}</h1>
-                  {expert.title && <p className="mt-2 text-xl">{expert.title}</p>}
-                  {expert.linkedin && (
-                    <a href={expert.linkedin} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-1.5 text-[15px] font-semibold underline">
-                      <Linkedin className="w-4 h-4" /> LinkedIn profile
-                    </a>
-                  )}
-                </div>
-              </div>
-
-              {expert.bio && (
-                <>
-                  <h2 className="font-display font-bold text-xl mt-12 tracking-[-0.02em]">About</h2>
-                  <p className="mt-3 text-[17px] leading-relaxed text-[var(--nxt-ink)]/80 max-w-2xl whitespace-pre-line">{expert.bio}</p>
-                </>
-              )}
-              {expert.how_to_help && (
-                <>
-                  <h2 className="font-display font-bold text-xl mt-10 tracking-[-0.02em]">How they help founders</h2>
-                  <p className="mt-3 text-[17px] leading-relaxed text-[var(--nxt-ink)]/80 max-w-2xl whitespace-pre-line">{expert.how_to_help}</p>
-                </>
-              )}
               {facts.length > 0 && (
-                <dl className="mt-10 max-w-2xl divide-y divide-[var(--nxt-line)] border-y border-[var(--nxt-line)]">
+                <dl className="max-w-2xl divide-y divide-[var(--nxt-line)] border-y border-[var(--nxt-line)]">
                   {facts.map(([key, label]) => (
                     <div key={key} className="grid sm:grid-cols-[11rem_1fr] gap-1 sm:gap-6 py-3.5">
                       <dt className="text-sm uppercase tracking-wider text-[var(--nxt-ink-soft)]">{label}</dt>
-                      <dd className="text-[16px]">{expert[key]}</dd>
+                      <dd className="text-[16px]">{expert[key] as string}</dd>
                     </div>
                   ))}
                 </dl>
               )}
+              <ExpertActivity expertId={expert.id} firstName={first} />
               {!expert.bio && !expert.how_to_help && facts.length === 0 && (
-                <p className="mt-10 text-[var(--nxt-ink-soft)] max-w-xl">{expert.name} is part of the NXT expert network. A fuller profile will appear here soon.</p>
+                <p className="text-[var(--nxt-ink-soft)] max-w-xl">{expert.name} is part of the NXT expert network. A fuller profile will appear here soon.</p>
               )}
             </div>
 
             <aside className="rounded-[18px] border border-[var(--nxt-line)] p-7 lg:sticky lg:top-24">
-              <h2 className="font-display font-bold text-xl tracking-[-0.02em]">Work with {expert.name.split(' ')[0]}</h2>
+              <h2 className="font-display font-bold text-xl tracking-[-0.02em]">Work with {first}</h2>
               <p className="mt-3 text-[15px] text-[var(--nxt-ink-soft)] leading-relaxed">
-                Online booking opens once {expert.name.split(' ')[0]} sets up their sessions. Until then, tell us what you need and we will make the introduction.
+                Online booking opens once {first} sets up their sessions. Until then, tell us what you need and we will make the introduction.
               </p>
               <Btn to="/#start" full className="mt-6">Ask for an introduction</Btn>
             </aside>
           </div>
-        )}
-      </div>
+        </>
+      )}
     </PublicLayout>
   );
 };
