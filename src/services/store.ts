@@ -301,6 +301,22 @@ class ApiStore {
     );
   }
 
+  /** Archived accounts are kept but can no longer be used. */
+  public setArchived(userId: string, archived: boolean): Promise<void> {
+    return this.mutate(
+      d => { const u = d.admin?.users.find(x => x.id === userId); if (u) u.archived = archived; },
+      () => api.patch(`/admin/users/${userId}`, { archived }),
+    );
+  }
+
+  /** Permanently removes a person and what they own. */
+  public deleteUser(userId: string): Promise<void> {
+    return this.mutate(
+      d => { if (d.admin) d.admin.users = d.admin.users.filter(x => x.id !== userId); },
+      () => api.delete(`/admin/users/${userId}`),
+    );
+  }
+
   public setMentor(userId: string, isMentor: boolean): Promise<void> {
     return this.mutate(
       d => { const u = d.admin?.users.find(x => x.id === userId); if (u) u.is_mentor = isMentor; },
@@ -494,12 +510,18 @@ class ApiStore {
     return this.write(() => api.post('/admin/starter-content'));
   }
 
+  /** Problem statements. The free guide project is not one of them. */
   public getProblems(): ProblemStatement[] {
+    return this.data.content.problems.filter(p => !p.guide);
+  }
+
+  /** Every problem a founder can open a roadmap project for, including the free guide project. */
+  public getRoadmapProblems(): ProblemStatement[] {
     return this.data.content.problems;
   }
 
   public getProblemById(id: string): ProblemStatement | undefined {
-    return this.getProblems().find(p => p.id === id);
+    return this.data.content.problems.find(p => p.id === id);
   }
 
   private saveContent<T extends { id?: string }>(kind: 'problems' | 'categories' | 'steps' | 'resources', item: T): Promise<void> {

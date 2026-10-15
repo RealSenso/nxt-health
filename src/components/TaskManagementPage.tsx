@@ -35,7 +35,10 @@ export const TaskManagementPage: React.FC<TaskManagementPageProps> = ({
   onViewResources,
 }) => {
   const categories = store.getCategories();
-  const allProblems = store.getProblems();
+  const allCategories = store.getAllCategories();
+  const allProblems = store.getRoadmapProblems();
+  const guideProject = allProblems.find(p => p.guide) || null;
+  const guideCategory = allCategories.find(c => c.guide) || null;
   const scopeKey = currentUser ? store.getScopeKey(currentUser) : '';
 
   const navigate = useNavigate();
@@ -53,8 +56,11 @@ export const TaskManagementPage: React.FC<TaskManagementPageProps> = ({
   const [settingsProblemId, setSettingsProblemId] = useState<string | null>(null);
 
   const workingProblemIds = store.getWorkingProblemIds(scopeKey);
-  const workingProblems = allProblems.filter(p => workingProblemIds.includes(p.id));
-  const unselectedProblems = allProblems.filter(p => !workingProblemIds.includes(p.id));
+  const isMember = !!currentUser?.is_member;
+  // Free accounts can work on the free guide project only; members can work on any problem.
+  const pickableProblems = isMember ? allProblems : allProblems.filter(p => p.guide);
+  const workingProblems = pickableProblems.filter(p => workingProblemIds.includes(p.id));
+  const unselectedProblems = pickableProblems.filter(p => !workingProblemIds.includes(p.id));
 
   const appliedProblemIds = new Set(
     currentUser
@@ -65,13 +71,20 @@ export const TaskManagementPage: React.FC<TaskManagementPageProps> = ({
 
   const [pendingCategoryId, setPendingCategoryId] = useState<string | null>(null);
 
-  const isMember = !!currentUser?.is_member;
+  const selectedIsGuide = !!selectedProblemId && selectedProblemId === guideProject?.id;
   useEffect(() => {
-    if (!selectedProblemId || !isMember || !store.getProblemById(selectedProblemId)) return;
+    if (!currentUser || !selectedProblemId) return;
+    const problem = store.getProblemById(selectedProblemId);
+    if (!problem || (!isMember && !problem.guide)) return;
     if (!store.getWorkingProblemIds(scopeKey).includes(selectedProblemId)) store.addWorkingProblem(scopeKey, selectedProblemId);
-  }, [selectedProblemId, isMember, scopeKey]);
+    // The guide project always uses the guide's own roadmap, so there is nothing to choose.
+    if (problem.guide && guideCategory && !store.getLockedCategoryId(scopeKey, selectedProblemId)) {
+      store.lockCategory(scopeKey, selectedProblemId, guideCategory.id);
+    }
+  }, [selectedProblemId, isMember, scopeKey, guideCategory?.id]);
 
-  if (!currentUser || !currentUser.is_member) {
+  // Free accounts see a read-only preview of member roadmaps, and the full flow for the free guide.
+  if (!currentUser || (!isMember && selectedProblemId && !selectedIsGuide)) {
     return (
       <RoadmapTrailer
         isLoggedIn={!!currentUser}
@@ -82,7 +95,7 @@ export const TaskManagementPage: React.FC<TaskManagementPageProps> = ({
   }
 
   const selectedProblem = allProblems.find(p => p.id === selectedProblemId) || null;
-  const selectedCategory = categories.find(c => c.id === selectedCategoryId) || null;
+  const selectedCategory = allCategories.find(c => c.id === selectedCategoryId) || null;
 
   if (selectedProblemId && !selectedProblem) {
     return (
@@ -164,7 +177,7 @@ export const TaskManagementPage: React.FC<TaskManagementPageProps> = ({
       onClose={() => setSettingsProblemId(null)}
       currentUser={currentUser}
       problem={settingsProblem}
-      currentCategory={categories.find(c => c.id === settingsCategoryId) || null}
+      currentCategory={allCategories.find(c => c.id === settingsCategoryId) || null}
       currentProgressPercent={settingsCategoryId ? categoryProgressPercent(settingsCategoryId) : 0}
       onReselectCategory={() => {
         if (settingsProblemId) handleResetCategory(settingsProblemId);
@@ -212,13 +225,13 @@ export const TaskManagementPage: React.FC<TaskManagementPageProps> = ({
               <AlertCircle className="w-5 h-5 shrink-0" />
               <span>You haven't picked a problem yet — choose one below to start your first project.</span>
             </Reveal>
-            <ProblemPickerGrid problems={allProblems} onPick={handleAddProblem} appliedIds={appliedProblemIds} savedIds={savedProblemIds} />
+            <ProblemPickerGrid problems={pickableProblems} onPick={handleAddProblem} appliedIds={appliedProblemIds} savedIds={savedProblemIds} />
           </div>
         ) : (
           <RevealGroup className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8" stagger={0.05}>
             {workingProblems.map(problem => {
               const lockedId = store.getLockedCategoryId(scopeKey, problem.id);
-              const lockedCategory = categories.find(c => c.id === lockedId) || null;
+              const lockedCategory = allCategories.find(c => c.id === lockedId) || null;
               const lockedSteps = lockedId ? store.getSteps(lockedId) : [];
               const lockedProgress = lockedId ? store.getUserProgress(scopeKey, lockedId) : {};
               const doneCount = lockedSteps.filter(st => !!lockedProgress[st.id]).length;
@@ -325,6 +338,18 @@ export const TaskManagementPage: React.FC<TaskManagementPageProps> = ({
             </motion.div>
           )}
         </AnimatePresence>
+
+        {!isMember && (
+          <div className="space-y-6 pt-4 border-t border-[var(--nxt-line)]">
+            <Reveal className="bg-[var(--nxt-bg-soft)] border border-[var(--nxt-line)] rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <p className="text-sm text-[var(--nxt-ink)]">
+                <span className="font-bold">The free guide is yours to use.</span> Members unlock every other roadmap, funding applications and experts.
+              </p>
+              <PillButton tone="mint" onClick={onOpenMembershipModal} className="px-4 py-2 text-sm shrink-0">Become a member</PillButton>
+            </Reveal>
+            <RoadmapTrailer isLoggedIn onOpenLogin={onOpenLogin} onOpenMembershipModal={onOpenMembershipModal} />
+          </div>
+        )}
 
         {settingsModal}
       </div>

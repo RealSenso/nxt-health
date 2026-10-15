@@ -242,7 +242,7 @@ export const AdminExperts: React.FC = () => {
 
       <ul className="mt-4 divide-y divide-[var(--nxt-line)]">
         {shown.map(item => (
-          <li key={item.id} className="py-4 flex flex-col sm:flex-row sm:flex-wrap sm:items-start gap-3 justify-between">
+          <li key={item.id} className="py-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
             <div className="min-w-0">
               <p className="font-semibold">{item.name}</p>
               {item.title && <p className="text-sm text-[var(--nxt-ink-soft)] mt-0.5">{item.title}</p>}
@@ -252,24 +252,24 @@ export const AdminExperts: React.FC = () => {
                 {/^https:\/\//i.test(item.linkedin) && <a className="inline-flex items-center gap-1 underline" href={item.linkedin} target="_blank" rel="noreferrer"><Linkedin className="w-3.5 h-3.5" /> LinkedIn</a>}
               </p>
             </div>
-            <div className="shrink-0 flex items-center gap-2 text-sm">
-              <label className="inline-flex items-center gap-1.5 cursor-pointer">
+            <div className="shrink-0 flex flex-wrap items-center sm:justify-end gap-2 text-sm">
+              <label className="inline-flex items-center gap-1.5 cursor-pointer w-36">
                 <input type="checkbox" checked={!!item.listed} onChange={(e) => void change(item, { listed: e.target.checked })} aria-label={`Show ${item.name} in the expert list`} />
                 <span className="text-xs font-semibold">In expert list</span>
               </label>
-              <select value={item.fit} onChange={(e) => void change(item, { fit: e.target.value as PipelineExpert['fit'] })} className="rounded-full border border-[var(--nxt-line)] bg-transparent px-3 py-1.5" aria-label={`Fit for ${item.name}`}>
+              <select value={item.fit} onChange={(e) => void change(item, { fit: e.target.value as PipelineExpert['fit'] })} className="w-36 rounded-full border border-[var(--nxt-line)] bg-transparent px-3 py-1.5" aria-label={`Fit for ${item.name}`}>
                 <option value="">Fit: —</option>
                 <option value="Strong">Strong fit</option>
                 <option value="Medium">Medium fit</option>
               </select>
-              <select value={item.stage} onChange={(e) => void change(item, { stage: e.target.value as PipelineExpert['stage'] })} className="rounded-full border border-[var(--nxt-line)] bg-transparent px-3 py-1.5" aria-label={`Stage for ${item.name}`}>
+              <select value={item.stage} onChange={(e) => void change(item, { stage: e.target.value as PipelineExpert['stage'] })} className="w-36 rounded-full border border-[var(--nxt-line)] bg-transparent px-3 py-1.5" aria-label={`Stage for ${item.name}`}>
                 <option value="onboarding">Onboarding</option>
                 <option value="outreach">Approached</option>
               </select>
               <button onClick={() => setEditing(editing === item.id ? '' : item.id)} className="text-xs font-semibold underline whitespace-nowrap">{editing === item.id ? 'Close profile' : 'Edit profile'}</button>
               <button onClick={() => void remove(item)} className="p-2 rounded-full text-[var(--nxt-ink-soft)] hover:text-[var(--nxt-ink)]" aria-label={`Remove ${item.name}`}><Trash2 className="w-4 h-4" /></button>
             </div>
-            {editing === item.id && <div className="w-full sm:basis-full"><ProfileForm item={item} onSave={(fields) => void change(item, fields)} /></div>}
+            {editing === item.id && <div className="sm:col-span-2"><ProfileForm item={item} onSave={(fields) => void change(item, fields)} /></div>}
           </li>
         ))}
       </ul>

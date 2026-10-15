@@ -31,7 +31,7 @@ export function expertsRouter(database: Database): Router {
   async function listedExperts() {
     const profiles = await database.col('mentorProfiles').find({ accepting: true }).toArray();
     if (!profiles.length) return [];
-    const users = await database.col('users').find({ _id: { $in: profiles.map(p => p._id) }, is_mentor: true }).toArray();
+    const users = await database.col('users').find({ _id: { $in: profiles.map(p => p._id) }, is_mentor: true, archived: { $ne: true } }).toArray();
     return users.map(user => ({ user, profile: profiles.find(p => p._id === user._id)! }));
   }
 

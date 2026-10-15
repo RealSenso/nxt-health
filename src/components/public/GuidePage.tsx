@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Check, ChevronDown } from 'lucide-react';
+import { Navigate } from 'react-router-dom';
 import { store } from '../../services/store';
 import { PublicLayout } from './PublicLayout';
 import { Btn, Eyebrow, H1 } from './ui';
@@ -11,6 +12,9 @@ import { Btn, Eyebrow, H1 } from './ui';
 export const GuidePage: React.FC = () => {
   const guide = store.getGuide();
   const signedIn = store.isAuthenticated();
+  const guideProject = store.getRoadmapProblems().find(p => p.guide);
+  // Signed-in people use the guide inside Roadmaps, like every other roadmap.
+  if (signedIn && guideProject) return <Navigate to={`/roadmaps/${guideProject.id}`} replace />;
   const scopeKey = signedIn ? store.getScopeKey(store.getCurrentUser()) : '';
   const progress = guide && signedIn ? store.getUserProgress(scopeKey, guide.category.id) : {};
   const [open, setOpen] = useState<string>(guide?.steps[0]?.id || '');

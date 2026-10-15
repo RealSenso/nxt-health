@@ -26,6 +26,7 @@ const schemas = {
     department: text(200).min(1),
     funded: z.boolean(),
     funding_amount: text(200).optional(),
+    guide: z.boolean().optional(),
     sponsor_name: text(120).optional(),
     sponsor_linkedin: httpsLink.optional(),
     sponsor_photo_url: photoLink.optional(),

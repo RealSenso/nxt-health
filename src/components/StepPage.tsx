@@ -248,33 +248,40 @@ export const StepPage: React.FC<StepPageProps> = ({
             <span className="font-semibold text-[var(--nxt-ink)]">{daysActive === null ? '—' : `${daysActive} day${daysActive === 1 ? '' : 's'}`}</span>
             {guide.typicalDuration && <span className="text-xs">({guide.typicalDuration.startsWith('about') ? '' : 'typical '}{guide.typicalDuration})</span>}
           </Meta>
-          <Meta label="Spent on this step">
-            <span className="text-[var(--nxt-ink)] font-semibold">₹</span>
-            <input
-              id="input-step-spent"
-              type="number"
-              min={0}
-              inputMode="decimal"
-              placeholder="0"
-              value={workspace.spent_inr ?? ''}
-              onChange={(e) => save({ spent_inr: e.target.value === '' ? undefined : Math.max(0, Number(e.target.value)) })}
-              className="w-24 text-xs bg-transparent text-[var(--nxt-ink)] focus:outline-hidden border-b border-[var(--nxt-line)]"
-            />
-            {step.expected_cost_inr !== undefined && <span className="text-xs">(typically ₹{step.expected_cost_inr.toLocaleString('en-IN')})</span>}
-          </Meta>
-          <Meta label="Target">
-            <input
-              type="date"
-              value={workspace.target_date || ''}
-              onChange={(e) => save({ target_date: e.target.value || undefined })}
-              className="text-xs bg-transparent text-[var(--nxt-ink)] focus:outline-hidden"
-            />
-            {daysToTarget !== null && !isCompleted && (
-              <span className={`text-xs font-semibold ${daysToTarget < 0 ? 'text-[var(--nxt-peach-deep)]' : ''}`}>
-                {daysToTarget < 0 ? `${-daysToTarget}d overdue` : `${daysToTarget}d left`}
+          <div className="ml-auto flex flex-wrap items-center gap-x-6 gap-y-3">
+            <Meta label="Spent on this step">
+              <span className="inline-flex items-center gap-2 rounded-full bg-[var(--nxt-bg-soft)] border border-[var(--nxt-line)] pl-3.5 pr-2 py-1.5 focus-within:ring-2 focus-within:ring-[var(--nxt-ink)]">
+                <span className="text-sm font-semibold text-[var(--nxt-ink)]">₹</span>
+                <input
+                  id="input-step-spent"
+                  type="number"
+                  min={0}
+                  inputMode="decimal"
+                  placeholder="0"
+                  aria-label="Spent on this step in rupees"
+                  value={workspace.spent_inr ?? ''}
+                  onChange={(e) => save({ spent_inr: e.target.value === '' ? undefined : Math.max(0, Number(e.target.value)) })}
+                  className="w-24 text-sm bg-transparent text-[var(--nxt-ink)] focus:outline-hidden"
+                />
               </span>
-            )}
-          </Meta>
+              {step.expected_cost_inr !== undefined && <span className="text-xs">typically ₹{step.expected_cost_inr.toLocaleString('en-IN')}</span>}
+            </Meta>
+            <Meta label="Target">
+              <input
+                id="input-step-target"
+                type="date"
+                aria-label="Target date"
+                value={workspace.target_date || ''}
+                onChange={(e) => save({ target_date: e.target.value || undefined })}
+                className="rounded-full bg-[var(--nxt-bg-soft)] border border-[var(--nxt-line)] px-3.5 py-1.5 text-sm text-[var(--nxt-ink)] focus:outline-hidden focus:ring-2 focus:ring-[var(--nxt-ink)]"
+              />
+              {daysToTarget !== null && !isCompleted && (
+                <span className={`text-xs font-semibold ${daysToTarget < 0 ? 'text-[var(--nxt-peach-deep)]' : ''}`}>
+                  {daysToTarget < 0 ? `${-daysToTarget}d overdue` : `${daysToTarget}d left`}
+                </span>
+              )}
+            </Meta>
+          </div>
         </div>
 
         {displayStatus === 'blocked' && (
@@ -332,9 +339,11 @@ export const StepPage: React.FC<StepPageProps> = ({
                     </span>
                   )}
                   {taskDetails.get(item.id) && editingTaskId !== item.id && (
-                    <span className="hidden sm:flex items-center gap-1.5 shrink-0 text-xs text-[var(--nxt-ink-soft)] mt-0.5">
-                      {taskDetails.get(item.id)!.gate && <span className="px-2 py-0.5 rounded-full bg-[var(--nxt-mint-strong)] text-white font-bold text-[11px]">{taskDetails.get(item.id)!.gate}</span>}
-                      {taskDetails.get(item.id)!.duration}
+                    <span className="hidden sm:flex items-center gap-2 shrink-0 text-xs text-[var(--nxt-ink-soft)] mt-0.5">
+                      <span className="w-[4.5rem] flex justify-end">
+                        {taskDetails.get(item.id)!.gate && <span className="px-2 py-0.5 rounded-full bg-[var(--nxt-mint-strong)] text-white font-bold text-[11px] whitespace-nowrap">{taskDetails.get(item.id)!.gate}</span>}
+                      </span>
+                      <span className="w-24 text-left whitespace-nowrap">{taskDetails.get(item.id)!.duration}</span>
                     </span>
                   )}
                   {taskDetails.get(item.id) && editingTaskId !== item.id && (

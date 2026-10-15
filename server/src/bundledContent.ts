@@ -1,7 +1,7 @@
 import type { Database } from './db.js';
 import { SEED_BLOGS } from './bundled/seedBlogs.js';
 import { START_IN_INDIA_ROADMAP } from './bundled/startIndiaRoadmap.js';
-import { buildRoadmapSteps, STARTER_CATEGORIES } from './starterContent.js';
+import { buildRoadmapSteps, GUIDE_PROBLEM, STARTER_CATEGORIES } from './starterContent.js';
 
 type Doc = Record<string, unknown> & { id: string };
 const toDoc = ({ id, ...rest }: Doc) => ({ _id: id, ...rest });
@@ -29,6 +29,14 @@ export async function loadBundledContent(database: Database): Promise<{ steps: n
       steps++;
     }
   }
+
+  // The project that holds the free guide in Roadmaps.
+  const { _id: guideProblemId, ...guideFields } = toDoc(GUIDE_PROBLEM);
+  await col('problems').updateOne(
+    { _id: guideProblemId },
+    { $setOnInsert: { ...guideFields, created_by_admin: 'system', created_at: new Date(Date.now() - 365 * 86_400_000).toISOString() } },
+    { upsert: true },
+  );
 
   let blogs = 0;
   const created = new Date().toISOString();

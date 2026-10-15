@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { HttpError, requireMember, requireVerified, scopeKeyOf } from '../auth.js';
+import { requireRoadmapAccess } from '../access.js';
 import type { Database } from '../db.js';
 import { now, parse } from '../util.js';
 
@@ -24,13 +25,13 @@ export function scopeRouter(database: Database): Router {
   const workspaces = database.col('workspaces');
 
   r.put('/scope/working-problems/:problemId', async (req, res) => {
-    const key = scopeKeyOf(requireMember(req));
+    const key = scopeKeyOf(await requireRoadmapAccess(req, database, { problemId: param(req.params.problemId) }));
     await scopes.updateOne({ _id: key }, { $addToSet: { working_problem_ids: param(req.params.problemId) } }, { upsert: true });
     res.json({ ok: true });
   });
 
   r.delete('/scope/working-problems/:problemId', async (req, res) => {
-    const key = scopeKeyOf(requireMember(req));
+    const key = scopeKeyOf(await requireRoadmapAccess(req, database, { problemId: param(req.params.problemId) }));
     await scopes.updateOne({ _id: key }, { $pull: { working_problem_ids: param(req.params.problemId) } as never });
     res.json({ ok: true });
   });
@@ -42,24 +43,23 @@ export function scopeRouter(database: Database): Router {
   });
 
   r.put('/scope/locks/:problemId', async (req, res) => {
-    const key = scopeKeyOf(requireMember(req));
     const { category_id } = parse(z.object({ category_id: id }), req.body);
+    const key = scopeKeyOf(await requireRoadmapAccess(req, database, { problemId: param(req.params.problemId), categoryId: category_id }));
     const category = await database.col('categories').findOne({ _id: category_id });
     if (!category) throw new HttpError(404, 'Category not found.');
     if (category.coming_soon) throw new HttpError(409, `${category.name} is coming soon — it isn't open yet.`);
-    if (category.guide) throw new HttpError(409, `${category.name} is a guide, not a project category.`);
     await scopes.updateOne({ _id: key }, { $set: { [`category_locks.${param(req.params.problemId)}`]: category_id } }, { upsert: true });
     res.json({ ok: true });
   });
 
   r.delete('/scope/locks/:problemId', async (req, res) => {
-    const key = scopeKeyOf(requireMember(req));
+    const key = scopeKeyOf(await requireRoadmapAccess(req, database, { problemId: param(req.params.problemId) }));
     await scopes.updateOne({ _id: key }, { $unset: { [`category_locks.${param(req.params.problemId)}`]: '' } });
     res.json({ ok: true });
   });
 
   r.put('/scope/notes/:problemId', async (req, res) => {
-    const key = scopeKeyOf(requireMember(req));
+    const key = scopeKeyOf(await requireRoadmapAccess(req, database, { problemId: param(req.params.problemId) }));
     const { note } = parse(z.object({ note: z.string().max(5000) }), req.body);
     await scopes.updateOne({ _id: key }, { $set: { [`project_notes.${param(req.params.problemId)}`]: note } }, { upsert: true });
     res.json({ ok: true });
@@ -88,13 +88,13 @@ export function scopeRouter(database: Database): Router {
   });
 
   r.delete('/scope/progress/:categoryId', async (req, res) => {
-    const key = scopeKeyOf(requireMember(req));
+    const key = scopeKeyOf(await requireRoadmapAccess(req, database, { categoryId: param(req.params.categoryId) }));
     await progress.deleteMany({ user_id: key, category_id: param(req.params.categoryId) });
     res.json({ ok: true });
   });
 
   r.put('/scope/workspaces/:problemId/:stepId', async (req, res) => {
-    const key = scopeKeyOf(requireMember(req));
+    const key = scopeKeyOf(await requireRoadmapAccess(req, database, { problemId: param(req.params.problemId) }));
     const body = parse(workspaceSchema, req.body);
     const problem_id = param(req.params.problemId);
     const step_id = param(req.params.stepId);
@@ -104,7 +104,7 @@ export function scopeRouter(database: Database): Router {
   });
 
   r.delete('/scope/workspaces/:problemId', async (req, res) => {
-    const key = scopeKeyOf(requireMember(req));
+    const key = scopeKeyOf(await requireRoadmapAccess(req, database, { problemId: param(req.params.problemId) }));
     await workspaces.deleteMany({ scope_key: key, problem_id: param(req.params.problemId) });
     res.json({ ok: true });
   });

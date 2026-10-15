@@ -1,6 +1,6 @@
 import type { Database } from './db.js';
 import type { RoadmapContent } from './roadmapTypes.js';
-import { buildRoadmapSteps, OBSOLETE_CATEGORY_ID, OBSOLETE_PROBLEM_ID, ROADMAP_SOURCE_CATEGORY, STARTER_CATEGORIES, STARTER_PROBLEMS, STARTER_RESOURCES } from './starterContent.js';
+import { buildRoadmapSteps, GUIDE_PROBLEM, OBSOLETE_CATEGORY_ID, OBSOLETE_PROBLEM_ID, ROADMAP_SOURCE_CATEGORY, STARTER_CATEGORIES, STARTER_PROBLEMS, STARTER_RESOURCES } from './starterContent.js';
 
 type Doc = Record<string, unknown> & { id: string };
 const toDoc = ({ id, ...rest }: Doc) => ({ _id: id, ...rest });
@@ -39,7 +39,7 @@ export async function syncStarterContent(database: Database, adminId: string, ro
   }
 
   let problemsAdded = 0;
-  for (const [index, problem] of STARTER_PROBLEMS.entries()) {
+  for (const [index, problem] of [...STARTER_PROBLEMS, GUIDE_PROBLEM].entries()) {
     const { _id, ...fields } = toDoc(problem);
     // Earlier entries are newer, so they list first.
     const added = await col('problems').updateOne(

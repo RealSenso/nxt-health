@@ -306,8 +306,15 @@ describe('website content', () => {
     await request(app).post('/api/scope/progress/toggle').set('Authorization', token('visitor')).send({ category_id: 'cat-marketplace-network', step_id: 's1' }).expect(403);
     const ok = await request(app).post('/api/scope/progress/toggle').set('Authorization', token('visitor')).send({ category_id: 'cat-start-in-india', step_id: 'step-start-in-india-0' }).expect(200);
     expect(ok.body.completed).toBe(true);
-    await member('founder');
-    await request(app).put('/api/scope/locks/prob-x').set('Authorization', token('founder')).send({ category_id: 'cat-start-in-india' }).expect(409);
+    // A free account can open the guide as a project, but not lock the guide to some other problem or a paid category to the guide.
+    await request(app).put('/api/scope/locks/prob-start-in-india').set('Authorization', token('visitor')).send({ category_id: 'cat-start-in-india' }).expect(200);
+    await request(app).put('/api/scope/locks/prob-x').set('Authorization', token('visitor')).send({ category_id: 'cat-start-in-india' }).expect(403);
+    await request(app).put('/api/scope/locks/prob-start-in-india').set('Authorization', token('visitor')).send({ category_id: 'cat-marketplace-network' }).expect(403);
+    await request(app).put('/api/scope/working-problems/prob-start-in-india').set('Authorization', token('visitor')).expect(200);
+    await request(app).put('/api/scope/working-problems/prob-1').set('Authorization', token('visitor')).expect(403);
+    const note = { status: 'in_progress', checklist: [], log: [], spent_inr: 500 };
+    await request(app).put('/api/scope/workspaces/prob-start-in-india/step-start-in-india-0').set('Authorization', token('visitor')).send(note).expect(200);
+    await request(app).put('/api/scope/workspaces/prob-1/step-x').set('Authorization', token('visitor')).send(note).expect(403);
   });
 });
 
@@ -324,6 +331,33 @@ describe('funding application form', () => {
     expect(ok.body.application.answers).toEqual({ city: 'Pune', support_needed: ['Clinical validation'] });
     const asAdmin = (await request(app).get('/api/bootstrap').set('Authorization', token('boss')).expect(200)).body.applications;
     expect(asAdmin[0].answers.city).toBe('Pune');
+  });
+});
+
+describe('archiving and deleting members', () => {
+  it('lets admins archive, restore and permanently delete a member, but never an admin or themselves', async () => {
+    await admin('boss');
+    await admin('boss2');
+    await member('ann');
+    await request(app).patch('/api/admin/users/ann').set('Authorization', token('ann')).send({ archived: true }).expect(403);
+    await request(app).patch('/api/admin/users/boss2').set('Authorization', token('boss')).send({ archived: true }).expect(400);
+    await request(app).delete('/api/admin/users/boss2').set('Authorization', token('boss')).expect(400);
+    await request(app).delete('/api/admin/users/boss').set('Authorization', token('boss')).expect(400);
+
+    // An archived account is kept but can't be used.
+    await request(app).patch('/api/admin/users/ann').set('Authorization', token('boss')).send({ archived: true }).expect(200);
+    const blocked = await request(app).put('/api/scope/working-problems/prob-start-in-india').set('Authorization', token('ann'));
+    expect(blocked.status).toBe(403);
+    expect(blocked.body.error).toMatch(/archived/i);
+    const list = (await request(app).get('/api/bootstrap').set('Authorization', token('boss')).expect(200)).body.admin.users;
+    expect(list.find((u: { id: string }) => u.id === 'ann').archived).toBe(true);
+    await request(app).patch('/api/admin/users/ann').set('Authorization', token('boss')).send({ archived: false }).expect(200);
+
+    await request(app).delete('/api/admin/users/ann').set('Authorization', token('ann')).expect(403);
+    await request(app).delete('/api/admin/users/ann').set('Authorization', token('boss')).expect(200);
+    const after = (await request(app).get('/api/bootstrap').set('Authorization', token('boss')).expect(200)).body.admin.users;
+    expect(after.some((u: { id: string }) => u.id === 'ann')).toBe(false);
+    await request(app).delete('/api/admin/users/ann').set('Authorization', token('boss')).expect(404);
   });
 });
 
@@ -535,7 +569,7 @@ describe('uploads and profiles', () => {
       await admin('boss');
       const first = await request(app).post('/api/admin/starter-content').set('Authorization', token('boss')).expect(201);
       // The test fixtures contain cat-1 and prob-1, which are old starter ids, so one of each goes.
-      expect(first.body).toMatchObject({ categories: 26, steps: 0, problems_added: 2, removed_categories: 1, removed_problems: 1 });
+      expect(first.body).toMatchObject({ categories: 26, steps: 0, problems_added: 3, removed_categories: 1, removed_problems: 1 });
 
       const loaded = await content('boss');
       expect(loaded.categories).toHaveLength(26);
@@ -544,7 +578,7 @@ describe('uploads and profiles', () => {
         'Workflow / Operational Tech', 'Training / Simulation', 'Clinical Infrastructure / Platform',
         'How to start a startup in India',
       ]);
-      expect(loaded.problems.map((p: { title: string }) => p.title)).toEqual(['In women, what is “psychological” and what is “not”?', 'Solve migraine, without meds.']);
+      expect(loaded.problems.map((p: { title: string }) => p.title).sort()).toEqual(['How to start a startup in India', 'In women, what is “psychological” and what is “not”?', 'Solve migraine, without meds.'].sort());
 
       const second = await request(app).post('/api/admin/starter-content').set('Authorization', token('boss')).expect(201);
       expect(second.body).toMatchObject({ categories: 26, problems_added: 0, removed_categories: 0 });

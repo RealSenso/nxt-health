@@ -3,7 +3,8 @@ import multer from 'multer';
 import { ObjectId } from 'mongodb';
 import { Readable } from 'node:stream';
 import { z } from 'zod';
-import { canAccessScope, HttpError, requireAdmin, requireMember, requireUser, scopeKeyOf } from '../auth.js';
+import { canAccessScope, HttpError, requireAdmin, requireMember, requireUser, requireVerified, scopeKeyOf } from '../auth.js';
+import { requireRoadmapAccess } from '../access.js';
 import type { Database } from '../db.js';
 import { out } from '../db.js';
 import { adminIds, newId, notify, now, parse } from '../util.js';
@@ -112,12 +113,12 @@ export function applicationsRouter(database: Database): Router {
     res.json({ application: out(await apps.findOne({ _id: app._id })) });
   });
 
-  r.post('/submissions', (req, _res, next) => { requireMember(req); next(); }, upload.array('files', MAX_FILES), async (req, res) => {
-    const user = requireMember(req);
+  r.post('/submissions', (req, _res, next) => { requireVerified(req); next(); }, upload.array('files', MAX_FILES), async (req, res) => {
     const body = parse(
       z.object({ step_id: z.string().min(1), category_id: z.string().min(1), problem_id: z.string().min(1), note: z.string().max(5000).default('') }),
       req.body,
     );
+    const user = await requireRoadmapAccess(req, database, { problemId: body.problem_id, categoryId: body.category_id });
     const files = (req.files as Express.Multer.File[] | undefined) || [];
     if (!body.note.trim() && files.length === 0) throw new HttpError(400, 'Add a note or attach at least one file.');
 

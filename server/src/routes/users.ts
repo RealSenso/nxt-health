@@ -1,4 +1,7 @@
 import { Router } from 'express';
+import { ObjectId } from 'mongodb';
+import { getApps } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
 import { z } from 'zod';
 import { HttpError, isAdmin, requireAdmin, requireAuth, requireUser, requireVerified } from '../auth.js';
 import type { Database } from '../db.js';
@@ -52,6 +55,7 @@ const adminUserSchema = z.object({
   role: z.enum(['admin', 'member']).optional(),
   membership_status: z.enum(['none', 'requested', 'active', 'declined']).optional(),
   is_mentor: z.boolean().optional(),
+  archived: z.boolean().optional(),
 }).strict();
 
 export function usersRouter(database: Database): Router {
@@ -156,6 +160,7 @@ export function usersRouter(database: Database): Router {
     const target = await users.findOne({ _id: id });
     if (!target) throw new HttpError(404, 'User not found.');
     if (id === admin._id && body.role === 'member') throw new HttpError(400, "You can't remove your own admin role.");
+    if (body.archived && (id === admin._id || target.role === 'admin')) throw new HttpError(400, "Admins can't be archived. Remove their admin role first.");
     const update: Record<string, unknown> = { ...body };
     if (body.membership_status === 'active' && target.membership_status !== 'active') update.membership_started_at = now();
     await users.updateOne({ _id: id }, { $set: update });
@@ -171,6 +176,66 @@ export function usersRouter(database: Database): Router {
       await notify(database, [id], 'mentorship', "You're now an expert", 'An admin added you as an expert. Set up your expert profile so founders can find you.', '/mentoring');
     }
     res.json({ user: out(await users.findOne({ _id: id })) });
+  });
+
+  /**
+   * Permanently removes one person and what they own: profile, roadmap work, applications, evidence, messages and bookings.
+   * Admins can't be deleted (remove their admin role first), and nobody can delete themselves. Archive keeps the data.
+   */
+  r.delete('/admin/users/:id', async (req, res) => {
+    const admin = requireAdmin(req);
+    const id = String(req.params.id);
+    const target = await users.findOne({ _id: id });
+    if (!target) throw new HttpError(404, 'User not found.');
+    if (id === admin._id) throw new HttpError(400, "You can't delete your own account.");
+    if (target.role === 'admin') throw new HttpError(400, "Admins can't be deleted. Remove their admin role first.");
+
+    const col = database.col;
+    const submissions = await col('submissions').find({ $or: [{ user_id: id }, { scope_key: id }] }).toArray();
+    for (const sub of submissions) {
+      for (const file of (sub.files as { file_id: string }[] | undefined) || []) {
+        await database.files.delete(new ObjectId(file.file_id)).catch(() => undefined);
+      }
+    }
+    const threads = await col('threads').find({ participant_uids: id }).toArray();
+    const ownThreadIds = threads.filter(t => (t.participant_uids as string[]).length <= 2).map(t => t._id as string);
+    const team = target.team_id ? await col('teams').findOne({ _id: target.team_id as string }) : null;
+
+    await Promise.all([
+      col('messages').deleteMany({ thread_id: { $in: ownThreadIds } }),
+      col('threads').deleteMany({ _id: { $in: ownThreadIds } }),
+      col('threads').updateMany({ participant_uids: id }, { $pull: { participant_uids: id } as never }),
+      col('notifications').deleteMany({ user_id: id }),
+      col('rsvps').deleteMany({ user_id: id }),
+      col('bookings').deleteMany({ user_id: id }),
+      col('mentorRequests').deleteMany({ $or: [{ founder_uid: id }, { mentor_uid: id }] }),
+      col('consultations').deleteMany({ $or: [{ founder_uid: id }, { mentor_uid: id }] }),
+      col('teamInvites').deleteMany({ $or: [{ invited_by: id }, { to_email: target.email as string }] }),
+      col('publicProfiles').deleteMany({ _id: id }),
+      col('mentorProfiles').deleteMany({ _id: id }),
+      col('scopes').deleteMany({ _id: id }),
+      col('progress').deleteMany({ user_id: id }),
+      col('workspaces').deleteMany({ scope_key: id }),
+      col('applications').deleteMany({ $or: [{ user_id: id }, { scope_key: id }] }),
+      col('submissions').deleteMany({ _id: { $in: submissions.map(s => s._id as string) } }),
+      col('stepRatings').deleteMany({ user_id: id }),
+      col('resourceViews').deleteMany({ user_id: id }),
+      col('problemVotes').deleteMany({ user_id: id }),
+    ]);
+    if (team) {
+      const remaining = ((team.member_ids as string[]) || []).filter(m => m !== id);
+      if (remaining.length === 0) await col('teams').deleteOne({ _id: team._id as string });
+      else await col('teams').updateOne({ _id: team._id as string }, { $set: { member_ids: remaining } });
+    }
+    await col('resources').updateMany({}, { $set: { rsvp_count: 0 } });
+    for (const { _id, n } of await col('rsvps').aggregate<{ _id: string; n: number }>([{ $group: { _id: '$resource_id', n: { $sum: 1 } } }]).toArray()) {
+      await col('resources').updateOne({ _id }, { $set: { rsvp_count: n } });
+    }
+    await users.deleteOne({ _id: id });
+
+    // Their sign-in account too, when this server can reach the identity service.
+    if (getApps().length) await getAuth().deleteUser(id).catch(() => undefined);
+    res.json({ ok: true });
   });
 
   return r;

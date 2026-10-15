@@ -24,6 +24,8 @@ export interface User {
   membership_status: MembershipStatus;
   membership_requested_at?: string;
   is_mentor?: boolean;
+  /** Set by an admin: the account is kept but cannot be used. */
+  archived?: boolean;
   email_verified?: boolean;
   saved_problem_ids?: string[];
   team_id?: string | null;
@@ -85,6 +87,8 @@ export interface ProblemStatement {
   department: string;
   funded: boolean;
   funding_amount?: string;
+  /** The free guide project. Not listed with problem statements; available in Roadmaps to everyone signed in. */
+  guide?: boolean;
   /** The person who posted the problem. */
   sponsor_name?: string;
   sponsor_linkedin?: string;

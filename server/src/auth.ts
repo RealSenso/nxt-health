@@ -17,6 +17,8 @@ export interface UserDoc {
   membership_status: 'none' | 'requested' | 'active' | 'declined';
   is_mentor?: boolean;
   team_id?: string | null;
+  /** Set by an admin: the account is kept but can no longer be used. */
+  archived?: boolean;
   [key: string]: unknown;
 }
 
@@ -57,6 +59,7 @@ export function requireAuth(req: Request): VerifiedToken {
 export function requireUser(req: Request): UserDoc {
   requireAuth(req);
   if (!req.user) throw new HttpError(403, 'Finish creating your profile first.');
+  if (req.user.archived) throw new HttpError(403, 'This account has been archived. Please contact NXT Health.');
   return req.user;
 }
 

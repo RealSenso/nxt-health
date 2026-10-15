@@ -5,6 +5,16 @@ import type { RoadmapContent } from './roadmapTypes.js';
 
 type Doc = Record<string, unknown> & { id: string };
 
+/** The free guide project: not a problem statement, but the project every signed-in person can open in Roadmaps. */
+export const GUIDE_PROBLEM: Doc = {
+  id: 'prob-start-in-india',
+  title: 'How to start a startup in India',
+  description: 'A free step-by-step guide from a first idea to an incorporated, recognised, compliant and funded company. Work through it like any other roadmap: tick off tasks, keep notes and track your progress.',
+  department: 'Getting started',
+  funded: false,
+  guide: true,
+};
+
 export const STARTER_PROBLEMS: Doc[] = [
   {
     id: 'prob-womens-psychological',
