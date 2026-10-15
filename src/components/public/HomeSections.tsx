@@ -1,7 +1,22 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { AnimatePresence, motion, useInView } from 'motion/react';
 import { Check } from 'lucide-react';
 import { Eyebrow, H2, RuleList } from './ui';
+
+/** One shared clock, so the dots and the "How it works" steps always change on the same beat. */
+const BEAT_MS = 2600;
+let beat = 0;
+let timer = 0;
+const listeners = new Set<() => void>();
+const subscribeBeat = (fn: () => void) => {
+  listeners.add(fn);
+  if (listeners.size === 1) timer = window.setInterval(() => { beat += 1; listeners.forEach(l => l()); }, BEAT_MS);
+  return () => {
+    listeners.delete(fn);
+    if (listeners.size === 0) window.clearInterval(timer);
+  };
+};
+const useBeat = () => useSyncExternalStore(subscribeBeat, () => beat, () => 0);
 
 const inView = { initial: { opacity: 0, y: 24 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true, margin: '-80px' }, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const } };
 
@@ -63,11 +78,9 @@ const shuffle = () => {
 
 /** "1 in 5" shown as a grid of people; the one in five with an idea keeps moving, and one of them starts. */
 export const OneInFive: React.FC = () => {
+  const tick = useBeat();
   const [{ ideas: pattern, starts }, setPick] = useState(() => ({ ideas: [0, 6, 12, 18, 24], starts: 12 }));
-  useEffect(() => {
-    const t = window.setInterval(() => setPick(shuffle()), 2600);
-    return () => window.clearInterval(t);
-  }, []);
+  useEffect(() => { if (tick > 0) setPick(shuffle()); }, [tick]);
 
   return (
   <section className="nxt-container py-16 sm:py-20 border-b border-[var(--nxt-line)]">
@@ -102,16 +115,14 @@ export const OneInFive: React.FC = () => {
 
 /** Five steps shown one at a time; they advance on their own until someone picks one. */
 export const HowItWorks: React.FC<{ steps: { title: string; body: React.ReactNode }[] }> = ({ steps }) => {
-  const [index, setIndex] = useState(0);
-  const [auto, setAuto] = useState(true);
+  const [manual, setManual] = useState<number | null>(null);
   const ref = useRef<HTMLElement>(null);
-  // The walk-through starts when the section scrolls into view, not on page load.
+  // The walk-through starts at step 1 when the section scrolls into view, then follows the shared beat.
   const seen = useInView(ref, { once: true, amount: 0.45 });
-  useEffect(() => {
-    if (!auto || !seen) return;
-    const t = window.setInterval(() => setIndex(i => (i + 1) % steps.length), 2600);
-    return () => window.clearInterval(t);
-  }, [auto, seen, steps.length]);
+  const tick = useBeat();
+  const startedAt = useRef<number | null>(null);
+  if (seen && startedAt.current === null) startedAt.current = tick;
+  const index = manual !== null ? manual : startedAt.current === null ? 0 : (tick - startedAt.current) % steps.length;
 
   return (
     <section ref={ref} id="how-it-works" className="nxt-container py-20 sm:py-24 border-b border-[var(--nxt-line)] scroll-mt-20">
@@ -124,7 +135,7 @@ export const HowItWorks: React.FC<{ steps: { title: string; body: React.ReactNod
           {steps.map((s, i) => (
             <li key={s.title} className="shrink-0 lg:shrink">
               <button
-                onClick={() => { setIndex(i); setAuto(false); }}
+                onClick={() => setManual(i)}
                 aria-current={i === index}
                 className={`w-full text-left flex items-center gap-3 rounded-xl px-3 py-3 transition-colors ${i === index ? 'bg-[var(--nxt-bg-soft)]' : 'hover:bg-[var(--nxt-bg-soft)]/60'}`}
               >
