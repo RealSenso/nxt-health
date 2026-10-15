@@ -5,7 +5,7 @@ import { PublicLayout } from './public/PublicLayout';
 import { InquiryForm, LeadRole } from './public/InquiryForm';
 import { BlogCard } from './public/BlogPages';
 import type { Startup } from '../types';
-import { HowItWorks, OneInFive, RouteComparison, Rise, WhoItsFor } from './public/HomeSections';
+import { HowItWorks, OneInFive, Rise, WhoItsFor } from './public/HomeSections';
 import { scrollToId } from './public/smoothScroll';
 import { Btn, Eyebrow, H1, H2, RuleList, Step } from './public/ui';
 
@@ -141,7 +141,27 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      <RouteComparison />
+      {/* The difference */}
+      <section className="nxt-container py-20 sm:py-24 border-b border-[var(--nxt-line)]">
+        <H2 className="max-w-[24ch]">Others build companies. We connect the pieces a doctor can't reach.</H2>
+        <div className="mt-12 grid gap-6 md:grid-cols-2">
+          <div className="rounded-[18px] border border-[var(--nxt-line)] bg-[var(--nxt-surface)] p-7 sm:p-9">
+            <Eyebrow>The usual route</Eyebrow>
+            <h3 className="font-display font-bold text-2xl mt-5 tracking-[-0.02em]">Build first. Find the buyer last.</h3>
+            <p className="mt-4 text-[17px] leading-relaxed text-[var(--nxt-ink-soft)]">
+              A founder builds the product, writes the pitch deck, finds an advisor, and only then goes looking for someone to pay for it. By then the time and money are spent.
+            </p>
+          </div>
+          <div className="rounded-[18px] bg-[#111] text-white p-7 sm:p-9 border border-white/10">
+            <p className="text-[12px] sm:text-[13px] uppercase tracking-[0.14em] text-white/60">The NXT route</p>
+            <h3 className="font-display font-bold text-2xl mt-5 tracking-[-0.02em]">Start with a problem someone will pay to solve.</h3>
+            <p className="mt-4 text-[17px] leading-relaxed text-white/80">
+              Pharma companies and hospitals name the problem and put money behind it. Then we connect a physician-founder to the capital, hospitals and commercial help needed to solve it.
+            </p>
+          </div>
+        </div>
+        <p className="mt-10 font-semibold text-lg">Problem first. Funded first. Then we build it with the doctor.</p>
+      </section>
 
       <OneInFive />
 

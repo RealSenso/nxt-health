@@ -25,47 +25,6 @@ export const Rise: React.FC<{ children: React.ReactNode; className?: string; del
   <motion.div {...inView} transition={{ ...inView.transition, delay }} className={className}>{children}</motion.div>
 );
 
-const Track: React.FC<{ label: string; tone: 'muted' | 'bold'; segments: { name: string; weight: number; flag?: boolean }[] }> = ({ label, tone, segments }) => (
-  <div>
-    <p className={`text-[12px] uppercase tracking-[0.14em] mb-3 ${tone === 'bold' ? 'text-[var(--nxt-ink)] font-semibold' : 'text-[var(--nxt-ink-soft)]'}`}>{label}</p>
-    <div className="flex gap-1.5">
-      {segments.map((s, i) => (
-        <motion.div
-          key={s.name}
-          initial={{ opacity: 0, scaleX: 0 }}
-          whileInView={{ opacity: 1, scaleX: 1 }}
-          viewport={{ once: true, margin: '-60px' }}
-          transition={{ delay: (tone === 'bold' ? 0.5 : 0) + i * 0.18, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          style={{ flexGrow: s.weight, transformOrigin: 'left' }}
-          className={`min-w-0 rounded-xl px-3 py-4 text-sm font-semibold leading-tight ${
-            tone === 'bold'
-              ? s.flag ? 'bg-[var(--nxt-mint-strong)] text-white' : 'bg-[var(--nxt-ink-fixed)] text-white'
-              : s.flag ? 'border-2 border-dashed border-[var(--nxt-ink-soft)] text-[var(--nxt-ink)]' : 'bg-[var(--nxt-bg-soft)] text-[var(--nxt-ink-soft)]'
-          }`}
-        >
-          <span className="block truncate sm:whitespace-normal">{s.name}</span>
-        </motion.div>
-      ))}
-    </div>
-  </div>
-);
-
-/** The usual route versus the NXT route, drawn as two timelines. */
-export const RouteComparison: React.FC = () => (
-  <section className="nxt-container py-20 sm:py-24 border-b border-[var(--nxt-line)]">
-    <Rise><H2 className="max-w-[24ch]">Others build companies. We connect the pieces a doctor can't reach.</H2></Rise>
-    <div className="mt-12 space-y-10">
-      <Track label="The usual route" tone="muted" segments={[
-        { name: 'Build the product', weight: 4 }, { name: 'Pitch deck', weight: 2 }, { name: 'Find an advisor', weight: 2 }, { name: 'Look for a buyer… (too late)', weight: 3, flag: true },
-      ]} />
-      <Track label="The NXT route" tone="bold" segments={[
-        { name: 'Funded problem', weight: 2, flag: true }, { name: 'Doctor-founder', weight: 2 }, { name: 'Gate by gate with evidence', weight: 4 }, { name: 'Buyer already waiting', weight: 3, flag: true },
-      ]} />
-    </div>
-    <Rise delay={0.2}><p className="mt-10 font-semibold text-lg">The buyer is the first step, not the last. Problem first. Funded first.</p></Rise>
-  </section>
-);
-
 /** Picks five different cells of the 5x5 grid at random, and which of them is the one who starts. */
 const shuffle = () => {
   const cells = Array.from({ length: 25 }, (_, i) => i);
