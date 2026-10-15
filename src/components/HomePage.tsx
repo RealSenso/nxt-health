@@ -5,7 +5,7 @@ import { PublicLayout } from './public/PublicLayout';
 import { InquiryForm, LeadRole } from './public/InquiryForm';
 import { BlogCard } from './public/BlogPages';
 import type { Startup } from '../types';
-import { HowItWorks, OneInFive, Rise, WhoItsFor } from './public/HomeSections';
+import { HowItWorks, OneInFive, Rise } from './public/HomeSections';
 import { scrollToId } from './public/smoothScroll';
 import { Btn, Eyebrow, H1, H2, RuleList, Step } from './public/ui';
 
@@ -133,7 +133,7 @@ export const HomePage: React.FC = () => {
               key={link.label}
               href={link.to}
               className="rounded-full border border-[var(--nxt-ink)]/70 px-4 py-2 text-[15px] hover:bg-[var(--nxt-bg-soft)] transition-colors"
-              onClick={(e) => { e.preventDefault(); window.dispatchEvent(new CustomEvent('nxt-audience', { detail: link.to.slice(1) })); scrollToId('who-its-for'); }}
+              onClick={(e) => { e.preventDefault(); scrollToId(link.to.slice(1), 'center'); }}
             >
               {link.label}
             </a>
@@ -173,7 +173,21 @@ export const HomePage: React.FC = () => {
     { title: 'Get matched help', body: <>Experts, hospitals, lawyers and incubators, recommended for the step you're on.</> },
       ]} />
 
-      <WhoItsFor audiences={AUDIENCES} />
+      {/* Who it's for */}
+      <section id="who-its-for" className="nxt-container py-20 sm:py-24 border-b border-[var(--nxt-line)] scroll-mt-20">
+        <Eyebrow>Who it's for</Eyebrow>
+        <H2 className="mt-5">Each side gets something different.</H2>
+        <div className="mt-12 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          {AUDIENCES.map(a => (
+            <article key={a.id} id={a.id} className="rounded-[18px] border border-[var(--nxt-line)] bg-[var(--nxt-surface)] p-7 flex flex-col scroll-mt-28">
+              <p className="text-[15px] text-[var(--nxt-ink-soft)]">{a.who}</p>
+              <h3 className="font-display font-bold text-[1.65rem] leading-[1.1] mt-4 tracking-[-0.025em]">{a.title}</h3>
+              <p className="mt-4 text-[15px] leading-relaxed text-[var(--nxt-ink-soft)]">{a.intro}</p>
+              <RuleList items={a.points} className="mt-5" />
+            </article>
+          ))}
+        </div>
+      </section>
 
       {/* What's inside */}
       <section className="nxt-container py-20 sm:py-24 border-b border-[var(--nxt-line)]">

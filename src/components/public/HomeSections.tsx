@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { AnimatePresence, motion, useInView } from 'motion/react';
 import { Check } from 'lucide-react';
-import { Eyebrow, H2, RuleList } from './ui';
+import { Eyebrow, H2 } from './ui';
 
 /** One shared clock, so the dots and the "How it works" steps always change on the same beat. */
 const BEAT_MS = 2600;
@@ -122,59 +122,6 @@ export const HowItWorks: React.FC<{ steps: { title: string; body: React.ReactNod
           </AnimatePresence>
         </div>
       </div>
-    </section>
-  );
-};
-
-interface Audience { id: string; who: string; title: string; intro: string; points: string[] }
-
-/** One panel, six audiences: pick who you are and read only your own pitch. */
-export const WhoItsFor: React.FC<{ audiences: Audience[] }> = ({ audiences }) => {
-  const [id, setId] = useState(audiences[0].id);
-  const a = audiences.find(x => x.id === id) || audiences[0];
-  useEffect(() => {
-    const pick = (e: Event) => { const next = (e as CustomEvent<string>).detail; if (audiences.some(x => x.id === next)) setId(next); };
-    window.addEventListener('nxt-audience', pick);
-    return () => window.removeEventListener('nxt-audience', pick);
-  }, [audiences]);
-  return (
-    <section id="who-its-for" className="nxt-container py-20 sm:py-24 border-b border-[var(--nxt-line)] scroll-mt-20">
-      <Rise>
-        <Eyebrow>Who it's for</Eyebrow>
-        <H2 className="mt-5">I am…</H2>
-      </Rise>
-      <div className="mt-8 flex flex-wrap gap-2.5" role="tablist" aria-label="Who are you">
-        {audiences.map(x => (
-          <button
-            key={x.id}
-            id={x.id}
-            role="tab"
-            aria-selected={x.id === id}
-            onClick={() => setId(x.id)}
-            className={`rounded-full border px-4 py-2 text-[15px] transition-colors scroll-mt-28 ${
-              x.id === id ? 'bg-[var(--nxt-ink-fixed)] text-white border-transparent font-semibold' : 'border-[var(--nxt-ink)]/60 hover:bg-[var(--nxt-bg-soft)]'
-            }`}
-          >
-            {x.who}
-          </button>
-        ))}
-      </div>
-      <AnimatePresence mode="wait">
-        <motion.article
-          key={a.id}
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.25 }}
-          className="mt-8 rounded-[22px] border border-[var(--nxt-line)] bg-[var(--nxt-surface)] p-7 sm:p-10 grid gap-8 lg:grid-cols-2 lg:gap-16"
-        >
-          <div>
-            <h3 className="font-display font-bold text-[clamp(1.6rem,3vw,2.4rem)] leading-[1.1] tracking-[-0.03em]">{a.title}</h3>
-            <p className="mt-5 text-lg leading-relaxed text-[var(--nxt-ink-soft)]">{a.intro}</p>
-          </div>
-          <RuleList items={a.points} className="self-center" />
-        </motion.article>
-      </AnimatePresence>
     </section>
   );
 };
