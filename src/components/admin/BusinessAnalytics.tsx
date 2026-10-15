@@ -55,7 +55,7 @@ const rupees = (n: number) => `₹${Math.round(n).toLocaleString('en-IN')}`;
 /** What founders say they spent on each step, next to the expected cost, which an admin can adjust. */
 const CostsPanel: React.FC = () => {
   const steps = store.getSteps();
-  const categories = store.getCategories();
+  const categories = store.getAllCategories();
   const spendByStep = new Map<string, number[]>();
   for (const [key, ws] of Object.entries(store.getAllStepWorkspaces())) {
     if (typeof ws.spent_inr !== 'number') continue;
@@ -197,7 +197,7 @@ export const BusinessAnalytics: React.FC = () => {
   const views = store.getResourceViews();
   const ratings = store.getStepRatings();
   const allSteps = store.getSteps();
-  const categories = store.getCategories();
+  const categories = store.getAllCategories();
   const resources = store.getResources();
 
   const workspaceEntries = Object.entries(workspaces).map(([key, ws]) => {

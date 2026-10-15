@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import logo from '../../assets/nxt-health-logo.png';
 import { store } from '../../services/store';
 import { Btn } from './ui';
+import { AnnouncementBar } from '../ui/AnnouncementBar';
 
 export type PublicVariant = 'home' | 'experts' | 'join';
 
@@ -13,7 +14,8 @@ const NAV: Record<PublicVariant, { items: NavItem[]; cta: NavItem; subBrand?: st
     items: [
       { label: 'How it works', to: '/#how-it-works' },
       { label: 'Problem statements', to: '/problems' },
-      { label: "Who it's for", to: '/#who-its-for' },
+      { label: 'Start in India', to: '/start-in-india' },
+      { label: 'Blog', to: '/blog' },
       { label: 'Pricing', to: '/#pricing' },
       { label: 'Find an expert', to: '/experts' },
     ],
@@ -47,6 +49,8 @@ const FOOTER_LINKS: Record<PublicVariant, NavItem[]> = {
     { label: "Who it's for", to: '/#who-its-for' },
     { label: 'Pricing', to: '/#pricing' },
     { label: 'Problem statements', to: '/problems' },
+    { label: 'Start in India', to: '/start-in-india' },
+    { label: 'Blog', to: '/blog' },
     { label: 'Find an expert', to: '/experts' },
     { label: 'Become an expert', to: '/experts/join' },
   ],
@@ -83,6 +87,7 @@ export const PublicLayout: React.FC<{ variant: PublicVariant; children: React.Re
 
   return (
     <div className="min-h-screen flex flex-col bg-[var(--nxt-bg)] text-[var(--nxt-ink)]">
+      <AnnouncementBar />
       <header className="nxt-bar-dark sticky top-0 z-40 bg-[var(--nxt-bg)] border-b border-[var(--nxt-line)]">
         <div className="nxt-container flex h-[72px] items-center justify-between gap-4">
           <Link to="/" className="flex items-center gap-4 shrink-0" aria-label="NXT Health home">

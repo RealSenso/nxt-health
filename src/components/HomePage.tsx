@@ -3,6 +3,8 @@ import { useSearchParams } from 'react-router-dom';
 import { store } from '../services/store';
 import { PublicLayout } from './public/PublicLayout';
 import { InquiryForm, LeadRole } from './public/InquiryForm';
+import { BlogCard } from './public/BlogPages';
+import type { Startup } from '../types';
 import { Btn, Eyebrow, H1, H2, RuleList, Step } from './public/ui';
 
 const JUMP_LINKS = [
@@ -103,6 +105,9 @@ export const HomePage: React.FC = () => {
   const routeCount = categories.length || 25;
   const openCount = categories.filter(c => !c.coming_soon).length;
   const initialRole = asRole(params.get('as'));
+  const site = store.getSite();
+  const blogs = store.getBlogs().filter(b => b.status === 'published').slice(0, 3);
+  const startups = store.getStartups();
 
   return (
     <PublicLayout variant="home">
@@ -110,10 +115,10 @@ export const HomePage: React.FC = () => {
       <section className="nxt-container pt-16 sm:pt-24 pb-16 sm:pb-20 border-b border-[var(--nxt-line)]">
         <Eyebrow>NXT Health · Problem first. Funded first.</Eyebrow>
         <H1 className="mt-7">
-          Pharma has the problem.<br className="hidden sm:block" /> Doctors have the answer.
+          {site.hero_title || <>Pharma has the problem.<br className="hidden sm:block" /> Doctors have the answer.</>}
         </H1>
         <p className="mt-8 max-w-[34rem] text-[clamp(1.05rem,1.5vw,1.25rem)] leading-relaxed text-[var(--nxt-ink)]/80">
-          NXT Health connects funded clinical problems with the physician-founders who can solve them, then walks each one step by step to market.
+          {site.hero_subtitle || 'NXT Health connects funded clinical problems with the physician-founders who can solve them, then walks each one step by step to market.'}
         </p>
         <div className="mt-9 flex flex-wrap gap-3">
           <Btn to="/#start">Seed a problem</Btn>
@@ -212,6 +217,43 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
+      {/* Free guide */}
+      <section className="nxt-container py-16 border-b border-[var(--nxt-line)]">
+        <div className="rounded-[18px] bg-[#111] text-white p-8 sm:p-12 grid gap-8 lg:grid-cols-[1fr_auto] items-center">
+          <div>
+            <p className="text-[12px] sm:text-[13px] uppercase tracking-[0.14em] text-white/60">Free for everyone</p>
+            <h2 className="font-display font-bold text-[clamp(1.75rem,3.2vw,2.75rem)] leading-[1.05] tracking-[-0.035em] mt-3 max-w-[22ch]">How to start a startup in India.</h2>
+            <p className="mt-4 text-lg text-white/80 max-w-xl">Every step from idea to an incorporated, recognised and funded company: structure, registrations, Startup India, IP, funding and compliance.</p>
+          </div>
+          <Btn variant="light" to="/start-in-india">Read the guide</Btn>
+        </div>
+      </section>
+
+      {/* Blog */}
+      {site.show_blogs && blogs.length > 0 && (
+        <section id="blog" className="nxt-container py-20 sm:py-24 border-b border-[var(--nxt-line)] scroll-mt-20">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <Eyebrow>From the blog</Eyebrow>
+              <H2 className="mt-5">Ideas for people building health.</H2>
+            </div>
+            <Btn variant="outline" to="/blog">All posts</Btn>
+          </div>
+          <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">{blogs.map(post => <BlogCard key={post.id} post={post} />)}</div>
+        </section>
+      )}
+
+      {/* Startups */}
+      {site.show_startups && startups.length > 0 && (
+        <section id="startups" className="nxt-container py-20 sm:py-24 border-b border-[var(--nxt-line)] scroll-mt-20">
+          <Eyebrow>Startups working with us</Eyebrow>
+          <H2 className="mt-5">Companies taking problems to patients.</H2>
+          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {startups.map(s => <StartupCard key={s.id} startup={s} />)}
+          </div>
+        </section>
+      )}
+
       {/* Pricing */}
       <section id="pricing" className="nxt-container py-20 sm:py-24 scroll-mt-20">
         <Eyebrow>Pricing</Eyebrow>
@@ -250,6 +292,28 @@ export const HomePage: React.FC = () => {
       </section>
     </PublicLayout>
   );
+};
+
+const StartupCard: React.FC<{ startup: Startup }> = ({ startup }) => {
+  const body = (
+    <>
+      <div className="flex items-center gap-4">
+        {startup.logo_url
+          ? <img src={startup.logo_url} alt="" className="w-14 h-14 rounded-xl object-contain border border-[var(--nxt-line)] bg-white p-1.5" loading="lazy" />
+          : <div className="w-14 h-14 rounded-xl bg-[#111] text-white font-display font-bold text-xl flex items-center justify-center" aria-hidden="true">{startup.name.slice(0, 1).toUpperCase()}</div>}
+        <div className="min-w-0">
+          <h3 className="font-display font-bold text-lg tracking-[-0.02em] leading-tight">{startup.name}</h3>
+          <p className="text-[13px] text-[var(--nxt-ink-soft)] mt-0.5">{[startup.sector, startup.stage, startup.location].filter(Boolean).join(' · ')}</p>
+        </div>
+      </div>
+      {startup.tagline && <p className="mt-4 font-semibold">{startup.tagline}</p>}
+      {startup.description && <p className="mt-2 text-[15px] leading-relaxed text-[var(--nxt-ink-soft)] line-clamp-4">{startup.description}</p>}
+    </>
+  );
+  const cls = 'block rounded-[18px] border border-[var(--nxt-line)] bg-[var(--nxt-surface)] p-6';
+  return startup.website
+    ? <a href={startup.website} target="_blank" rel="noreferrer" className={`${cls} hover:border-[var(--nxt-ink)] transition-colors`}>{body}</a>
+    : <article className={cls}>{body}</article>;
 };
 
 const PriceCard: React.FC<{

@@ -88,7 +88,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser }) => {
   const [applicationFilter, setApplicationFilter] = useState<'all' | 'Pending' | 'Approved' | 'Rejected'>('all');
   const [reviewNotes, setReviewNotes] = useState<Record<string, string>>({});
 
-  const categories = store.getCategories();
+  const categories = store.getAllCategories();
   const [editingCategory, setEditingCategory] = useState<Partial<Category> | null>(null);
 
   const [selectedCategoryIdForSteps, setSelectedCategoryIdForSteps] = useState<string>(categories[0]?.id || 'cat-1');
@@ -1578,7 +1578,7 @@ const AnalyticsTab: React.FC = () => {
 
 const AdminAnalytics: React.FC = () => {
   const problems = store.getProblems();
-  const categories = store.getCategories();
+  const categories = store.getAllCategories();
   const applications = store.getApplications().filter(a => a.status !== 'Draft');
   const allProgress = store.getAllProgress();
   const workingProblemsMap = store.getAllWorkingProblems();

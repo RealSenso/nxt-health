@@ -4,7 +4,7 @@
 import { copyFileSync, mkdirSync } from 'node:fs';
 
 copyFileSync('dist/index.html', 'dist/404.html');
-for (const route of ['experts', 'experts/join']) {
+for (const route of ['experts', 'experts/join', 'blog', 'start-in-india']) {
   mkdirSync(`dist/${route}`, { recursive: true });
   copyFileSync('dist/index.html', `dist/${route}/index.html`);
 }

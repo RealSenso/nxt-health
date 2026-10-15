@@ -8,6 +8,9 @@ import { HomePage } from './components/HomePage';
 import { ExpertsPage } from './components/public/ExpertsPage';
 import { ListedExpertPage } from './components/public/ListedExpertPage';
 import { PublicLayout } from './components/public/PublicLayout';
+import { AnnouncementBar } from './components/ui/AnnouncementBar';
+import { BlogListPage, BlogPostPage } from './components/public/BlogPages';
+import { GuidePage } from './components/public/GuidePage';
 import { ExpertDetailPage } from './components/public/ExpertDetailPage';
 import { BecomeExpertPage } from './components/public/BecomeExpertPage';
 import { LoginPage } from './components/LoginPage';
@@ -37,6 +40,7 @@ const TAB_PATHS: Record<string, string> = {
   funds: '/funds',
   dashboard: '/dashboard',
   messages: '/messages',
+  'start-in-india': '/start-in-india',
   admin: '/admin/funding',
 };
 
@@ -111,6 +115,9 @@ export default function App() {
     <>
       <Routes>
         <Route path="/" element={isAuthenticated ? <Navigate to="/problems" replace /> : <HomePage />} />
+        <Route path="/blog" element={<BlogListPage />} />
+        <Route path="/blog/:id" element={<BlogPostPage />} />
+        <Route path="/start-in-india" element={<GuidePage />} />
         <Route path="/experts" element={<MembersOnly><ExpertsPage /></MembersOnly>} />
         <Route path="/experts/join" element={<BecomeExpertPage />} />
         <Route path="/experts/network/:id" element={<MembersOnly><ListedExpertPage /></MembersOnly>} />
@@ -244,6 +251,7 @@ function Shell({ currentUser, modals }: { currentUser: User | null; modals: Moda
 
   return (
     <div className="min-h-screen bg-[var(--nxt-bg)] text-[var(--nxt-ink)] flex flex-col font-sans">
+      <AnnouncementBar />
       <Navbar
         currentTab={currentTab}
         setCurrentTab={(tab) => {
@@ -280,6 +288,8 @@ function Shell({ currentUser, modals }: { currentUser: User | null; modals: Moda
         <div className="nxt-container py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-sm text-[var(--nxt-ink-soft)]">{PLATFORM_NAME} · nxthealth.ai · India</p>
           <div className="flex items-center gap-5 text-sm text-[var(--nxt-ink-soft)]">
+            <Link to="/start-in-india" className="underline underline-offset-2 hover:text-[var(--nxt-ink)] transition-colors">Start in India</Link>
+            <Link to="/blog" className="underline underline-offset-2 hover:text-[var(--nxt-ink)] transition-colors">Blog</Link>
             {currentUser?.is_member && <Link to="/experts" className="underline underline-offset-2 hover:text-[var(--nxt-ink)] transition-colors">Find an expert</Link>}
             <button onClick={modals.openSlack} className="hover:text-[var(--nxt-ink)] transition-colors">Community Slack</button>
             {currentUser ? (

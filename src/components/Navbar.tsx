@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   DollarSign, ListTodo, Shield,
   CheckCircle2, Sparkles, Lock, FileQuestion, LogOut, LogIn, Users2, UserCog,
-  LayoutDashboard, BookMarked, ChevronDown, Sun, Moon, Monitor, GraduationCap, MessageSquare
+  LayoutDashboard, BookMarked, ChevronDown, Sun, Moon, Monitor, GraduationCap, Rocket, MessageSquare
 } from 'lucide-react';
 import { User } from '../types';
 import { store } from '../services/store';
@@ -30,6 +30,7 @@ const ROADMAP_SUBMODES: Mode[] = [
   { id: 'tasks', label: 'Roadmaps', icon: ListTodo, locked: true, preview: true },
   { id: 'resources', label: 'Resources', icon: BookMarked, locked: true, preview: true },
   { id: 'mentors', label: 'Experts', icon: GraduationCap, locked: true },
+  { id: 'start-in-india', label: 'Start in India', icon: Rocket },
 ];
 const FUNDS_MODE: Mode = { id: 'funds', label: 'Funds & Grants', icon: DollarSign, locked: true };
 const ADMIN_MODE: Mode = { id: 'admin', label: 'Admin Panel', icon: Shield };

@@ -6,7 +6,7 @@ import {
   AcquisitionSource, AppNotification, ApplicationStatus, Booking, Category, Commitment, Consultation, FounderBackground,
   FounderOutcomes, FundingApplication, Gender, MembershipStatus, MentorProfile, MentorRequest, Message,
   ProblemStatement, PublicFounder, PublicProfileSettings, PublicTeam, Resource, ResourceView, Rsvp,
-  ListedExpert, ProblemVote, VoteBreakdown, VoteTally, StartupStage, Step, StepRating, StepSubmission, StepWorkspace, SubmissionStatus, Team, TeamInvite,
+  BlogPost, ListedExpert, ProblemVote, SiteSettings, Startup, VoteBreakdown, VoteTally, StartupStage, Step, StepRating, StepSubmission, StepWorkspace, SubmissionStatus, Team, TeamInvite,
   Thread, User, UserProgress, UserRole,
 } from '../types';
 import { api, ApiError } from './api';
@@ -47,6 +47,9 @@ interface BootstrapData {
     booked_slots: Record<string, string[]>;
     listed_experts?: ListedExpert[];
     problem_votes?: VoteTally;
+    blogs?: BlogPost[];
+    startups?: Startup[];
+    site?: SiteSettings;
   };
   me: RawUser | null;
   needs_profile: boolean;
@@ -520,8 +523,61 @@ class ApiStore {
     return this.deleteContent('problems', id);
   }
 
+  /** Project categories: the ones a founder builds a roadmap in. Free guides are not included. */
   public getCategories(): Category[] {
+    return this.getAllCategories().filter(c => !c.guide);
+  }
+
+  /** Every category, including free guides. */
+  public getAllCategories(): Category[] {
     return [...this.data.content.categories].sort((a, b) => a.order - b.order);
+  }
+
+  /** The free "start a startup in India" guide, when it has been loaded. */
+  public getGuide(): { category: Category; steps: Step[] } | null {
+    const category = this.data.content.categories.find(c => c.guide);
+    return category ? { category, steps: this.getSteps(category.id) } : null;
+  }
+
+  public getBlogs(): BlogPost[] {
+    return this.data.content.blogs || [];
+  }
+
+  public getStartups(): Startup[] {
+    return this.data.content.startups || [];
+  }
+
+  public getSite(): SiteSettings {
+    return { hero_title: '', hero_subtitle: '', announcement: '', announcement_link: '', show_blogs: true, show_startups: true, ...this.data.content.site };
+  }
+
+  // ----- admin: website content -----
+
+  public async saveBlog(post: Partial<BlogPost> & { title: string }): Promise<void> {
+    const { id, created_at: _c, published_at: _p, ...body } = post;
+    await (id ? api.put(`/admin/blogs/${id}`, body) : api.post('/admin/blogs', body));
+    await this.refresh();
+  }
+
+  public async deleteBlog(id: string): Promise<void> {
+    await api.delete(`/admin/blogs/${id}`);
+    await this.refresh();
+  }
+
+  public async saveStartup(startup: Partial<Startup> & { name: string }): Promise<void> {
+    const { id, ...body } = startup;
+    await (id ? api.put(`/admin/startups/${id}`, body) : api.post('/admin/startups', body));
+    await this.refresh();
+  }
+
+  public async deleteStartup(id: string): Promise<void> {
+    await api.delete(`/admin/startups/${id}`);
+    await this.refresh();
+  }
+
+  public async saveSite(site: SiteSettings): Promise<void> {
+    await api.put('/admin/site-settings', site);
+    await this.refresh();
   }
 
   public saveCategory(category: Omit<Category, 'id'> & { id?: string }): Promise<void> {
