@@ -154,7 +154,7 @@ export const HomePage: React.FC = () => {
           </div>
           <div className="rounded-[18px] bg-[#111] text-white p-7 sm:p-9 border border-white/10">
             <p className="text-[12px] sm:text-[13px] uppercase tracking-[0.14em] text-white/60">The NXT route</p>
-            <h3 className="font-display font-bold text-2xl mt-5 tracking-[-0.02em]">Start with a problem someone will pay to solve.</h3>
+            <h3 className="font-display font-bold text-2xl mt-5 tracking-[-0.02em]"><span className="text-[#22c55e]">Start</span> with a problem someone will pay to solve.</h3>
             <p className="mt-4 text-[17px] leading-relaxed text-white/80">
               Pharma companies and hospitals name the problem and put money behind it. Then we connect a physician-founder to the capital, hospitals and commercial help needed to solve it.
             </p>
