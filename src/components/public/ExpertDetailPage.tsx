@@ -8,28 +8,11 @@ import { firstName, GATES, formatRate, istDateKey, istDayLabel, istTime } from '
 import { PublicLayout } from './PublicLayout';
 import { ExpertActivity, ExpertHero } from './ExpertParts';
 import { ExpertPhoto } from './ExpertDirectory';
+import { SAMPLE } from './ExpertProfile';
 import { PayConsultationDialog } from './PayConsultationDialog';
 import { Btn, RuleList } from './ui';
 
 const MAX_DAYS = 6;
-
-// Shown until an admin fills in the expert's own words, so every profile reads as a complete page.
-const SAMPLE = {
-  bio: "Two or three lines in the expert's own words: what they have taken to market, in which countries, and for whom.",
-  bookWhen: [
-    'Work out your device class and the route that follows from it',
-    'Plan the evidence a regulator will ask for',
-    'Check a regulatory file before you submit it',
-    'Decide whether India, the GCC or the US comes first',
-  ],
-  gates: [3, 4],
-  highlights: [
-    { title: 'Has done it before.', text: 'Years of hands-on work taking products from idea to patients.' },
-    { title: 'Knows the buyers.', text: 'Hospitals, payers and pharma teams who say yes or no.' },
-    { title: 'Answers in an hour.', text: 'Short sessions, matched to the gate you are working on.' },
-  ],
-  channelTitle: 'Episode title from the NXT Health channel',
-};
 
 export const ExpertDetailPage: React.FC = () => {
   const { expertId } = useParams<{ expertId: string }>();
