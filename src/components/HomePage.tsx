@@ -6,6 +6,8 @@ import { InquiryForm, LeadRole } from './public/InquiryForm';
 import { BlogCard } from './public/BlogPages';
 import type { Startup } from '../types';
 import { RouteFinder } from './public/RouteFinder';
+import { HowItWorks, OneInFive, RouteComparison, Rise, WhoItsFor } from './public/HomeSections';
+import { scrollToId } from './public/smoothScroll';
 import { Btn, Eyebrow, H1, H2, RuleList, Step } from './public/ui';
 
 const JUMP_LINKS = [
@@ -138,7 +140,7 @@ export const HomePage: React.FC = () => {
                   key={link.label}
                   href={link.to}
                   className="rounded-full border border-[var(--nxt-ink)]/50 px-3.5 py-1.5 text-sm hover:bg-[var(--nxt-bg-soft)] transition-colors"
-                  onClick={(e) => { e.preventDefault(); document.getElementById(link.to.slice(1))?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }}
+                  onClick={(e) => { e.preventDefault(); window.dispatchEvent(new CustomEvent('nxt-audience', { detail: link.to.slice(1) })); scrollToId('who-its-for'); }}
                 >
                   {link.label}
                 </a>
@@ -146,79 +148,29 @@ export const HomePage: React.FC = () => {
             </div>
       </section>
 
-      {/* The difference */}
-      <section className="nxt-container py-20 sm:py-24 border-b border-[var(--nxt-line)]">
-        <H2 className="max-w-[24ch]">Others build companies. We connect the pieces a doctor can't reach.</H2>
-        <div className="mt-12 grid gap-6 md:grid-cols-2">
-          <div className="rounded-[18px] border border-[var(--nxt-line)] bg-[var(--nxt-surface)] p-7 sm:p-9">
-            <Eyebrow>The usual route</Eyebrow>
-            <h3 className="font-display font-bold text-2xl mt-5 tracking-[-0.02em]">Build first. Find the buyer last.</h3>
-            <p className="mt-4 text-[17px] leading-relaxed text-[var(--nxt-ink-soft)]">
-              A founder builds the product, writes the pitch deck, finds an advisor, and only then goes looking for someone to pay for it. By then the time and money are spent.
-            </p>
-          </div>
-          <div className="rounded-[18px] bg-[#111] text-white p-7 sm:p-9 border border-white/10">
-            <p className="text-[12px] sm:text-[13px] uppercase tracking-[0.14em] text-white/60">The NXT route</p>
-            <h3 className="font-display font-bold text-2xl mt-5 tracking-[-0.02em]">Start with a problem someone will pay to solve.</h3>
-            <p className="mt-4 text-[17px] leading-relaxed text-white/80">
-              Pharma companies and hospitals name the problem and put money behind it. Then we connect a physician-founder to the capital, hospitals and commercial help needed to solve it.
-            </p>
-          </div>
-        </div>
-        <p className="mt-10 font-semibold text-lg">Problem first. Funded first. Then we build it with the doctor.</p>
-      </section>
+      <RouteComparison />
 
-      {/* 1 in 5 */}
-      <section className="nxt-container py-16 sm:py-20 border-b border-[var(--nxt-line)]">
-        <div className="grid gap-6 md:grid-cols-[auto_1fr] md:gap-14 items-center">
-          <p className="font-display font-bold text-[clamp(4rem,10vw,8rem)] leading-none tracking-[-0.05em]">1 in 5</p>
-          <div className="max-w-3xl">
-            <p className="text-[clamp(1.15rem,1.9vw,1.6rem)] leading-snug">
-              physicians we speak with has an idea they want to build. Most never start, because they don't know where to begin.
-            </p>
-            <p className="mt-3 text-[var(--nxt-ink-soft)]">We help them check the idea against what the market wants, before they spend the time and the money.</p>
-          </div>
-        </div>
-      </section>
+      <OneInFive />
 
-      {/* How it works */}
-      <section id="how-it-works" className="nxt-container py-20 sm:py-24 border-b border-[var(--nxt-line)] scroll-mt-20">
-        <Eyebrow>How it works</Eyebrow>
-        <H2 className="mt-5">From problem to market, one gate at a time.</H2>
-        <div className="mt-12 grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-5">
-          <Step n="01" title="Find a problem">Problems come from doctors, hospitals and pharma. Some already have money behind them. Some are open.</Step>
-          <Step n="02" title="Apply for funding">Each fund screens in its own way. You get a yes, a no, or a clear ask for more.</Step>
-          <Step n="03" title="Pick a roadmap">{routeCount} routes to market, from marketplaces to devices to AI, each with the steps for your country{openCount > 0 && openCount < routeCount ? ` — ${openCount} open now` : ''}.</Step>
-          <Step n="04" title="Clear each gate">Every step has a deadline and needs evidence. Clear it, and the next one opens.</Step>
-          <Step n="05" title="Get matched help">Experts, hospitals, lawyers and incubators, recommended for the step you're on.</Step>
-        </div>
-      </section>
+      <HowItWorks steps={[
+    { title: 'Find a problem', body: <>Problems come from doctors, hospitals and pharma. Some already have money behind them. Some are open.</> },
+    { title: 'Apply for funding', body: <>Each fund screens in its own way. You get a yes, a no, or a clear ask for more.</> },
+    { title: 'Pick a roadmap', body: <>{routeCount} routes to market, from marketplaces to devices to AI, each with the steps for your country{openCount > 0 && openCount < routeCount ? ` — ${openCount} open now` : ''}.</> },
+    { title: 'Clear each gate', body: <>Every step has a deadline and needs evidence. Clear it, and the next one opens.</> },
+    { title: 'Get matched help', body: <>Experts, hospitals, lawyers and incubators, recommended for the step you're on.</> },
+      ]} />
 
-      {/* Who it's for */}
-      <section id="who-its-for" className="nxt-container py-20 sm:py-24 border-b border-[var(--nxt-line)] scroll-mt-20">
-        <Eyebrow>Who it's for</Eyebrow>
-        <H2 className="mt-5">Each side gets something different.</H2>
-        <div className="mt-12 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {AUDIENCES.map(a => (
-            <article key={a.id} id={a.id} className="rounded-[18px] border border-[var(--nxt-line)] bg-[var(--nxt-surface)] p-7 flex flex-col scroll-mt-28">
-              <p className="text-[15px] text-[var(--nxt-ink-soft)]">{a.who}</p>
-              <h3 className="font-display font-bold text-[1.65rem] leading-[1.1] mt-4 tracking-[-0.025em]">{a.title}</h3>
-              <p className="mt-4 text-[15px] leading-relaxed text-[var(--nxt-ink-soft)]">{a.intro}</p>
-              <RuleList items={a.points} className="mt-5" />
-            </article>
-          ))}
-        </div>
-      </section>
+      <WhoItsFor audiences={AUDIENCES} />
 
       {/* What's inside */}
       <section className="nxt-container py-20 sm:py-24 border-b border-[var(--nxt-line)]">
         <H2>What's inside the platform</H2>
         <div className="mt-12 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
-          {PLATFORM.map(item => (
-            <div key={item.title} className="border-t border-[var(--nxt-ink)] pt-4">
+          {PLATFORM.map((item, i) => (
+            <Rise key={item.title} delay={(i % 3) * 0.08} className="border-t border-[var(--nxt-ink)] pt-4">
               <h3 className="font-bold text-lg">{item.title}</h3>
               <p className="mt-2 text-[15px] text-[var(--nxt-ink-soft)] leading-relaxed">{item.text}</p>
-            </div>
+            </Rise>
           ))}
         </div>
       </section>

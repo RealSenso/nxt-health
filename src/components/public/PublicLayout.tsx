@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { scrollToId, useSmoothScroll } from './smoothScroll';
 import { Link, useLocation } from 'react-router-dom';
 import logo from '../../assets/nxt-health-logo.png';
 import { store } from '../../services/store';
@@ -49,8 +50,8 @@ const NAV: Record<PublicVariant, { items: NavItem[]; cta: NavItem; subBrand?: st
 function useAnchorScroll() {
   const { pathname, hash } = useLocation();
   useEffect(() => {
-    if (!hash) { window.scrollTo(0, 0); return; }
-    const timer = window.setTimeout(() => document.getElementById(hash.slice(1))?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+    if (!hash) { window.scrollTo({ top: 0, behavior: 'instant' }); return; }
+    const timer = window.setTimeout(() => scrollToId(hash.slice(1)), 60);
     return () => window.clearTimeout(timer);
   }, [pathname, hash]);
 }
@@ -58,6 +59,7 @@ function useAnchorScroll() {
 export const PublicLayout: React.FC<{ variant: PublicVariant; children: React.ReactNode }> = ({ variant, children }) => {
   useAnchorScroll();
   const inApp = useInAppShell();
+  useSmoothScroll(!inApp);
   // Inside the signed-in app the app's own navigation is already on screen.
   if (inApp) return <>{children}</>;
   const nav = NAV[variant];
