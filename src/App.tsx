@@ -253,8 +253,7 @@ function Shell({ currentUser, modals }: { currentUser: User | null; modals: Moda
   // Expert pages run edge to edge, like the rest of the public site, under the app's own navigation.
   const bleed = location.pathname.startsWith('/experts/');
   // Every page has one parent, so the pages form a tree: the app navigation is the root, and "Back" always goes up one level.
-  const parent = location.pathname.startsWith('/experts/') ? { to: '/experts', label: 'Experts' }
-    : /^\/admin\/(?!overview)[^/]+/.test(location.pathname) ? { to: '/admin/overview', label: 'Admin overview' }
+  const parent = /^\/admin\/(?!overview)[^/]+/.test(location.pathname) ? { to: '/admin/overview', label: 'Admin overview' }
     : null;
 
   return (
