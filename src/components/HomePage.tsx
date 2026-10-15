@@ -5,7 +5,6 @@ import { PublicLayout } from './public/PublicLayout';
 import { InquiryForm, LeadRole } from './public/InquiryForm';
 import { BlogCard } from './public/BlogPages';
 import type { Startup } from '../types';
-import { RouteFinder } from './public/RouteFinder';
 import { HowItWorks, OneInFive, RouteComparison, Rise, WhoItsFor } from './public/HomeSections';
 import { scrollToId } from './public/smoothScroll';
 import { Btn, Eyebrow, H1, H2, RuleList, Step } from './public/ui';
@@ -115,37 +114,31 @@ export const HomePage: React.FC = () => {
   return (
     <PublicLayout variant="home">
       {/* Hero */}
-      <section className="nxt-container pt-12 sm:pt-20 pb-16 sm:pb-20 border-b border-[var(--nxt-line)]">
-        <div className="grid gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16 items-start">
-          <div>
-            <Eyebrow>NXT Health · Problem first. Funded first.</Eyebrow>
-            <H1 className="mt-7">
-              {site.hero_title || <>Pharma has the problem.<br className="hidden sm:block" /> Doctors have the answer.</>}
-            </H1>
-            <p className="mt-7 max-w-[34rem] text-[clamp(1.05rem,1.5vw,1.25rem)] leading-relaxed text-[var(--nxt-ink)]/80">
-              {site.hero_subtitle || 'NXT Health connects funded clinical problems with the physician-founders who can solve them, then walks each one step by step to market.'}
-            </p>
-            <div className="mt-9 grid grid-cols-3 gap-4 max-w-md">
-              <div><p className="font-display font-bold text-3xl tracking-[-0.03em]">{routeCount}</p><p className="text-sm text-[var(--nxt-ink-soft)]">routes to market</p></div>
-              <div><p className="font-display font-bold text-3xl tracking-[-0.03em]">{store.getProblems().filter(p => p.funded).length}</p><p className="text-sm text-[var(--nxt-ink-soft)]">funded problems</p></div>
-              <div><p className="font-display font-bold text-3xl tracking-[-0.03em]">Free</p><p className="text-sm text-[var(--nxt-ink-soft)]">to start</p></div>
-            </div>
-          </div>
-          <RouteFinder />
+      <section className="nxt-container pt-16 sm:pt-24 pb-16 sm:pb-20 border-b border-[var(--nxt-line)]">
+        <Eyebrow>NXT Health · Problem first. Funded first.</Eyebrow>
+        <H1 className="mt-7">
+          {site.hero_title || <>Pharma has the problem.<br className="hidden sm:block" /> Doctors have the answer.</>}
+        </H1>
+        <p className="mt-8 max-w-[34rem] text-[clamp(1.05rem,1.5vw,1.25rem)] leading-relaxed text-[var(--nxt-ink)]/80">
+          {site.hero_subtitle || 'NXT Health connects funded clinical problems with the physician-founders who can solve them, then walks each one step by step to market.'}
+        </p>
+        <div className="mt-9 flex flex-wrap gap-3">
+          <Btn to="/#start">Seed a problem</Btn>
+          <Btn variant="outline" to="/problems">Browse problem statements</Btn>
         </div>
-        <p className="mt-12 text-sm text-[var(--nxt-ink-soft)]">Or jump to what's in it for you</p>
-        <div className="mt-3 flex flex-wrap gap-2">
-              {JUMP_LINKS.map(link => (
-                <a
-                  key={link.label}
-                  href={link.to}
-                  className="rounded-full border border-[var(--nxt-ink)]/50 px-3.5 py-1.5 text-sm hover:bg-[var(--nxt-bg-soft)] transition-colors"
-                  onClick={(e) => { e.preventDefault(); window.dispatchEvent(new CustomEvent('nxt-audience', { detail: link.to.slice(1) })); scrollToId('who-its-for'); }}
-                >
-                  {link.label}
-                </a>
-              ))}
-            </div>
+        <p className="mt-12 text-sm text-[var(--nxt-ink-soft)]">Jump to what's in it for you</p>
+        <div className="mt-3 flex flex-wrap gap-2.5">
+          {JUMP_LINKS.map(link => (
+            <a
+              key={link.label}
+              href={link.to}
+              className="rounded-full border border-[var(--nxt-ink)]/70 px-4 py-2 text-[15px] hover:bg-[var(--nxt-bg-soft)] transition-colors"
+              onClick={(e) => { e.preventDefault(); window.dispatchEvent(new CustomEvent('nxt-audience', { detail: link.to.slice(1) })); scrollToId('who-its-for'); }}
+            >
+              {link.label}
+            </a>
+          ))}
+        </div>
       </section>
 
       <RouteComparison />
