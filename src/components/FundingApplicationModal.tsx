@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { X, Save, AlertCircle, Check, ChevronLeft, ChevronRight, Send } from 'lucide-react';
 import { FundingApplication, ProblemStatement, User } from '../types';
 import { store } from '../services/store';
-import { Answers, FUNDING_FORM, missingRequired, sectionComplete, type Question } from '../data/fundingForm';
+import { Answers, FUNDING_FORM, hasRequired, missingRequired, sectionComplete, type Question } from '../data/fundingForm';
 
 interface FundingApplicationModalProps {
   isOpen: boolean;
@@ -164,10 +164,10 @@ export const FundingApplicationModal: React.FC<FundingApplicationModalProps> = (
             <div className="max-w-5xl mx-auto px-4 sm:px-8 py-8 grid gap-8 lg:grid-cols-[16rem_1fr]">
               <nav aria-label="Sections" className="lg:sticky lg:top-4 self-start">
                 <p className="text-xs font-semibold text-[var(--nxt-ink-soft)] flex justify-between">
-                  <span>SECTIONS</span><span>{FUNDING_FORM.filter(s => sectionComplete(s, answers)).length} of {FUNDING_FORM.length} done</span>
+                  <span>SECTIONS</span><span>{FUNDING_FORM.filter(s => sectionComplete(s, answers)).length} of {FUNDING_FORM.filter(hasRequired).length} done</span>
                 </p>
                 <div className="mt-2 flex gap-1" aria-hidden="true">
-                  {FUNDING_FORM.map(s => <span key={s.id} className={`h-1 flex-1 rounded-full ${sectionComplete(s, answers) ? 'bg-[var(--nxt-ink)]' : 'bg-[var(--nxt-line)]'}`} />)}
+                  {FUNDING_FORM.map(s => <span key={s.id} className={`h-1 flex-1 rounded-full ${sectionComplete(s, answers) ? 'bg-[var(--nxt-mint-strong)]' : 'bg-[var(--nxt-line)]'}`} />)}
                 </div>
                 <ol className="mt-4 flex lg:block gap-2 overflow-x-auto lg:overflow-visible pb-1 lg:space-y-1">
                   {FUNDING_FORM.map((s, i) => {
@@ -179,7 +179,7 @@ export const FundingApplicationModal: React.FC<FundingApplicationModalProps> = (
                           aria-current={i === index ? 'step' : undefined}
                           className={`w-full flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-left whitespace-nowrap ${i === index ? 'bg-[var(--nxt-bg-soft)] font-semibold ring-1 ring-[var(--nxt-ink)]' : 'text-[var(--nxt-ink-soft)] hover:bg-[var(--nxt-bg-soft)]'}`}
                         >
-                          <span className={`w-5 h-5 shrink-0 rounded-full border flex items-center justify-center text-[10px] font-bold ${done ? 'bg-[var(--nxt-ink-fixed)] text-white border-transparent' : 'border-[var(--nxt-ink-soft)]'}`}>
+                          <span className={`w-5 h-5 shrink-0 rounded-full border flex items-center justify-center text-[10px] font-bold ${done ? 'bg-[var(--nxt-mint-strong)] text-white border-transparent' : 'border-[var(--nxt-ink-soft)]'}`}>
                             {done ? <Check className="w-3 h-3" /> : String(i + 1).padStart(2, '0')}
                           </span>
                           {s.title}

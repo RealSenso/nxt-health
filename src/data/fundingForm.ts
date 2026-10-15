@@ -186,7 +186,10 @@ export const isAnswered = (value: string | string[] | undefined): boolean =>
   Array.isArray(value) ? value.length > 0 : !!value && value.trim() !== '' && value !== 'false';
 
 export const sectionComplete = (section: FormSection, answers: Answers): boolean =>
-  section.questions.filter(q => q.required).every(q => isAnswered(answers[q.id]));
+  hasRequired(section) && section.questions.filter(q => q.required).every(q => isAnswered(answers[q.id]));
+
+/** A section is only ticked when it has required fields and every one is filled. */
+export const hasRequired = (section: FormSection): boolean => section.questions.some(q => q.required);
 
 export const missingRequired = (answers: Answers): { section: FormSection; question: Question }[] =>
   FUNDING_FORM.flatMap(section => section.questions.filter(q => q.required && !isAnswered(answers[q.id])).map(question => ({ section, question })));
