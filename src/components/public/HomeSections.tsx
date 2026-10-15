@@ -51,25 +51,23 @@ export const RouteComparison: React.FC = () => (
   </section>
 );
 
-/** Five dark dots in a 5x5 grid, one of them green, moving through a pattern. Always one in five. */
-const PATTERNS: number[][] = [
-  [0, 6, 12, 18, 24],   // diagonal
-  [4, 8, 12, 16, 20],   // other diagonal
-  [2, 7, 12, 17, 22],   // column
-  [10, 11, 12, 13, 14], // row
-  [2, 10, 12, 14, 22],  // cross
-  [0, 4, 12, 20, 24],   // corners and centre
-];
+/** Picks five different cells of the 5x5 grid at random, and which of them is the one who starts. */
+const shuffle = () => {
+  const cells = Array.from({ length: 25 }, (_, i) => i);
+  for (let i = cells.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [cells[i], cells[j]] = [cells[j], cells[i]];
+  }
+  return { ideas: cells.slice(0, 5), starts: cells[0] };
+};
 
 /** "1 in 5" shown as a grid of people; the one in five with an idea keeps moving, and one of them starts. */
 export const OneInFive: React.FC = () => {
-  const [tick, setTick] = useState(0);
+  const [{ ideas: pattern, starts }, setPick] = useState(() => ({ ideas: [0, 6, 12, 18, 24], starts: 12 }));
   useEffect(() => {
-    const t = window.setInterval(() => setTick(n => n + 1), 1500);
+    const t = window.setInterval(() => setPick(shuffle()), 1500);
     return () => window.clearInterval(t);
   }, []);
-  const pattern = PATTERNS[tick % PATTERNS.length];
-  const starts = pattern[tick % pattern.length];
 
   return (
   <section className="nxt-container py-16 sm:py-20 border-b border-[var(--nxt-line)]">
@@ -86,7 +84,7 @@ export const OneInFive: React.FC = () => {
               viewport={{ once: true, margin: '-60px' }}
               transition={{ delay: i * 0.03, duration: 0.35 }}
               className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full transition-[background-color,transform] duration-700 ${
-                green ? 'bg-[var(--nxt-mint-strong)] scale-110' : idea ? 'bg-[var(--nxt-ink-fixed)]' : 'bg-[var(--nxt-line)]'
+                green ? 'bg-[#16a34a] scale-110' : idea ? 'bg-[var(--nxt-ink-fixed)]' : 'bg-[var(--nxt-line)]'
               }`}
             />
           );
@@ -131,7 +129,7 @@ export const HowItWorks: React.FC<{ steps: { title: string; body: React.ReactNod
                 className={`w-full text-left flex items-center gap-3 rounded-xl px-3 py-3 transition-colors ${i === index ? 'bg-[var(--nxt-bg-soft)]' : 'hover:bg-[var(--nxt-bg-soft)]/60'}`}
               >
                 <span className={`w-7 h-7 shrink-0 rounded-full text-[11px] font-bold flex items-center justify-center border ${
-                  i < index ? 'bg-[var(--nxt-mint-strong)] text-white border-transparent' : i === index ? 'bg-[var(--nxt-ink-fixed)] text-white border-transparent' : 'border-[var(--nxt-ink-soft)] text-[var(--nxt-ink-soft)]'
+                  i < index ? 'bg-[#16a34a] text-white border-transparent' : i === index ? 'bg-[var(--nxt-ink-fixed)] text-white border-transparent' : 'border-[var(--nxt-ink-soft)] text-[var(--nxt-ink-soft)]'
                 }`}>{i < index ? <Check className="w-3.5 h-3.5" /> : i + 1}</span>
                 <span className={`whitespace-nowrap ${i === index ? 'font-semibold' : 'text-[var(--nxt-ink-soft)]'}`}>{s.title}</span>
               </button>

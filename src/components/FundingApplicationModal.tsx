@@ -167,7 +167,7 @@ export const FundingApplicationModal: React.FC<FundingApplicationModalProps> = (
                   <span>SECTIONS</span><span>{FUNDING_FORM.filter(s => sectionComplete(s, answers)).length} of {FUNDING_FORM.filter(hasRequired).length} done</span>
                 </p>
                 <div className="mt-2 flex gap-1" aria-hidden="true">
-                  {FUNDING_FORM.map(s => <span key={s.id} className={`h-1 flex-1 rounded-full ${sectionComplete(s, answers) ? 'bg-[var(--nxt-mint-strong)]' : 'bg-[var(--nxt-line)]'}`} />)}
+                  {FUNDING_FORM.map(s => <span key={s.id} className={`h-1 flex-1 rounded-full ${sectionComplete(s, answers) ? 'bg-[#16a34a]' : 'bg-[var(--nxt-line)]'}`} />)}
                 </div>
                 <ol className="mt-4 flex lg:block gap-2 overflow-x-auto lg:overflow-visible pb-1 lg:space-y-1">
                   {FUNDING_FORM.map((s, i) => {
@@ -179,7 +179,7 @@ export const FundingApplicationModal: React.FC<FundingApplicationModalProps> = (
                           aria-current={i === index ? 'step' : undefined}
                           className={`w-full flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-left whitespace-nowrap ${i === index ? 'bg-[var(--nxt-bg-soft)] font-semibold ring-1 ring-[var(--nxt-ink)]' : 'text-[var(--nxt-ink-soft)] hover:bg-[var(--nxt-bg-soft)]'}`}
                         >
-                          <span className={`w-5 h-5 shrink-0 rounded-full border flex items-center justify-center text-[10px] font-bold ${done ? 'bg-[var(--nxt-mint-strong)] text-white border-transparent' : 'border-[var(--nxt-ink-soft)]'}`}>
+                          <span className={`w-5 h-5 shrink-0 rounded-full border flex items-center justify-center text-[10px] font-bold ${done ? 'bg-[#16a34a] text-white border-transparent' : 'border-[var(--nxt-ink-soft)]'}`}>
                             {done ? <Check className="w-3 h-3" /> : String(i + 1).padStart(2, '0')}
                           </span>
                           {s.title}
