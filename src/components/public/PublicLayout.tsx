@@ -5,6 +5,7 @@ import { store } from '../../services/store';
 import { Btn } from './ui';
 import { AnnouncementBar } from '../ui/AnnouncementBar';
 import { useInAppShell } from '../ui/shellContext';
+import { ThemeToggle } from '../ThemeToggle';
 
 export type PublicVariant = 'home' | 'experts' | 'join';
 
@@ -107,6 +108,7 @@ export const PublicLayout: React.FC<{ variant: PublicVariant; children: React.Re
             {nav.items.filter(visible).map(item => (
               <Link key={item.label} to={item.to} className="hidden md:inline text-[15px] text-white/90 hover:text-white">{item.label}</Link>
             ))}
+            <ThemeToggle />
             {signedIn ? (
               <Btn variant="light" size="sm" to="/problems">Open app</Btn>
             ) : (
