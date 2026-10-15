@@ -202,6 +202,29 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
+      {/* Startups */}
+      {site.show_startups && startups.length > 0 && (
+        <section id="startups" className="nxt-container py-20 sm:py-24 border-b border-[var(--nxt-line)] scroll-mt-20">
+          <Eyebrow>Startups working with us</Eyebrow>
+          <H2 className="mt-5">Companies taking problems to patients.</H2>
+          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {startups.map(s => <StartupCard key={s.id} startup={s} />)}
+          </div>
+        </section>
+      )}
+
+      {/* Pricing */}
+      <section id="pricing" className="nxt-container py-20 sm:py-24 border-b border-[var(--nxt-line)] scroll-mt-20">
+        <Eyebrow>Pricing</Eyebrow>
+        <H2 className="mt-5">Free to start. At cost to build.</H2>
+        <p className="mt-4 text-lg text-[var(--nxt-ink-soft)]">Founders join free and pay at cost once they are ready to build.</p>
+        <div className="mt-10 grid gap-6 lg:grid-cols-3">
+          <PriceCard label="Community" price="Free" note="always" points={['Problem headlines', 'Community and podcasts', 'Monthly founder town hall', 'Starter templates']} cta="Join free" to="/signup" outline />
+          <PriceCard label="Founder member" price="₹2,000" note="per month · about $22 · at cost" points={['Full problem statements', 'Apply for funded problems', 'Stage-gate roadmaps and resources', 'Founder and co-founder workspace']} cta="Become a member" to="/signup" featured />
+          <PriceCard label="Add-ons" price="₹22,500" note="per month · about $250 · project coordinator" points={['A coordinator who keeps you on track', 'Expert sessions, priced by the mentor', 'From free to $500 an hour']} cta="Find an expert" to="/experts" outline />
+        </div>
+      </section>
+
       {/* Blog */}
       {site.show_blogs && blogs.length > 0 && (
         <section id="blog" className="nxt-container py-20 sm:py-24 border-b border-[var(--nxt-line)] scroll-mt-20">
@@ -216,29 +239,9 @@ export const HomePage: React.FC = () => {
         </section>
       )}
 
-      {/* Startups */}
-      {site.show_startups && startups.length > 0 && (
-        <section id="startups" className="nxt-container py-20 sm:py-24 border-b border-[var(--nxt-line)] scroll-mt-20">
-          <Eyebrow>Startups working with us</Eyebrow>
-          <H2 className="mt-5">Companies taking problems to patients.</H2>
-          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {startups.map(s => <StartupCard key={s.id} startup={s} />)}
-          </div>
-        </section>
-      )}
-
-      {/* Pricing */}
-      <section id="pricing" className="nxt-container py-20 sm:py-24 scroll-mt-20">
-        <Eyebrow>Pricing</Eyebrow>
-        <H2 className="mt-5">Free to start. At cost to build.</H2>
-        <p className="mt-4 text-lg text-[var(--nxt-ink-soft)]">Founders join free and pay at cost once they are ready to build.</p>
-        <div className="mt-10 grid gap-6 lg:grid-cols-3">
-          <PriceCard label="Community" price="Free" note="always" points={['Problem headlines', 'Community and podcasts', 'Monthly founder town hall', 'Starter templates']} cta="Join free" to="/signup" outline />
-          <PriceCard label="Founder member" price="₹2,000" note="per month · about $22 · at cost" points={['Full problem statements', 'Apply for funded problems', 'Stage-gate roadmaps and resources', 'Founder and co-founder workspace']} cta="Become a member" to="/signup" featured />
-          <PriceCard label="Add-ons" price="₹22,500" note="per month · about $250 · project coordinator" points={['A coordinator who keeps you on track', 'Expert sessions, priced by the mentor', 'From free to $500 an hour']} cta="Find an expert" to="/experts" outline />
-        </div>
-
-        <div className="mt-20">
+      {/* Pricing for pharma and hospitals */}
+      <section id="pricing-pharma" className="nxt-container py-20 sm:py-24 scroll-mt-20">
+        <div>
           <Eyebrow>For pharma and hospitals</Eyebrow>
           <h3 className="font-display font-bold text-[clamp(1.5rem,2.6vw,2.25rem)] tracking-[-0.03em] mt-4">Start with one problem. Grow into a pipeline.</h3>
           <div className="mt-10 grid gap-6 lg:grid-cols-3">
