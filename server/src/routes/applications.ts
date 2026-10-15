@@ -30,6 +30,8 @@ const decisionSchema = z.object({
   admin_feedback: z.string().trim().max(2000).optional(),
 });
 
+const stageSchema = z.object({ stage: z.enum(['form', 'fee', 'ai_interview', 'task', 'panel']) });
+
 const reviewSchema = z.object({
   status: z.enum(['Submitted', 'Approved', 'Changes Requested']),
   admin_feedback: z.string().trim().max(2000).optional(),
@@ -110,6 +112,16 @@ export function applicationsRouter(database: Database): Router {
         '/funds',
       );
     }
+    res.json({ application: out(await apps.findOne({ _id: app._id })) });
+  });
+
+  r.post('/admin/applications/:id/stage', async (req, res) => {
+    requireAdmin(req);
+    const body = parse(stageSchema, req.body);
+    const app = await apps.findOne({ _id: String(req.params.id) });
+    if (!app) throw new HttpError(404, 'Application not found.');
+    await apps.updateOne({ _id: app._id }, { $set: { stage: body.stage } });
+    await notify(database, [app.user_id as string], 'application_status', 'Your application moved on', `"${app.problem_title}" is now at the ${body.stage.replace('_', ' ')} stage.`, '/funds');
     res.json({ application: out(await apps.findOne({ _id: app._id })) });
   });
 

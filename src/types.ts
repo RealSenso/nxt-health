@@ -99,6 +99,8 @@ export interface ProblemStatement {
 
 export type ApplicationStatus = 'Draft' | 'Pending' | 'Approved' | 'Rejected';
 
+export type ApplicationStage = 'form' | 'fee' | 'ai_interview' | 'task' | 'panel';
+
 export interface FundingApplication {
   id: string;
   user_id: string;
@@ -113,6 +115,8 @@ export interface FundingApplication {
   /** Answers to the detailed application form, by question id. */
   answers?: Record<string, string | string[]>;
   status: ApplicationStatus;
+  /** Where the application is in the review process; set by an admin after the form is submitted. */
+  stage?: ApplicationStage;
   admin_feedback?: string;
   submitted_at: string;
   reviewed_at?: string;

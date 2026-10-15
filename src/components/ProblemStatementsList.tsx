@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { VotePanel } from './ui/VotePanel';
 import { Sponsor } from './ui/Sponsor';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -11,7 +11,7 @@ import {
 import { ProblemStatement, User, FundingApplication, Resource } from '../types';
 import { store } from '../services/store';
 import { Reveal, RevealGroup, RevealItem, PillButton } from './ui/Reveal';
-import { FundingApplicationModal } from './FundingApplicationModal';
+import { FundingApplicationModal, readApplicationSession } from './FundingApplicationModal';
 import { PageHeader } from './ui/PageHeader';
 import { departmentIcon } from '../data/icons';
 
@@ -73,6 +73,18 @@ export const ProblemStatementsList: React.FC<ProblemStatementsListProps> = ({
   const unfundedCount = problems.filter(p => !p.funded).length;
 
   const [applyModalDraft, setApplyModalDraft] = useState<FundingApplication | null>(null);
+
+  // A refresh while the application was open puts the person back in it, on the same section.
+  useEffect(() => {
+    const saved = readApplicationSession();
+    if (!saved || saved.path !== window.location.pathname) return;
+    const problem = store.getProblems().find(p => p.id === saved.problemId);
+    if (!problem) return;
+    const draft = saved.applicationId ? store.getApplications().find(a => a.id === saved.applicationId) || null : null;
+    setApplyModalDraft(draft);
+    setApplyModalProblem(problem);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleApplyClick = (problem: ProblemStatement) => {
     if (!currentUser) {

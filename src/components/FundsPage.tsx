@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import {
   Clock, CheckCircle2, XCircle, ArrowRight,
@@ -7,7 +7,7 @@ import {
 import { User, FundingApplication } from '../types';
 import { store } from '../services/store';
 import { RevealGroup, RevealItem, PillButton } from './ui/Reveal';
-import { FundingApplicationModal } from './FundingApplicationModal';
+import { FundingApplicationModal, readApplicationSession } from './FundingApplicationModal';
 import { DiscussButton } from './ui/DiscussButton';
 import { PageHeader } from './ui/PageHeader';
 import { BadgeDollarSign } from 'lucide-react';
@@ -25,6 +25,14 @@ export const FundsPage: React.FC<FundsPageProps> = ({
 }) => {
   const userApplications = store.getScopedApplications(currentUser);
   const [editingDraft, setEditingDraft] = useState<FundingApplication | null>(null);
+
+  useEffect(() => {
+    const saved = readApplicationSession();
+    if (!saved?.applicationId || saved.path !== window.location.pathname) return;
+    const draft = store.getApplications().find(a => a.id === saved.applicationId);
+    if (draft) setEditingDraft(draft);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const getStatusBadge = (status: string) => {
     switch (status) {

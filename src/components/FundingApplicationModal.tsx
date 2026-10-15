@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { X, Save, AlertCircle, Check, ChevronLeft, ChevronRight, Send } from 'lucide-react';
 import { FundingApplication, ProblemStatement, User } from '../types';
 import { store } from '../services/store';
+import { APPLICATION_STAGES, stageIndex } from '../data/applicationStages';
 import { Answers, FUNDING_FORM, hasRequired, missingRequired, sectionComplete, type Question } from '../data/fundingForm';
 
 interface FundingApplicationModalProps {
@@ -13,6 +14,16 @@ interface FundingApplicationModalProps {
   existingApplication?: FundingApplication | null;
   onSubmitted?: () => void;
 }
+
+const SESSION_KEY = 'nxt-open-application';
+export interface ApplicationSession { path: string; problemId: string; applicationId?: string; index: number; answers: Answers }
+/** The application someone had open, so a refresh puts them back where they were. */
+export const readApplicationSession = (): ApplicationSession | null => {
+  try { return JSON.parse(sessionStorage.getItem(SESSION_KEY) || 'null'); } catch { return null; }
+};
+const writeApplicationSession = (s: ApplicationSession | null) => {
+  try { if (s) sessionStorage.setItem(SESSION_KEY, JSON.stringify(s)); else sessionStorage.removeItem(SESSION_KEY); } catch { /* ignore */ }
+};
 
 const field = 'w-full text-sm bg-[var(--nxt-bg-soft)] border border-[var(--nxt-line)] rounded-xl p-3 text-[var(--nxt-ink)] focus:ring-2 focus:ring-[var(--nxt-ink)] focus:outline-hidden focus:bg-[var(--nxt-surface)] transition-colors';
 
@@ -70,6 +81,7 @@ export const FundingApplicationModal: React.FC<FundingApplicationModalProps> = (
   const [errorMessage, setErrorMessage] = useState('');
   const [savedNotice, setSavedNotice] = useState<'draft' | 'submitted' | null>(null);
   const [dirty, setDirty] = useState(false);
+  const [viewStage, setViewStage] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -81,14 +93,24 @@ export const FundingApplicationModal: React.FC<FundingApplicationModalProps> = (
     seed('pitch', existingApplication?.pitch);
     seed('supporting_notes', existingApplication?.supporting_notes);
     seed('amount_requested', existingApplication?.amount_requested ? String(existingApplication.amount_requested) : '');
-    setAnswers(start);
-    setIndex(0);
+    const saved = readApplicationSession();
+    const resumed = !!saved && saved.problemId === problem?.id && saved.applicationId === existingApplication?.id && saved.path === window.location.pathname;
+    setAnswers(resumed ? { ...start, ...saved!.answers } : start);
+    setIndex(resumed ? Math.min(saved!.index, FUNDING_FORM.length - 1) : 0);
+    setViewStage(null);
+    setDirty(resumed);
     setErrorMessage('');
     setSavedNotice(null);
-    setDirty(false);
   }, [isOpen, problem?.id, existingApplication?.id]);
 
+  useEffect(() => {
+    if (!isOpen || !problem) return;
+    writeApplicationSession({ path: window.location.pathname, problemId: problem.id, applicationId: existingApplication?.id, index, answers });
+  }, [isOpen, problem?.id, existingApplication?.id, index, answers]);
+
   const section = FUNDING_FORM[index];
+  const currentStage = stageIndex(existingApplication?.stage);
+  const shownStage = viewStage || 'form';
   const missing = useMemo(() => missingRequired(answers), [answers]);
   const last = index === FUNDING_FORM.length - 1;
 
@@ -121,6 +143,7 @@ export const FundingApplicationModal: React.FC<FundingApplicationModalProps> = (
     void store.upsertApplication(payload(), 'Draft');
     setSavedNotice('draft');
     setDirty(false);
+    writeApplicationSession(null);
     setTimeout(onClose, 900);
   };
 
@@ -136,11 +159,13 @@ export const FundingApplicationModal: React.FC<FundingApplicationModalProps> = (
     setSavedNotice('submitted');
     setDirty(false);
     onSubmitted?.();
+    writeApplicationSession(null);
     setTimeout(onClose, 1200);
   };
 
   const close = () => {
     if (dirty && !window.confirm('Close without saving? Your answers will be lost. Use "Save draft" to keep them.')) return;
+    writeApplicationSession(null);
     onClose();
   };
 
@@ -160,8 +185,54 @@ export const FundingApplicationModal: React.FC<FundingApplicationModalProps> = (
             <button id="btn-close-funding-modal" onClick={close} className="p-2 rounded-full text-[var(--nxt-ink-soft)] hover:text-[var(--nxt-ink)]" aria-label="Close"><X className="w-5 h-5" /></button>
           </header>
 
+          <div className="border-b border-[var(--nxt-line)] px-4 sm:px-8 shrink-0 overflow-x-auto no-scrollbar">
+            <ol className="flex gap-1 max-w-5xl mx-auto" aria-label="Application stages">
+              {APPLICATION_STAGES.map((st, i) => {
+                const reached = existingApplication ? i <= currentStage : i === 0;
+                const active = shownStage === st.id;
+                return (
+                  <li key={st.id}>
+                    <button
+                      onClick={() => setViewStage(st.id === 'form' ? null : st.id)}
+                      aria-current={active ? 'step' : undefined}
+                      className={`flex items-center gap-2 px-3 py-3.5 text-sm whitespace-nowrap border-b-2 transition-colors ${
+                        active ? 'border-[var(--nxt-ink)] text-[var(--nxt-ink)] font-semibold' : 'border-transparent text-[var(--nxt-ink-soft)] hover:text-[var(--nxt-ink)]'
+                      } ${reached || active ? '' : 'opacity-70'}`}
+                    >
+                      <st.icon className="w-4 h-4" /> {st.label}
+                      {st.id === 'ai_interview' && <span className="rounded-full bg-[#16a34a] text-white text-[10px] font-bold uppercase tracking-wider px-2 py-0.5">Coming soon</span>}
+                      {existingApplication && i < currentStage && <Check className="w-3.5 h-3.5 text-[#16a34a]" />}
+                    </button>
+                  </li>
+                );
+              })}
+            </ol>
+          </div>
+
           <div className="flex-1 overflow-y-auto">
-            <div className="max-w-5xl mx-auto px-4 sm:px-8 py-8 grid gap-8 lg:grid-cols-[16rem_1fr]">
+            {viewStage && (() => {
+              const st = APPLICATION_STAGES.find(x => x.id === viewStage)!;
+              const soon = st.id === 'ai_interview';
+              const idx = APPLICATION_STAGES.findIndex(x => x.id === st.id);
+              const status = !existingApplication ? 'Opens after you submit the form' : idx < currentStage ? 'Done' : idx === currentStage ? 'Current stage' : 'Opens when the previous stage is cleared';
+              return (
+                <div className="max-w-3xl mx-auto px-4 sm:px-8 py-14">
+                  <div className="rounded-[22px] border border-[var(--nxt-line)] bg-[var(--nxt-surface)] p-8 sm:p-10">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <st.icon className="w-6 h-6" />
+                      <h2 className="font-display font-bold text-2xl tracking-[-0.02em]">{st.label}</h2>
+                      {soon && <span className="rounded-full bg-[#16a34a] text-white text-xs font-bold uppercase tracking-wider px-3 py-1">Coming soon</span>}
+                    </div>
+                    <p className="mt-4 text-lg leading-relaxed text-[var(--nxt-ink-soft)]">{st.blurb}</p>
+                    <p className="mt-6 text-sm font-semibold">{soon ? 'We are still building this stage. You will be told when it opens.' : status}</p>
+                    <button onClick={() => setViewStage(null)} className="mt-8 inline-flex items-center gap-1.5 rounded-full border border-[var(--nxt-ink)] px-5 py-2.5 text-sm font-semibold hover:bg-[var(--nxt-bg-soft)]">
+                      <ChevronLeft className="w-4 h-4" /> Back to the form
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
+            <div className={`max-w-5xl mx-auto px-4 sm:px-8 py-8 grid gap-8 lg:grid-cols-[16rem_1fr] ${viewStage ? 'hidden' : ''}`}>
               <nav aria-label="Sections" className="lg:sticky lg:top-4 self-start">
                 <p className="text-xs font-semibold text-[var(--nxt-ink-soft)] flex justify-between">
                   <span>SECTIONS</span><span>{FUNDING_FORM.filter(s => sectionComplete(s, answers)).length} of {FUNDING_FORM.filter(hasRequired).length} done</span>
@@ -226,7 +297,7 @@ export const FundingApplicationModal: React.FC<FundingApplicationModalProps> = (
             </div>
           </div>
 
-          <footer className="border-t border-[var(--nxt-line)] px-4 sm:px-8 py-3 shrink-0 bg-[var(--nxt-surface)]">
+          <footer className={`border-t border-[var(--nxt-line)] px-4 sm:px-8 py-3 shrink-0 bg-[var(--nxt-surface)] ${viewStage ? 'hidden' : ''}`}>
             <div className="max-w-5xl mx-auto flex flex-wrap items-center gap-3 justify-between">
               <button onClick={() => setIndex(i => Math.max(0, i - 1))} disabled={index === 0} className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--nxt-line)] px-4 py-2.5 text-sm font-semibold disabled:opacity-40">
                 <ChevronLeft className="w-4 h-4" /> Back

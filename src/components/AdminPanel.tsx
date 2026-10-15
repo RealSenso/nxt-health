@@ -1,3 +1,5 @@
+import { APPLICATION_STAGES } from '../data/applicationStages';
+import type { ApplicationStage } from '../types';
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
@@ -407,6 +409,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser }) => {
                       </p>
                       <p className="text-xs text-[var(--nxt-ink-soft)]">{app.supporting_notes}</p>
                     </div>
+                  )}
+
+                  {app.status !== 'Draft' && (
+                    <label className="flex items-center gap-2 text-xs text-[var(--nxt-ink-soft)]">
+                      <span className="font-bold uppercase tracking-wider text-[11px]">Stage</span>
+                      <select
+                        value={app.stage || 'form'}
+                        onChange={(e) => { void store.setApplicationStage(app.id, e.target.value as ApplicationStage); }}
+                        className="text-xs bg-[var(--nxt-bg-soft)] border border-[var(--nxt-line)] rounded-lg px-2 py-1"
+                      >
+                        {APPLICATION_STAGES.map(st => <option key={st.id} value={st.id}>{st.label}</option>)}
+                      </select>
+                    </label>
                   )}
 
                   {app.status === 'Pending' ? (

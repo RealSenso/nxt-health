@@ -3,7 +3,7 @@ import {
   signInWithEmailAndPassword, signOut, updateProfile as updateFirebaseProfile, type User as FirebaseUser,
 } from 'firebase/auth';
 import {
-  AcquisitionSource, AppNotification, ApplicationStatus, Booking, Category, Commitment, Consultation, FounderBackground,
+  AcquisitionSource, AppNotification, ApplicationStage, ApplicationStatus, Booking, Category, Commitment, Consultation, FounderBackground,
   FounderOutcomes, FundingApplication, Gender, MembershipStatus, MentorProfile, MentorRequest, Message,
   ProblemStatement, PublicFounder, PublicProfileSettings, PublicTeam, Resource, ResourceView, Rsvp,
   BlogPost, ListedExpert, ProblemVote, SiteSettings, Startup, VoteBreakdown, VoteTally, StartupStage, Step, StepRating, StepSubmission, StepWorkspace, SubmissionStatus, Team, TeamInvite,
@@ -691,6 +691,13 @@ class ApiStore {
         if (a) { a.status = status; if (adminFeedback !== undefined) a.admin_feedback = adminFeedback; }
       },
       () => api.post(`/admin/applications/${id}/decision`, { status, ...(adminFeedback !== undefined ? { admin_feedback: adminFeedback } : {}) }),
+    );
+  }
+
+  public setApplicationStage(id: string, stage: ApplicationStage): Promise<void> {
+    return this.mutate(
+      d => { const a = d.applications?.find(x => x.id === id); if (a) a.stage = stage; },
+      () => api.post(`/admin/applications/${id}/stage`, { stage }),
     );
   }
 
