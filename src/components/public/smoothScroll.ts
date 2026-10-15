@@ -4,14 +4,21 @@ import Lenis from 'lenis';
 let active: Lenis | null = null;
 
 /** Scrolls to an element, easing through Lenis when it is running and falling back to the browser otherwise. */
-export function scrollToId(id: string, block: 'start' | 'center' = 'start') {
+export function scrollToId(id: string, block?: 'start' | 'center') {
   const el = document.getElementById(id);
   if (!el) return;
+  const header = 64;
+  const height = el.getBoundingClientRect().height;
+  const room = window.innerHeight - header;
+  // "How it works" always lands in the middle of the screen; anything taller than the screen starts at its top.
+  const centre = (block ?? (id === 'how-it-works' ? 'center' : 'start')) === 'center' && height < room;
+  // Lenis already honours the element's scroll-margin, so take it out of the offset.
+  const margin = parseFloat(getComputedStyle(el).scrollMarginTop) || 0;
+  const offset = (centre ? -(header + (room - height) / 2) : -(header + 16)) + margin;
   if (active) {
-    const offset = block === 'center' ? -(window.innerHeight - el.getBoundingClientRect().height) / 2 : -80;
     active.scrollTo(el, { offset, duration: 1.2 });
   } else {
-    el.scrollIntoView({ behavior: 'smooth', block });
+    window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY + offset - margin, behavior: 'smooth' });
   }
 }
 

@@ -58,6 +58,7 @@ function useAnchorScroll() {
 
 export const PublicLayout: React.FC<{ variant: PublicVariant; children: React.ReactNode }> = ({ variant, children }) => {
   useAnchorScroll();
+  const location = useLocation();
   const inApp = useInAppShell();
   useSmoothScroll(!inApp);
   // Inside the signed-in app the app's own navigation is already on screen.
@@ -84,7 +85,19 @@ export const PublicLayout: React.FC<{ variant: PublicVariant; children: React.Re
           </Link>
           <nav className="flex items-center gap-5 lg:gap-8">
             {nav.items.filter(visible).map(item => (
-              <Link key={item.label} to={item.to} className="hidden md:inline text-[15px] text-white/90 hover:text-white">{item.label}</Link>
+              <Link
+                key={item.label}
+                to={item.to}
+                className="hidden md:inline text-[15px] text-white/90 hover:text-white"
+                onClick={(e) => {
+                  // Already on this page: the URL would not change, so scroll to the section ourselves, every time.
+                  const [path, hash] = item.to.split('#');
+                  if (hash && (path === '' || path === location.pathname) && document.getElementById(hash)) {
+                    e.preventDefault();
+                    scrollToId(hash);
+                  }
+                }}
+              >{item.label}</Link>
             ))}
             <ThemeToggle />
             {signedIn ? (
