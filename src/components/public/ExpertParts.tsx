@@ -38,7 +38,7 @@ export const ExpertHero: React.FC<HeroProps> = ({ name, title, eyebrow, photoUrl
   const bodyRef = useRef<HTMLDivElement>(null);
   const [portraitW, setPortraitW] = useState<number | null>(null);
 
-  // The portrait is 9:16 and runs from the top of the eyebrow to the bottom of the video, so its width follows that height.
+  // The portrait is 9:16 and as tall as the video, so its width follows the video's height.
   useLayoutEffect(() => {
     const body = bodyRef.current;
     if (!body) return;
@@ -60,8 +60,8 @@ export const ExpertHero: React.FC<HeroProps> = ({ name, title, eyebrow, photoUrl
       {/* A block 71% of the page wide, centred, with the same generous space above and below as the design. */}
       <div className="w-[88%] lg:w-[71%] max-w-[1420px] mx-auto pt-20 pb-16 lg:py-[6.25vw]">
         <div className="grid gap-y-8 lg:gap-y-0 lg:grid-cols-[auto_minmax(0,1fr)] lg:gap-x-[6.2%]">
-          {/* Portrait: same height as the heading and video together */}
-          <div className="lg:col-start-1 lg:row-start-1 relative w-full max-w-[16rem] aspect-[9/16] lg:max-w-none lg:aspect-auto lg:w-[var(--pw)]" style={{ ['--pw' as string]: portraitW ? `${portraitW}px` : undefined }}>
+          {/* Portrait: 9:16, the same height as the video and level with its top */}
+          <div className="lg:col-start-1 lg:row-start-2 relative w-full max-w-[16rem] aspect-[9/16] lg:max-w-none lg:aspect-auto lg:w-[var(--pw)] order-2 lg:order-none" style={{ ['--pw' as string]: portraitW ? `${portraitW}px` : undefined }}>
             <img
               src={photoUrl ? assetUrl(photoUrl) : placeholderPortrait(name)}
               alt={name}
@@ -69,8 +69,7 @@ export const ExpertHero: React.FC<HeroProps> = ({ name, title, eyebrow, photoUrl
             />
           </div>
 
-          {/* Right column: scales its type with its own width */}
-          <div ref={bodyRef} className="lg:col-start-2 lg:row-start-1 [container-type:inline-size]">
+          <div className="lg:col-start-2 lg:row-start-1 [container-type:inline-size] order-1 lg:order-none lg:pb-[3.4cqw]">
             <p className="text-[clamp(11px,1.5cqw,15px)] uppercase tracking-[0.14em] text-white/60 flex flex-wrap items-center gap-x-3 gap-y-2">
               <span>{eyebrow}</span>
               {verified && (
@@ -86,8 +85,10 @@ export const ExpertHero: React.FC<HeroProps> = ({ name, title, eyebrow, photoUrl
                 <Linkedin className="w-4 h-4" /> LinkedIn
               </a>
             )}
+          </div>
 
-            <div className="mt-[3.4cqw] w-full lg:w-[88.8%]">
+          <div ref={bodyRef} className="lg:col-start-2 lg:row-start-2 [container-type:inline-size] order-3 lg:order-none">
+            <div className="w-full lg:w-[88.8%]">
               {videoUrl ? (
                 <a href={videoUrl} target="_blank" rel="noreferrer" className="flex flex-col items-center justify-center text-center rounded-[20px] border border-white/15 bg-[#161616] hover:bg-[#1c1c1c] transition-colors aspect-video px-6">
                   <span className="w-[8cqw] min-w-12 max-w-20 aspect-square rounded-full border-2 border-white flex items-center justify-center"><Play className="w-1/3 h-1/3 ml-0.5" /></span>
@@ -102,11 +103,10 @@ export const ExpertHero: React.FC<HeroProps> = ({ name, title, eyebrow, photoUrl
                 </div>
               )}
             </div>
-
           </div>
 
           {highlights.length > 0 && (
-            <div className="lg:col-start-2 lg:row-start-2 [container-type:inline-size] lg:mt-10">
+            <div className="lg:col-start-2 lg:row-start-3 [container-type:inline-size] lg:mt-10 order-4 lg:order-none">
               <div className="grid gap-6 sm:grid-cols-3 sm:gap-[4.4cqw]">
                 {highlights.slice(0, 3).map((h, i) => (
                   <div key={i} className="border-t border-white/25 pt-[1.8cqw] text-[clamp(13px,1.9cqw,17px)] leading-relaxed text-white/70">
