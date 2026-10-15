@@ -33,7 +33,7 @@ export const BlogCard: React.FC<{ post: BlogPost }> = ({ post }) => (
       <h3 className="mt-3 font-display font-bold text-[1.25rem] leading-snug tracking-[-0.02em]">{post.title}</h3>
       <p className="mt-3 text-[15px] leading-relaxed text-[var(--nxt-ink-soft)] line-clamp-3">{post.excerpt}</p>
       <p className="mt-auto pt-5 text-[13px] text-[var(--nxt-ink-soft)] flex items-center gap-3">
-        {post.author && <span>{post.author}</span>}
+        <span>NXT</span>
         {post.read_minutes > 0 && <span className="inline-flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> {post.read_minutes} min read</span>}
         <ArrowRight className="w-4 h-4 ml-auto transition-transform group-hover:translate-x-0.5" />
       </p>
@@ -119,7 +119,7 @@ export const BlogPostPage: React.FC = () => {
             </p>
             <h1 className="mt-4 font-display font-bold text-[clamp(2rem,4.5vw,3.25rem)] leading-[1.08] tracking-[-0.035em]">{post.title}</h1>
             <p className="mt-6 text-[15px] text-[var(--nxt-ink-soft)] flex flex-wrap gap-x-4 gap-y-1">
-              {post.author && <span>By <span className="font-semibold text-[var(--nxt-ink)]">{post.author}</span></span>}
+              <span>By <span className="font-semibold text-[var(--nxt-ink)]">NXT</span></span>
               {post.published_at && <span>{dateLabel(post.published_at)}</span>}
               {post.read_minutes > 0 && <span>{post.read_minutes} min read</span>}
             </p>

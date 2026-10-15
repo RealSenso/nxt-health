@@ -13,7 +13,7 @@ const DOMAINS = [
 ];
 const TYPES = ['Explainer', 'Perspective', 'Opinion', 'Unpopular Opinion', 'Myth vs Reality', 'Case Study', 'Industry Insight', 'Trend Watch', 'Founder Story', 'Expert Viewpoint', 'Deep Dive', 'Quick Read'];
 
-const EMPTY = { title: '', excerpt: '', body: '', cover_url: '', author: '', domain: '', content_type: '', read_minutes: 0, status: 'draft' as const };
+const EMPTY = { title: '', excerpt: '', body: '', cover_url: '', author: 'NXT', domain: '', content_type: '', read_minutes: 0, status: 'draft' as const };
 type Draft = typeof EMPTY & { id?: string };
 
 /** Reading time from word count, using the guide in the blog SOP (about 230 words a minute). */
@@ -33,7 +33,7 @@ export const AdminBlogs: React.FC = () => {
     setPreview(false);
     try {
       const { post: full } = await api.get<{ post: BlogPost }>(`/admin/blogs/${post.id}`);
-      setDraft({ id: full.id, title: full.title, excerpt: full.excerpt, body: full.body || '', cover_url: full.cover_url, author: full.author, domain: full.domain, content_type: full.content_type, read_minutes: full.read_minutes, status: full.status as 'draft' });
+      setDraft({ id: full.id, title: full.title, excerpt: full.excerpt, body: full.body || '', cover_url: full.cover_url, author: 'NXT', domain: full.domain, content_type: full.content_type, read_minutes: full.read_minutes, status: full.status as 'draft' });
     } catch (e) {
       setMessage({ ok: false, text: e instanceof Error ? e.message : 'Could not open that post.' });
     }
@@ -79,7 +79,6 @@ export const AdminBlogs: React.FC = () => {
           <Field label="Short summary" hint="Shown on the cards. One or two sentences." className="sm:col-span-2">
             <textarea rows={2} className={inputClass} value={draft.excerpt} onChange={(e) => set('excerpt', e.target.value)} />
           </Field>
-          <Field label="Author"><input className={inputClass} value={draft.author} onChange={(e) => set('author', e.target.value)} /></Field>
           <Field label="Domain">
             <input list="blog-domains" className={inputClass} value={draft.domain} onChange={(e) => set('domain', e.target.value)} />
             <datalist id="blog-domains">{DOMAINS.map(d => <option key={d} value={d} />)}</datalist>
@@ -140,7 +139,7 @@ export const AdminBlogs: React.FC = () => {
                   <Pill tone={post.status === 'published' ? 'good' : 'warn'}>{post.status}</Pill>
                 </p>
                 <p className="mt-1 text-sm text-[var(--nxt-ink-soft)]">
-                  {[post.author, post.domain, post.content_type, post.read_minutes ? `${post.read_minutes} min` : ''].filter(Boolean).join(' · ')}
+                  {[post.domain, post.content_type, post.read_minutes ? `${post.read_minutes} min` : ''].filter(Boolean).join(' · ')}
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-2 shrink-0">
