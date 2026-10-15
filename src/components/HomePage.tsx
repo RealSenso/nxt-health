@@ -197,8 +197,7 @@ export const HomePage: React.FC = () => {
               <p className="text-[15px] text-[var(--nxt-ink-soft)]">{a.who}</p>
               <h3 className="font-display font-bold text-[1.65rem] leading-[1.1] mt-4 tracking-[-0.025em]">{a.title}</h3>
               <p className="mt-4 text-[15px] leading-relaxed text-[var(--nxt-ink-soft)]">{a.intro}</p>
-              <RuleList items={a.points} className="mt-5 mb-7" />
-              {a.to !== '/signup' && <Btn to={a.to} full className="mt-auto">{a.cta}</Btn>}
+              <RuleList items={a.points} className="mt-5" />
             </article>
           ))}
         </div>
