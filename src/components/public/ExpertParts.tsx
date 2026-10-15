@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CheckCircle2, ChevronLeft, ExternalLink, Linkedin, Play } from 'lucide-react';
 import type { ExpertItem, ExpertItemKind } from '../../types';
@@ -31,17 +31,38 @@ interface HeroProps {
 /** The dark opening of an expert's page: portrait, name, role, an introduction video and three things to know. */
 export const ExpertHero: React.FC<HeroProps> = ({ name, title, eyebrow, photoUrl, videoUrl, linkedin, highlights, backTo, tagline, location, verified }) => {
   const first = firstName(name);
+  const headRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLDivElement>(null);
+  const [portrait, setPortrait] = useState<Record<string, string>>({});
+
+  // Size the portrait from the height of the heading plus the video, so it is 9:16 and the two line up exactly.
+  useLayoutEffect(() => {
+    const head = headRef.current;
+    const video = videoRef.current;
+    if (!head || !video) return;
+    const measure = () => {
+      if (window.innerWidth < 1024) { setPortrait({}); return; }
+      const h = Math.round(video.getBoundingClientRect().bottom - head.getBoundingClientRect().top);
+      setPortrait({ '--portrait-h': `${h}px`, '--portrait-w': `${Math.round((h * 9) / 16)}px` });
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(head); ro.observe(video);
+    window.addEventListener('resize', measure);
+    return () => { ro.disconnect(); window.removeEventListener('resize', measure); };
+  }, [videoUrl, name]);
+
   return (
     <section className="bg-black text-white">
       <div className="nxt-container pt-8 pb-16 sm:pb-20">
         <Link to={backTo} className="inline-flex items-center gap-1 text-[15px] text-white/70 hover:text-white"><ChevronLeft className="w-4 h-4" /> All experts</Link>
-        <div className="mt-10 grid gap-x-16 gap-y-8 lg:grid-cols-[22rem_1fr] lg:gap-x-20">
-          {/* The portrait lines up with the video: it starts at the video's top and ends at its bottom. */}
-          <div className="lg:col-start-1 lg:row-start-2 relative aspect-[4/5] lg:aspect-auto lg:min-h-0 max-w-[22rem] w-full">
-            <img src={photoUrl ? assetUrl(photoUrl) : placeholderPortrait(name)} alt={name} className="absolute inset-0 w-full h-full rounded-[8px] object-cover object-top bg-[#111]" />
+        <div className="mt-10 grid gap-x-16 gap-y-8 lg:grid-cols-[auto_1fr] lg:gap-x-20">
+          {/* The portrait is 9:16 and runs from the top of the eyebrow to the bottom of the video. */}
+          <div className="lg:col-start-1 lg:row-start-1 lg:row-span-2 w-full max-w-[16rem] aspect-[9/16] lg:aspect-auto lg:max-w-none lg:w-[var(--portrait-w)] lg:h-0 relative" style={portrait as React.CSSProperties}>
+            <img src={photoUrl ? assetUrl(photoUrl) : placeholderPortrait(name)} alt={name} className="absolute inset-0 lg:bottom-auto w-full h-full lg:h-[var(--portrait-h)] rounded-[8px] object-cover object-top bg-[#111]" />
           </div>
 
-          <div className="lg:col-start-2 lg:row-start-1">
+          <div ref={headRef} className="lg:col-start-2 lg:row-start-1">
             <div className="flex flex-wrap items-center gap-3">
               <p className="text-[12px] sm:text-[13px] uppercase tracking-[0.14em] text-white/60">{eyebrow}</p>
               {verified && (
@@ -58,7 +79,7 @@ export const ExpertHero: React.FC<HeroProps> = ({ name, title, eyebrow, photoUrl
             )}
           </div>
 
-          <div className="lg:col-start-2 lg:row-start-2">
+          <div ref={videoRef} className="lg:col-start-2 lg:row-start-2">
             {videoUrl ? (
               <a href={videoUrl} target="_blank" rel="noreferrer" className="flex flex-col items-center justify-center text-center rounded-[12px] border border-white/15 bg-[#161616] hover:bg-[#1c1c1c] transition-colors aspect-video px-6">
                 <span className="w-16 h-16 rounded-full border-2 border-white flex items-center justify-center"><Play className="w-6 h-6 ml-0.5" /></span>
