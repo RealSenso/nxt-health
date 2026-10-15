@@ -65,7 +65,7 @@ export const ExpertHero: React.FC<HeroProps> = ({ name, title, eyebrow, photoUrl
             <img
               src={photoUrl ? assetUrl(photoUrl) : placeholderPortrait(name)}
               alt={name}
-              className="absolute inset-0 w-full h-full rounded-[8px] object-cover object-top bg-[#111]"
+              className="absolute inset-0 w-full h-full rounded-[20px] object-cover object-top bg-[#111]"
             />
           </div>
 
@@ -89,13 +89,13 @@ export const ExpertHero: React.FC<HeroProps> = ({ name, title, eyebrow, photoUrl
 
             <div className="mt-[3.4cqw] w-full lg:w-[88.8%]">
               {videoUrl ? (
-                <a href={videoUrl} target="_blank" rel="noreferrer" className="flex flex-col items-center justify-center text-center rounded-[12px] border border-white/15 bg-[#161616] hover:bg-[#1c1c1c] transition-colors aspect-video px-6">
+                <a href={videoUrl} target="_blank" rel="noreferrer" className="flex flex-col items-center justify-center text-center rounded-[20px] border border-white/15 bg-[#161616] hover:bg-[#1c1c1c] transition-colors aspect-video px-6">
                   <span className="w-[8cqw] min-w-12 max-w-20 aspect-square rounded-full border-2 border-white flex items-center justify-center"><Play className="w-1/3 h-1/3 ml-0.5" /></span>
                   <span className="mt-[3cqw] font-bold text-[clamp(1rem,2.6cqw,1.6rem)]">Watch {first}'s introduction</span>
                   <span className="mt-2 text-[clamp(10px,1.4cqw,13px)] uppercase tracking-[0.14em] text-white/60">Introductory video</span>
                 </a>
               ) : (
-                <div className="flex flex-col items-center justify-center text-center rounded-[12px] border border-white/15 bg-[#161616] aspect-video px-6" aria-label="Introduction video coming soon">
+                <div className="flex flex-col items-center justify-center text-center rounded-[20px] border border-white/15 bg-[#161616] aspect-video px-6" aria-label="Introduction video coming soon">
                   <span className="w-[8cqw] min-w-12 max-w-20 aspect-square rounded-full border-2 border-white/40 flex items-center justify-center text-white/50"><Play className="w-1/3 h-1/3 ml-0.5" /></span>
                   <span className="mt-[3cqw] font-bold text-[clamp(1rem,2.6cqw,1.6rem)] text-white/80">{first}'s introduction</span>
                   <span className="mt-2 text-[clamp(10px,1.4cqw,13px)] uppercase tracking-[0.14em] text-white/50">Video coming soon</span>
