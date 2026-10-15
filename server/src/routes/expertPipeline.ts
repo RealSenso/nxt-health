@@ -28,6 +28,8 @@ const expertSchema = z.object({
   credentials: text(500).optional(),
   languages: text(200).optional(),
   how_to_help: text(2000).optional(),
+  intro_video_url: z.string().trim().max(500).refine(u => /^https:\/\/[^\s]+$/i.test(u), 'must be an https:// link').or(z.literal('')).optional(),
+  highlights: z.array(z.object({ title: text(80), text: text(200) })).max(4).optional(),
 }).strict();
 
 /** The onboarded experts an admin has chosen to show: name, role and LinkedIn only — never contact details. */
@@ -54,6 +56,8 @@ export async function listedExpert(database: Database, id: string) {
     title: (d.title as string) || '',
     linkedin: /^https:\/\//i.test((d.linkedin as string) || '') ? (d.linkedin as string) : '',
     ...Object.fromEntries(PROFILE_FIELDS.map(f => [f, (d[f] as string) || ''])),
+    intro_video_url: (d.intro_video_url as string) || '',
+    highlights: (d.highlights as { title: string; text: string }[]) || [],
   };
 }
 

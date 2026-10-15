@@ -41,6 +41,8 @@ const schemas = {
     complexity: z.enum(['low', 'moderate', 'high', 'very_high']).optional(),
     complexity_note: text(300).optional(),
     roadmap_note: text(500).optional(),
+    free_access: z.boolean().optional(),
+    guide: z.boolean().optional(),
     playbook: playbookSchema.optional(),
   }),
   steps: z.object({

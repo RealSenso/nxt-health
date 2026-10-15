@@ -244,6 +244,73 @@ describe('problem photos', () => {
   });
 });
 
+describe('website content', () => {
+  const blog = { title: 'A post', excerpt: 'e', body: 'Hello\n\n## Part', cover_url: '', author: 'A', domain: 'MedTech', content_type: 'Explainer', read_minutes: 3, status: 'published' };
+
+  it('lets admins publish blogs and startups, and shows visitors only published posts without their bodies', async () => {
+    await admin('boss');
+    await member('founder');
+    await request(app).post('/api/admin/blogs').send(blog).expect(401);
+    await request(app).post('/api/admin/blogs').set('Authorization', token('founder')).send(blog).expect(403);
+    await request(app).post('/api/admin/blogs').set('Authorization', token('boss')).send({ ...blog, cover_url: 'http://insecure' }).expect(400);
+
+    const pub = await request(app).post('/api/admin/blogs').set('Authorization', token('boss')).send(blog).expect(201);
+    const draft = await request(app).post('/api/admin/blogs').set('Authorization', token('boss')).send({ ...blog, title: 'Draft', status: 'draft' }).expect(201);
+
+    const guest = (await request(app).get('/api/bootstrap').expect(200)).body.content;
+    expect(guest.blogs.map((b: { title: string }) => b.title)).toEqual(['A post']);
+    expect(guest.blogs[0].body).toBeUndefined();
+    expect(guest.blogs[0].published_at).toBeTruthy();
+    const full = await request(app).get(`/api/public/blogs/${pub.body.item.id}`).expect(200);
+    expect(full.body.post.body).toContain('Hello');
+    await request(app).get(`/api/public/blogs/${draft.body.item.id}`).expect(404);
+    expect((await request(app).get(`/api/public/blogs/${draft.body.item.id}`).set('Authorization', token('boss')).expect(200)).body.post.title).toBe('Draft');
+    expect((await request(app).get('/api/bootstrap').set('Authorization', token('boss')).expect(200)).body.content.blogs).toHaveLength(2);
+
+    await request(app).put(`/api/admin/blogs/${draft.body.item.id}`).set('Authorization', token('boss')).send({ ...blog, title: 'Draft', status: 'published' }).expect(200);
+    expect((await request(app).get('/api/bootstrap').expect(200)).body.content.blogs).toHaveLength(2);
+    await request(app).delete(`/api/admin/blogs/${pub.body.item.id}`).set('Authorization', token('boss')).expect(200);
+    expect((await request(app).get('/api/bootstrap').expect(200)).body.content.blogs).toHaveLength(1);
+
+    const startup = { name: 'Acme Health', tagline: 't', description: 'd', logo_url: '', website: 'https://example.com', sector: 'MedTech', stage: 'Seed', location: 'Pune', featured: true, order: 1 };
+    await request(app).post('/api/admin/startups').set('Authorization', token('founder')).send(startup).expect(403);
+    await request(app).post('/api/admin/startups').set('Authorization', token('boss')).send(startup).expect(201);
+    expect((await request(app).get('/api/bootstrap').expect(200)).body.content.startups).toHaveLength(1);
+  });
+
+  it('keeps expert items for members, and saves site settings for admins', async () => {
+    await admin('boss');
+    await member('founder');
+    await signup('visitor');
+    const item = { expert_id: 'exp-a', kind: 'webinar', title: 'Webinar', url: 'https://example.com/w', date: '2026-10-01', summary: 's' };
+    await request(app).post('/api/admin/expert-items').set('Authorization', token('founder')).send(item).expect(403);
+    await request(app).post('/api/admin/expert-items').set('Authorization', token('boss')).send(item).expect(201);
+    await request(app).get('/api/public/expert-items/exp-a').expect(401);
+    await request(app).get('/api/public/expert-items/exp-a').set('Authorization', token('visitor')).expect(403);
+    expect((await request(app).get('/api/public/expert-items/exp-a').set('Authorization', token('founder')).expect(200)).body.items).toHaveLength(1);
+
+    const site = { hero_title: 'Hi', hero_subtitle: '', announcement: 'Open day', announcement_link: '/problems', show_blogs: true, show_startups: false };
+    await request(app).put('/api/admin/site-settings').set('Authorization', token('founder')).send(site).expect(403);
+    await request(app).put('/api/admin/site-settings').set('Authorization', token('boss')).send({ ...site, announcement_link: 'javascript:alert(1)' }).expect(400);
+    await request(app).put('/api/admin/site-settings').set('Authorization', token('boss')).send(site).expect(200);
+    expect((await request(app).get('/api/bootstrap').expect(200)).body.content.site).toMatchObject({ announcement: 'Open day', show_startups: false });
+  });
+
+  it('lets any signed-in person work through the free guide, but nobody lock it as a project', async () => {
+    await admin('boss');
+    await signup('visitor');
+    await request(app).post('/api/admin/starter-content').set('Authorization', token('boss')).expect(201);
+    const cats = (await request(app).get('/api/bootstrap').expect(200)).body.content.categories;
+    expect(cats.find((c: { id: string }) => c.id === 'cat-start-in-india')).toMatchObject({ free_access: true, guide: true, coming_soon: false });
+    // A normal category needs membership; the guide does not.
+    await request(app).post('/api/scope/progress/toggle').set('Authorization', token('visitor')).send({ category_id: 'cat-marketplace-network', step_id: 's1' }).expect(403);
+    const ok = await request(app).post('/api/scope/progress/toggle').set('Authorization', token('visitor')).send({ category_id: 'cat-start-in-india', step_id: 'step-start-in-india-0' }).expect(200);
+    expect(ok.body.completed).toBe(true);
+    await member('founder');
+    await request(app).put('/api/scope/locks/prob-x').set('Authorization', token('founder')).send({ category_id: 'cat-start-in-india' }).expect(409);
+  });
+});
+
 describe('events', () => {
   it('enforces RSVP capacity under concurrent requests', async () => {
     await Promise.all(['u1', 'u2', 'u3', 'u4'].map(member));
@@ -448,23 +515,24 @@ describe('uploads and profiles', () => {
       return (await (uid ? req.set('Authorization', token(uid)) : req).expect(200)).body.content;
     };
 
-    it('loads 25 categories (8 open) and the problem statements, and can be re-run safely', async () => {
+    it('loads 26 categories (9 open) and the problem statements, and can be re-run safely', async () => {
       await admin('boss');
       const first = await request(app).post('/api/admin/starter-content').set('Authorization', token('boss')).expect(201);
       // The test fixtures contain cat-1 and prob-1, which are old starter ids, so one of each goes.
-      expect(first.body).toMatchObject({ categories: 25, steps: 0, problems_added: 2, removed_categories: 1, removed_problems: 1 });
+      expect(first.body).toMatchObject({ categories: 26, steps: 0, problems_added: 2, removed_categories: 1, removed_problems: 1 });
 
       const loaded = await content('boss');
-      expect(loaded.categories).toHaveLength(25);
+      expect(loaded.categories).toHaveLength(26);
       expect(loaded.categories.filter((c: { coming_soon: boolean }) => !c.coming_soon).map((c: { name: string }) => c.name)).toEqual([
         'SaMD', 'Medical Device', 'Marketplace / Network', 'Healthcare Services', 'Patient Education / Engagement',
         'Workflow / Operational Tech', 'Training / Simulation', 'Clinical Infrastructure / Platform',
+        'How to start a startup in India',
       ]);
       expect(loaded.problems.map((p: { title: string }) => p.title)).toEqual(['In women, what is “psychological” and what is “not”?', 'Solve migraine, without meds.']);
 
       const second = await request(app).post('/api/admin/starter-content').set('Authorization', token('boss')).expect(201);
-      expect(second.body).toMatchObject({ categories: 25, problems_added: 0, removed_categories: 0 });
-      expect((await content('boss')).categories).toHaveLength(25);
+      expect(second.body).toMatchObject({ categories: 26, problems_added: 0, removed_categories: 0 });
+      expect((await content('boss')).categories).toHaveLength(26);
     });
 
     it('builds a roadmap for every open category from an imported checklist, and keeps it across refreshes', async () => {

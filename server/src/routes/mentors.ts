@@ -32,6 +32,8 @@ export const profileSchema = z.object({
   book_when: z.array(z.string().trim().min(1).max(160)).max(6).optional(),
   session_days: z.array(z.number().int().min(0).max(6)).max(7).optional(),
   session_times: z.array(clockTime).max(8).optional(),
+  intro_video_url: httpsUrl.optional(),
+  highlights: z.array(z.object({ title: z.string().trim().max(80), text: z.string().trim().max(200) })).max(4).optional(),
   /** Private: only shared with a founder once they have paid for a session. */
   meeting_url: httpsUrl.optional(),
 }).strict();

@@ -1,6 +1,7 @@
 import { createApp } from './app.js';
 import { connect } from './db.js';
 import { firebaseVerifier } from './firebase.js';
+import { loadBundledContent } from './bundledContent.js';
 import { removeObsoleteStarterContent, syncCategoryOrder } from './syncContent.js';
 
 function required(name: string): string {
@@ -15,6 +16,8 @@ const removed = await removeObsoleteStarterContent(database);
 if (removed.removed_categories || removed.removed_problems) {
   console.log(`Removed ${removed.removed_categories} old starter categories and ${removed.removed_problems} sample problems.`);
 }await syncCategoryOrder(database);
+const loaded = await loadBundledContent(database);
+if (loaded.steps || loaded.blogs) console.log(`Loaded ${loaded.steps} guide steps and ${loaded.blogs} blog posts.`);
 
 const app = createApp({
   database,

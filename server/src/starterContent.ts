@@ -54,6 +54,8 @@ interface CategoryDef {
   example: string;
   complexity?: Complexity;
   complexity_note?: string;
+  /** A free reading guide with its own page, rather than a category to build a project in. */
+  guide?: boolean;
 }
 
 /**
@@ -91,19 +93,22 @@ const CATEGORY_DEFS: CategoryDef[] = [
 
   // Listed in the categories sheet but not yet rated on the complexity sheet.
   { slug: 'care-service', name: 'Care-as-a-Service', description: 'Delivers an entire care pathway', example: 'Chronic disease management' },
+
+  // A free guide for every signed-in member; it has its own page and is not part of the project categories.
+  { slug: 'start-in-india', name: 'How to start a startup in India', description: 'A free step-by-step guide from idea to an incorporated, compliant and funded company', example: 'Incorporation, DPIIT recognition, IP, funding, compliance', guide: true },
 ];
 
 /** How many of the first categories are open to founders: SaMD, Medical Device, then the six priority "green" categories. */
 export const LIVE_CATEGORY_COUNT = 8;
 
 /** Categories that are open because they have a checklist written for them, in addition to the first six. */
-const DEDICATED_ROADMAP_SLUGS = ['medical-device', 'samd'];
+const DEDICATED_ROADMAP_SLUGS = ['medical-device', 'samd', 'start-in-india'];
 
 const categoryId = (slug: string) => `cat-${slug}`;
 
 export const STARTER_CATEGORIES: Doc[] = CATEGORY_DEFS.map((def, index) => {
   const dedicated = DEDICATED_ROADMAP_SLUGS.includes(def.slug);
-  const live = index < LIVE_CATEGORY_COUNT;
+  const live = index < LIVE_CATEGORY_COUNT || !!def.guide;
   return {
     id: categoryId(def.slug),
     name: def.name,
@@ -112,6 +117,7 @@ export const STARTER_CATEGORIES: Doc[] = CATEGORY_DEFS.map((def, index) => {
     order: index + 1,
     coming_soon: !live,
     ...(index < LIVE_CATEGORY_COUNT ? { priority: index + 1 } : {}),
+    ...(def.guide ? { free_access: true, guide: true } : {}),
     ...(def.complexity ? { complexity: def.complexity, complexity_note: def.complexity_note } : {}),
     ...(live && !dedicated && def.slug !== 'marketplace-network'
       ? { roadmap_note: 'This starter roadmap is built from the Marketplace checklist. A checklist written for this category is coming.' }

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { HttpError, requireMember, scopeKeyOf } from '../auth.js';
+import { HttpError, requireMember, requireVerified, scopeKeyOf } from '../auth.js';
 import type { Database } from '../db.js';
 import { now, parse } from '../util.js';
 
@@ -47,6 +47,7 @@ export function scopeRouter(database: Database): Router {
     const category = await database.col('categories').findOne({ _id: category_id });
     if (!category) throw new HttpError(404, 'Category not found.');
     if (category.coming_soon) throw new HttpError(409, `${category.name} is coming soon — it isn't open yet.`);
+    if (category.guide) throw new HttpError(409, `${category.name} is a guide, not a project category.`);
     await scopes.updateOne({ _id: key }, { $set: { [`category_locks.${param(req.params.problemId)}`]: category_id } }, { upsert: true });
     res.json({ ok: true });
   });
@@ -64,9 +65,17 @@ export function scopeRouter(database: Database): Router {
     res.json({ ok: true });
   });
 
+  /** Members can work on any category; everyone signed in can work on a free guide. */
+  async function requireProgressAccess(req: Parameters<typeof requireVerified>[0], categoryId: string) {
+    const user = requireVerified(req);
+    const category = await database.col('categories').findOne({ _id: categoryId }, { projection: { free_access: 1 } });
+    if (!category?.free_access && user.role !== 'admin' && user.membership_status !== 'active') throw new HttpError(403, 'This needs an active membership.');
+    return user;
+  }
+
   r.post('/scope/progress/toggle', async (req, res) => {
-    const key = scopeKeyOf(requireMember(req));
     const { category_id, step_id } = parse(z.object({ category_id: id, step_id: id }), req.body);
+    const key = scopeKeyOf(await requireProgressAccess(req, category_id));
     const docId = `${key}:${category_id}:${step_id}`;
     const existing = await progress.findOne({ _id: docId });
     const completed = !existing?.completed;

@@ -12,6 +12,7 @@ import { contentRouter } from './routes/content.js';
 import { eventsRouter } from './routes/events.js';
 import { expertsRouter } from './routes/experts.js';
 import { inquiriesRouter } from './routes/inquiries.js';
+import { cmsRouter } from './routes/cms.js';
 import { votesRouter } from './routes/votes.js';
 import { expertPipelineRouter } from './routes/expertPipeline.js';
 import { mentorsRouter } from './routes/mentors.js';
@@ -61,6 +62,7 @@ export function createApp({ database, verifyToken, allowedOrigins, rateLimitPerM
   api.use(inquiriesRouter(database, inquiryLimitPerHour));
   api.use(expertPipelineRouter(database));
   api.use(votesRouter(database, voteLimitPerHour));
+  api.use(cmsRouter(database));
   app.use('/api', api);
 
   app.use('/api', (_req, res) => { res.status(404).json({ error: 'Not found.' }); });

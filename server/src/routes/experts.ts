@@ -18,6 +18,8 @@ function publicExpert(user: Record<string, unknown> & { _id: string }, profile: 
     book_when: (profile.book_when as string[]) || [],
     rate_usd: typeof profile.rate_usd === 'number' ? profile.rate_usd : DEFAULT_RATE_USD,
     photo_url: (profile.photo_url as string) || '',
+    intro_video_url: (profile.intro_video_url as string) || '',
+    highlights: (profile.highlights as { title: string; text: string }[]) || [],
     open_slots: slotCount,
   };
 }

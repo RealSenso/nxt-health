@@ -135,6 +135,10 @@ export interface Category {
   complexity?: Complexity;
   complexity_note?: string;
   roadmap_note?: string;
+  /** Open to every signed-in person, member or not. */
+  free_access?: boolean;
+  /** A reading guide with its own page, not a product category to build a project in. */
+  guide?: boolean;
   playbook?: CategoryPlaybook;
 }
 
@@ -349,6 +353,8 @@ export interface ListedExpert {
 /** The full public profile of a listed expert. */
 export interface ListedExpertProfile extends ListedExpert {
   photo_url: string;
+  intro_video_url: string;
+  highlights: { title: string; text: string }[];
   bio: string;
   specialisation: string;
   organisation: string;
@@ -465,4 +471,58 @@ export interface PublicTeam {
   is_public: boolean;
   member_count: number;
   members: { id: string; name: string; headline: string; has_public_profile: boolean }[];
+}
+
+export type BlogStatus = 'draft' | 'published';
+
+/** A blog post. The list carries no body; the post page fetches it. */
+export interface BlogPost {
+  id: string;
+  title: string;
+  excerpt: string;
+  cover_url: string;
+  author: string;
+  domain: string;
+  content_type: string;
+  read_minutes: number;
+  status: BlogStatus;
+  published_at?: string;
+  created_at: string;
+  body?: string;
+}
+
+export interface Startup {
+  id: string;
+  name: string;
+  tagline: string;
+  description: string;
+  logo_url: string;
+  website: string;
+  sector: string;
+  stage: string;
+  location: string;
+  featured: boolean;
+  order: number;
+}
+
+export type ExpertItemKind = 'webinar' | 'podcast' | 'blog' | 'publication' | 'media' | 'other';
+
+/** A webinar, podcast, article or other thing an expert has put out. */
+export interface ExpertItem {
+  id: string;
+  expert_id: string;
+  kind: ExpertItemKind;
+  title: string;
+  url: string;
+  date: string;
+  summary: string;
+}
+
+export interface SiteSettings {
+  hero_title: string;
+  hero_subtitle: string;
+  announcement: string;
+  announcement_link: string;
+  show_blogs: boolean;
+  show_startups: boolean;
 }

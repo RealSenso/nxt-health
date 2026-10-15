@@ -1,5 +1,6 @@
 import { listedExperts } from './expertPipeline.js';
 import { voteBreakdown, voteTally } from './votes.js';
+import { publicBlogs, siteSettings, startupList } from './cms.js';
 import { Router } from 'express';
 import { isAdmin, scopeKeyOf, UserDoc } from '../auth.js';
 import type { Database } from '../db.js';
@@ -41,9 +42,10 @@ export function bootstrapRouter(database: Database): Router {
       const siblings = steps.filter(x => x.category_id === st.category_id);
       stepRank.set(st._id, siblings.indexOf(st));
     });
+    const freeCategories = new Set(categories.filter(c => c.free_access).map(c => c._id as string));
     const visibleSteps = fullAccess
       ? outAll(steps)
-      : outAll(steps).map(st => (stepRank.get(st.id)! < PREVIEW_STEPS ? st : { ...st, description: '', tasks: [], typical_duration: '', locked: true }));
+      : outAll(steps).map(st => (stepRank.get(st.id)! < PREVIEW_STEPS || freeCategories.has(st.category_id) ? st : { ...st, description: '', tasks: [], typical_duration: '', locked: true }));
     const visibleResources = fullAccess
       ? outAll(resources)
       : outAll(resources).map((res, i) => (i < PREVIEW_RESOURCES
@@ -60,6 +62,9 @@ export function bootstrapRouter(database: Database): Router {
         booked_slots: bookedSlots,
         listed_experts: fullAccess ? await listedExperts(database) : [],
         problem_votes: await voteTally(database),
+        blogs: await publicBlogs(database, !!viewer && isAdmin(viewer)),
+        startups: await startupList(database),
+        site: await siteSettings(database),
       },
       me: null,
       needs_profile: !!req.auth && !req.user,

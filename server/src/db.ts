@@ -10,7 +10,7 @@ export const COLLECTIONS = [
   'applications', 'submissions', 'notifications',
   'threads', 'messages',
   'rsvps', 'bookings',
-  'mentorProfiles', 'mentorRequests', 'consultations', 'inquiries', 'expertPipeline', 'problemVotes',
+  'mentorProfiles', 'mentorRequests', 'consultations', 'inquiries', 'expertPipeline', 'problemVotes', 'blogs', 'startups', 'expertItems',
   'resourceViews', 'stepRatings',
 ] as const;
 
