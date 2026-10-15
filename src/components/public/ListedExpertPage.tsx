@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import type { ListedExpertProfile } from '../../types';
 import { api, ApiError } from '../../services/api';
 import { PublicLayout } from './PublicLayout';
+import { firstName } from '../../data/experts';
 import { ExpertActivity, ExpertHero, ExpertStory } from './ExpertParts';
 import { Btn } from './ui';
 
@@ -46,7 +47,7 @@ export const ListedExpertPage: React.FC = () => {
   }
 
   const facts = expert ? FACTS.filter(([key]) => expert[key]) : [];
-  const first = expert ? expert.name.split(' ')[0] : '';
+  const first = expert ? firstName(expert.name) : '';
   const highlights = expert
     ? (expert.highlights.length ? expert.highlights : expert.facts.length ? expert.facts : [
         expert.specialisation && { title: 'Specialisation', text: expert.specialisation },

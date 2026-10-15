@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { ChevronLeft, ExternalLink, Linkedin, Play } from 'lucide-react';
 import type { ExpertItem, ExpertItemKind } from '../../types';
 import { api } from '../../services/api';
-import { assetUrl, initials } from '../../data/experts';
+import { assetUrl, firstName, initials } from '../../data/experts';
 
 /** A neutral stand-in portrait for experts who have not added a photo yet: a soft studio backdrop and a silhouette. */
 export function placeholderPortrait(name: string): string {
@@ -28,7 +28,7 @@ interface HeroProps {
 
 /** The dark opening of an expert's page: portrait, name, role, an introduction video and three things to know. */
 export const ExpertHero: React.FC<HeroProps> = ({ name, title, eyebrow, photoUrl, videoUrl, linkedin, highlights, backTo, tagline, location }) => {
-  const first = name.split(' ')[0];
+  const first = firstName(name);
   return (
     <section className="bg-black text-white">
       <div className="nxt-container pt-8 pb-16 sm:pb-20">

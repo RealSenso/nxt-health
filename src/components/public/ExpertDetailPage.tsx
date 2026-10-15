@@ -4,7 +4,7 @@ import { AlertCircle, ChevronLeft, CheckCircle2 } from 'lucide-react';
 import type { Consultation, PublicExpert } from '../../types';
 import { api, ApiError } from '../../services/api';
 import { store } from '../../services/store';
-import { GATES, formatRate, istDateKey, istDayLabel, istTime } from '../../data/experts';
+import { firstName, GATES, formatRate, istDateKey, istDayLabel, istTime } from '../../data/experts';
 import { PublicLayout } from './PublicLayout';
 import { ExpertActivity, ExpertHero, ExpertStory } from './ExpertParts';
 import { PayConsultationDialog } from './PayConsultationDialog';
@@ -105,14 +105,14 @@ export const ExpertDetailPage: React.FC = () => {
             highlights={(expert.highlights && expert.highlights.length ? expert.highlights : expert.topics.slice(0, 3).map(t => ({ title: t, text: '' })))}
           />
           <ExpertStory
-            eyebrow={`About ${expert.name.split(' ')[0]}`}
-            heading={expert.headline ? `${expert.name.split(' ')[0]} helps founders with ${expert.expert_areas.slice(0, 2).join(' and ').toLowerCase() || 'the hard parts'}.` : ''}
+            eyebrow={`About ${firstName(expert.name)}`}
+            heading={expert.headline ? `${firstName(expert.name)} helps founders with ${expert.expert_areas.slice(0, 2).join(' and ').toLowerCase() || 'the hard parts'}.` : ''}
             paragraphs={[expert.bio]}
           />
           <div className="nxt-container pt-14 pb-24">
           <div className="grid gap-12 lg:grid-cols-[1fr_26rem] xl:grid-cols-[1fr_28rem] lg:gap-20 items-start">
             <div>
-              <ExpertActivity expertId={expert.id} firstName={expert.name.split(' ')[0]} />
+              <ExpertActivity expertId={expert.id} firstName={firstName(expert.name)} />
 
               {expert.book_when.length > 0 && (
                 <>

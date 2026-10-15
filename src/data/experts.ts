@@ -36,5 +36,15 @@ import { API_URL } from '../services/api';
 /** Photos uploaded to the platform are served by the API; links are used as they are. */
 export const assetUrl = (url: string) => (url.startsWith('/') ? `${API_URL}${url}` : url);
 
+/** The name people go by: skips titles such as Dr. and Prof. */
+export const firstName = (name: string): string => {
+  const parts = name
+    .replace(/,.*$/, '')
+    .split(/\s+/)
+    .map(p => p.replace(/^(dr|prof)\.?(?=[A-Za-z])/i, ''))
+    .filter(p => p && !/^(dr|prof|mr|mrs|ms|mx)\.?$/i.test(p));
+  return parts[0] || name;
+};
+
 export const initials = (name: string) =>
   name.replace(/^(dr|prof)\.?\s+/i, '').split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]?.toUpperCase()).join('');

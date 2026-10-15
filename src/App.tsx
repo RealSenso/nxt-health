@@ -251,6 +251,8 @@ function Shell({ currentUser, modals }: { currentUser: User | null; modals: Moda
   const navigate = useNavigate();
   const location = useLocation();
   const currentTab = tabForPath(location.pathname);
+  // Expert pages run edge to edge, like the rest of the public site, under the app's own navigation.
+  const bleed = location.pathname.startsWith('/experts');
 
   return (
     <div className="min-h-screen bg-[var(--nxt-bg)] text-[var(--nxt-ink)] flex flex-col font-sans">
@@ -276,7 +278,7 @@ function Shell({ currentUser, modals }: { currentUser: User | null; modals: Moda
 
       {currentUser && !store.isEmailVerified() && <VerifyEmailBanner email={currentUser.email} />}
 
-      <main className="flex-1 nxt-container pt-8 sm:pt-12 pb-28 md:pb-16">
+      <main className={bleed ? 'flex-1 pb-24 md:pb-0' : 'flex-1 nxt-container pt-8 sm:pt-12 pb-28 md:pb-16'}>
         <motion.div
           key={currentTab}
           initial={{ opacity: 0, y: 10 }}
@@ -284,7 +286,7 @@ function Shell({ currentUser, modals }: { currentUser: User | null; modals: Moda
           transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
         >
           <InAppShell.Provider value>
-            <div className="nxt-in-shell"><Outlet /></div>
+            <Outlet />
           </InAppShell.Provider>
         </motion.div>
       </main>
