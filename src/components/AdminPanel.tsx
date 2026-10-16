@@ -548,7 +548,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser }) => {
                   <div key={field}>
                     <label className="block text-xs font-semibold text-[var(--nxt-ink-soft)] mb-1">{label}</label>
                     <input
-                      type={field === 'sponsor_name' ? 'text' : 'url'}
+                      type="text"
+                      inputMode={field === 'sponsor_name' ? 'text' : 'url'}
                       value={editingProblem[field] || ''}
                       onChange={(e) => setEditingProblem({ ...editingProblem, [field]: e.target.value })}
                       className="w-full text-xs bg-[var(--nxt-surface)] border border-[var(--nxt-line)] rounded-lg p-2 focus:ring-1 focus:ring-[var(--nxt-mint-strong)]"
