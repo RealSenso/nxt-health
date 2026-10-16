@@ -539,11 +539,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser }) => {
                 </div>
               </div>
 
-              <div className="grid sm:grid-cols-3 gap-3">
+              <div className="grid sm:grid-cols-2 gap-3">
                 {([
                   ['sponsor_name', 'Posted by', 'Name'],
                   ['sponsor_linkedin', 'LinkedIn link', 'https://www.linkedin.com/in/…'],
-                  ['sponsor_photo_url', 'Photo link', 'https://… (optional)'],
                 ] as const).map(([field, label, placeholder]) => (
                   <div key={field}>
                     <label className="block text-xs font-semibold text-[var(--nxt-ink-soft)] mb-1">{label}</label>
@@ -557,7 +556,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser }) => {
                     />
                   </div>
                 ))}
-                <div className="sm:col-span-3 flex flex-wrap items-center gap-3 text-xs">
+                <div className="sm:col-span-2 flex flex-wrap items-center gap-3 text-xs">
                   <label className={`inline-flex items-center gap-1.5 rounded-full border border-[var(--nxt-line)] px-3 py-1.5 font-semibold ${editingProblem.id ? 'cursor-pointer hover:bg-[var(--nxt-bg-soft)]' : 'opacity-60'}`}>
                     <Paperclip className="w-3.5 h-3.5" /> Upload photo
                     <input
