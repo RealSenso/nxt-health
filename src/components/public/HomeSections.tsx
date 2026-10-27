@@ -36,7 +36,15 @@ const shuffle = () => {
 };
 
 /** "1 in 5" shown as a grid of people; the one in five with an idea keeps moving, and one of them starts. */
-export const OneInFive: React.FC = () => {
+export const OneInFive: React.FC<{
+  stat?: string;
+  headline?: React.ReactNode;
+  subtitle?: React.ReactNode;
+}> = ({
+  stat = '1 in 5',
+  headline = 'doctors encounters a critical clinical problem every day and waits for someone to solve it.',
+  subtitle = 'NXT Health captures these frontline pains, validates them with industry funding, and connects them to ambitious founders ready to build the solution.',
+}) => {
   const tick = useBeat();
   const [{ ideas: pattern, starts }, setPick] = useState(() => ({ ideas: [0, 6, 12, 18, 24], starts: 12 }));
   useEffect(() => { if (tick > 0) setPick(shuffle()); }, [tick]);
@@ -63,9 +71,9 @@ export const OneInFive: React.FC = () => {
         })}
       </div>
       <Rise>
-        <p className="font-display font-bold text-[clamp(3rem,8vw,6rem)] leading-none tracking-[-0.05em]">1 in 5</p>
-        <p className="mt-5 text-[clamp(1.1rem,1.8vw,1.5rem)] leading-snug max-w-2xl">physicians we speak with has an idea they want to build. Most never start, because they don't know where to begin.</p>
-        <p className="mt-3 text-[var(--nxt-ink-soft)]">We help them check the idea against what the market wants, before they spend the time and the money.</p>
+        <p className="font-display font-bold text-[clamp(3rem,8vw,6rem)] leading-none tracking-[-0.05em]">{stat}</p>
+        <p className="mt-5 text-[clamp(1.1rem,1.8vw,1.5rem)] leading-snug max-w-2xl">{headline}</p>
+        <p className="mt-3 text-[var(--nxt-ink-soft)] max-w-2xl leading-relaxed">{subtitle}</p>
       </Rise>
     </div>
   </section>
@@ -73,7 +81,15 @@ export const OneInFive: React.FC = () => {
 };
 
 /** Five steps shown one at a time; they advance on their own until someone picks one. */
-export const HowItWorks: React.FC<{ steps: { title: string; body: React.ReactNode }[] }> = ({ steps }) => {
+export const HowItWorks: React.FC<{
+  title?: string;
+  subtitle?: React.ReactNode;
+  steps: { title: string; body: React.ReactNode }[];
+}> = ({
+  title = 'How It Works',
+  subtitle = 'A structured, milestone-driven pathway engineered to eliminate startup risk.',
+  steps,
+}) => {
   const [manual, setManual] = useState<number | null>(null);
   const ref = useRef<HTMLElement>(null);
   // The walk-through starts at step 1 when the section scrolls into view, then follows the shared beat.
@@ -86,8 +102,8 @@ export const HowItWorks: React.FC<{ steps: { title: string; body: React.ReactNod
   return (
     <section ref={ref} id="how-it-works" className="nxt-container py-20 sm:py-24 border-b border-[var(--nxt-line)] scroll-mt-20">
       <Rise>
-        <Eyebrow>How it works</Eyebrow>
-        <H2 className="mt-5">From problem to market, one gate at a time.</H2>
+        <Eyebrow>{title}</Eyebrow>
+        <H2 className="mt-5">{subtitle}</H2>
       </Rise>
       <div className="mt-12 grid gap-10 lg:grid-cols-[18rem_1fr] lg:gap-16">
         <ol className="flex lg:block gap-2 overflow-x-auto no-scrollbar lg:space-y-1">

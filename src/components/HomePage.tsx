@@ -10,12 +10,12 @@ import { scrollToId } from './public/smoothScroll';
 import { Btn, Eyebrow, H1, H2, RuleList, Step } from './public/ui';
 
 const JUMP_LINKS = [
-  { label: 'Founders and startups', to: '#who-founders' },
-  { label: 'Pharma companies and innovators', to: '#who-pharma' },
-  { label: 'Hospitals', to: '#who-hospitals' },
-  { label: 'Experts', to: '#who-experts' },
-  { label: 'Incubators', to: '#who-incubators' },
-  { label: 'Entering the US', to: '#who-us' },
+  { label: 'Founders & Builders', to: '#who-founders' },
+  { label: 'Pharma & Innovators', to: '#who-pharma' },
+  { label: 'Hospitals & Health Systems', to: '#who-hospitals' },
+  { label: 'Domain Experts & Advisors', to: '#who-experts' },
+  { label: 'Incubators & Accelerators', to: '#who-incubators' },
+  { label: 'Entering the US Market', to: '#who-us' },
 ];
 
 interface Audience {
@@ -23,7 +23,7 @@ interface Audience {
   who: string;
   title: string;
   intro: string;
-  points: string[];
+  points: (string | React.ReactNode)[];
   cta: string;
   to: string;
 }
@@ -31,67 +31,109 @@ interface Audience {
 const AUDIENCES: Audience[] = [
   {
     id: 'who-founders',
-    who: 'Physician-founders and startups',
-    title: 'Know what to do next, every week.',
-    intro: 'You have the idea and the clinical know-how. What nobody gave you is the route. We give you real problems with money behind them, and a step-by-step path to market.',
-    points: ['A route built for your product and your country', "The right expert for the step you're on", "Ask anything in private, including what you wouldn't ask out loud"],
+    who: '1. Prospective Founders & Builders',
+    title: 'Stop guessing market fit. Build with guaranteed demand.',
+    intro: 'You bring the execution and technical vision. We give you validated, funded clinical problems and the exact execution pathway to bring them to market.',
+    points: [
+      <><strong>Tailored Roadmaps:</strong> A commercial pathway built specifically for your product type and target market.</>,
+      <><strong>Stage-Matched Guidance:</strong> Connect with specialized experts at the exact moment your venture encounters a friction point.</>,
+      <><strong>Unfiltered Platform Support:</strong> Get direct, private answers to critical strategic, operational, and structural questions.</>,
+    ],
     cta: 'Join free',
     to: '/signup',
   },
   {
     id: 'who-pharma',
-    who: 'Pharma companies and innovators',
-    title: 'Fund a problem, not a hackathon.',
-    intro: 'Name one problem. We bring screened, doctor-led teams who work against deadlines and submit evidence at every step. You watch real progress and skip the cold decks.',
-    points: ['Start with one small grant', 'See every team move, gate by gate', 'Grow into a pipeline, with the option to co-invest'],
+    who: '2. Pharma Companies & Enterprise Innovators',
+    title: 'Fund a solved challenge, not an unvalidated pitch.',
+    intro: 'Define the high-value clinical problem. We deploy screened, execution-focused founder teams who deliver evidence at every stage-gate.',
+    points: [
+      <><strong>Low-Risk Pilot Capital:</strong> Initiate engagement with targeted innovation grants.</>,
+      <><strong>Full Stage-Gate Transparency:</strong> Track team progress, evidence submissions, and milestone completion in real time.</>,
+      <><strong>De-Risked Dealflow:</strong> Build a scalable solution pipeline with built-in co-investment options.</>,
+    ],
     cta: 'Seed a problem',
     to: '/?as=pharma#start',
   },
   {
     id: 'who-hospitals',
-    who: 'Hospitals',
-    title: 'Your problems solved. Your research wing paid.',
-    intro: 'List the problems your clinicians face every day. Host validation studies on the research capacity you already have, and earn new revenue from it.',
-    points: ['Doctor-led teams working on your problems', 'Studies run on capacity you already have', 'A new revenue line for your research wing'],
+    who: '3. Hospitals & Health Systems',
+    title: 'Turn daily clinical friction into institutional revenue.',
+    intro: 'List the real-world operational and clinical challenges your physicians face. Leverage existing research infrastructure to validate solutions and open new revenue channels.',
+    points: [
+      <><strong>Targeted Problem Solving:</strong> Dedicated teams building solutions specifically for your frontline needs.</>,
+      <><strong>Asset Optimization:</strong> Run validation studies using existing research and clinical capacity.</>,
+      <><strong>Direct Commercial Revenue:</strong> Create a recurring revenue line for your research wing and clinical departments.</>,
+    ],
     cta: 'List a problem',
     to: '/?as=hospital#start',
   },
   {
     id: 'who-experts',
-    who: 'Experts',
-    title: "Founders are stuck on something you've already done.",
-    intro: 'Regulatory, clinical validation, hospital pilots, selling to pharma. If you have done it, founders will book an hour with you at the exact step where they need it.',
-    points: ['Set your own rate, from free to $500 an hour', 'Get matched to founders at the step where you help most', 'Booking, video and chat are built in'],
+    who: '4. Domain Experts & Advisors',
+    title: 'Monetize your specialized industry experience.',
+    intro: 'Founders encounter regulatory, clinical, and commercial roadblocks you’ve already solved. Connect with teams at the precise stage where your knowledge moves the needle.',
+    points: [
+      <><strong>Flexible Engagement:</strong> Set your custom hourly rate, from pro bono mentoring to high-value consulting.</>,
+      <><strong>Precision Matching:</strong> Get routed to founders only when they reach the exact milestone you specialize in.</>,
+      <><strong>Seamless Platform Delivery:</strong> Integrated booking, video conferencing, and direct communication built right in.</>,
+    ],
     cta: 'Become an expert',
     to: '/experts/join',
   },
   {
     id: 'who-incubators',
-    who: 'Incubators and accelerators',
-    title: 'You build companies. We bring the buyer forward.',
-    intro: 'Most founders meet the buyer last. Ours start with a problem that pharma or a hospital has already put money behind. We connect. You build and scale.',
-    points: ['Funded problems your founders can apply for', 'Get recommended to founders at the step where you help', 'Roadmaps and evidence gates your cohort can follow'],
+    who: '5. Incubators & Accelerators',
+    title: 'De-risk your cohort by introducing the buyer on Day 1.',
+    intro: 'Instead of helping founders search for market fit at graduation, give them access to problems that pharma and hospitals have already funded.',
+    points: [
+      <><strong>Built-In Market Demand:</strong> Provide your cohort with access to pre-funded clinical needs.</>,
+      <><strong>Structured Progress Tracking:</strong> Utilize standardized roadmaps and evidence gates across your entire portfolio.</>,
+      <><strong>Program Integration:</strong> Get recommended to founder teams at the exact development stage where your curriculum adds value.</>,
+    ],
     cta: 'Partner with us',
     to: '/?as=incubator#start',
   },
   {
     id: 'who-us',
-    who: 'Entering the US',
-    title: 'Heading for the US? Follow a route, not a guess.',
-    intro: 'The same model works for market entry. Pick the roadmap for your product, follow the US steps, and book people who have dealt with the FDA and sold to US hospitals and pharma.',
-    points: ['US-specific steps on your roadmap', 'Experts on FDA routes and US go-to-market', 'Prove the demand before you pay for a launch'],
+    who: '6. Global Companies Entering the US Market',
+    title: 'Execute a proven GTM route, not a high-risk guess.',
+    intro: 'Navigate US healthcare expansion with a structured, regulatory-compliant roadmap backed by vetted FDA and commercialization veterans.',
+    points: [
+      <><strong>US-Specific Roadmaps:</strong> Step-by-step guidance covering FDA pathways, reimbursement, and health system procurement.</>,
+      <><strong>Vetted GTM Experts:</strong> Book advisors who have successfully cleared FDA hurdles and sold into US hospital networks.</>,
+      <><strong>De-Risked Market Entry:</strong> Validate local demand and commercial viability before committing heavy launch capital.</>,
+    ],
     cta: 'Plan your US entry',
     to: '/?as=us#start',
   },
 ];
 
 const PLATFORM = [
-  { title: 'Problem library', text: 'Funded and open problems, each with its own page.' },
-  { title: 'Funding applications', text: 'Apply, get screened, and get feedback if you need to resubmit.' },
-  { title: 'Stage-gate roadmaps', text: 'Steps, deadlines and resources for each type of product.' },
-  { title: 'Expert matching', text: 'Recommended experts, paid bookings and built-in chat.' },
-  { title: 'Team workspace', text: 'Invite co-founders and share a live progress log.' },
-  { title: 'Progress view', text: 'Sponsors see each team move, gate by gate.' },
+  {
+    title: '1. Validated Problem Library',
+    text: 'Explore an active index of funded clinical challenges sourced directly from pharma partners and health systems, complete with requirements, scope, and target outcomes.',
+  },
+  {
+    title: '2. Streamlined Funding Applications',
+    text: 'Submit your venture proposal for dedicated project capital. Benefit from structured screening protocols and direct, actionable feedback to refine resubmissions.',
+  },
+  {
+    title: '3. Stage-Gate Roadmaps',
+    text: 'Execute against pre-mapped development blueprints tailored to your specific product type. Featuring explicit milestones, regulatory checkpoints, and fixed deadlines.',
+  },
+  {
+    title: '4. Precision Expert Matching',
+    text: 'Instantly connect with vetted industry advisors. Book stage-matched consulting sessions with integrated scheduling, payment, and private communication tools.',
+  },
+  {
+    title: '5. Collaborative Team Workspace',
+    text: 'Centralize your startup operations. Onboard co-founders and team members while maintaining a real-time, shared execution log.',
+  },
+  {
+    title: '6. Sponsor Progress View',
+    text: 'Give funding partners and enterprise sponsors real-time visibility into your venture’s stage-gate progression and evidence verification.',
+  },
 ];
 
 const asRole = (value: string | null): LeadRole => {
@@ -117,10 +159,10 @@ export const HomePage: React.FC = () => {
       <section className="nxt-container pt-16 sm:pt-24 pb-16 sm:pb-20 border-b border-[var(--nxt-line)]">
         <Eyebrow>NXT Health · Problem first. Funded first.</Eyebrow>
         <H1 className="mt-7">
-          {site.hero_title || <>Pharma has the problem.<br className="hidden sm:block" /> Doctors have the answer.</>}
+          {site.hero_title || <>Doctors identify the real-world problems.<br className="hidden sm:block" /> You bring the solutions.</>}
         </H1>
-        <p className="mt-8 max-w-[34rem] text-[clamp(1.05rem,1.5vw,1.25rem)] leading-relaxed text-[var(--nxt-ink)]/80">
-          {site.hero_subtitle || 'NXT Health connects funded clinical problems with the physician-founders who can solve them, then walks each one step by step to market.'}
+        <p className="mt-8 max-w-[38rem] text-[clamp(1.05rem,1.5vw,1.25rem)] leading-relaxed text-[var(--nxt-ink)]/80">
+          {site.hero_subtitle || 'NXT Health pairs validated, funded clinical problems with ambitious founders, providing a structured, end-to-end pathway from challenge to commercial launch.'}
         </p>
         <div className="mt-9 flex flex-wrap gap-3">
           <Btn to="/#start">Seed a problem</Btn>
@@ -143,44 +185,46 @@ export const HomePage: React.FC = () => {
 
       {/* The difference */}
       <section className="nxt-container py-20 sm:py-24 border-b border-[var(--nxt-line)]">
-        <H2 className="max-w-[24ch]">Others build companies. We connect the pieces a doctor can't reach.</H2>
+        <H2 className="max-w-[32ch]">Others launch startups in a vacuum. We connect ambitious founders with the real-world clinical challenges healthcare is waiting to solve.</H2>
         <div className="mt-12 grid gap-6 md:grid-cols-2">
           <div className="rounded-[18px] border border-[var(--nxt-line)] bg-[var(--nxt-surface)] p-7 sm:p-9">
-            <Eyebrow>The usual route</Eyebrow>
-            <h3 className="font-display font-bold text-2xl mt-5 tracking-[-0.02em]">Build first. Find the buyer last.</h3>
+            <Eyebrow>The Traditional Route</Eyebrow>
+            <h3 className="font-display font-bold text-2xl mt-5 tracking-[-0.02em]">Build first. Search for buyers later.</h3>
             <p className="mt-4 text-[17px] leading-relaxed text-[var(--nxt-ink-soft)]">
-              A founder builds the product, writes the pitch deck, finds an advisor, and only then goes looking for someone to pay for it. By then the time and money are spent.
+              Founders build a product, craft a pitch deck, and hunt for market fit, wasting critical time and capital on unvalidated ideas.
             </p>
           </div>
           <div className="rounded-[18px] bg-[#111] text-white p-7 sm:p-9 border border-white/10">
-            <p className="text-[12px] sm:text-[13px] uppercase tracking-[0.14em] text-white/60">The NXT route</p>
-            <h3 className="font-display font-bold text-2xl mt-5 tracking-[-0.02em]"><span className="text-[#22c55e]">Start</span> with a problem someone will pay to solve.</h3>
+            <p className="text-[12px] sm:text-[13px] uppercase tracking-[0.14em] text-white/60">The NXT Route</p>
+            <h3 className="font-display font-bold text-2xl mt-5 tracking-[-0.02em]"><span className="text-[#22c55e]">Start</span> with guaranteed demand.</h3>
             <p className="mt-4 text-[17px] leading-relaxed text-white/80">
-              Pharma companies and hospitals name the problem and put money behind it. Then we connect a physician-founder to the capital, hospitals and commercial help needed to solve it.
+              Doctors and Industry define the clinical problem and fund the solution. NXT Health matches ambitious founders with validated challenges, capital, and the end-to-end support needed to launch.
             </p>
           </div>
         </div>
-        <p className="mt-10 font-semibold text-lg">Problem first. Funded first. Then we build it with the doctor.</p>
       </section>
 
       <OneInFive />
 
-      <HowItWorks steps={[
-    { title: 'Find a problem', body: <>Problems come from doctors, hospitals and pharma. Some already have money behind them. Some are open.</> },
-    { title: 'Apply for funding', body: <>Each fund screens in its own way. You get a yes, a no, or a clear ask for more.</> },
-    { title: 'Pick a roadmap', body: <>{routeCount} routes to market, from marketplaces to devices to AI, each with the steps for your country{openCount > 0 && openCount < routeCount ? ` — ${openCount} open now` : ''}.</> },
-    { title: 'Clear each gate', body: <>Every step has a deadline and needs evidence. Clear it, and the next one opens.</> },
-    { title: 'Get matched help', body: <>Experts, hospitals, lawyers and incubators, recommended for the step you're on.</> },
-      ]} />
+      <HowItWorks
+        subtitle="A structured, milestone-driven pathway engineered to eliminate startup risk."
+        steps={[
+          { title: 'Problem Selection', body: 'Start with verified, high-value clinical needs sourced from frontline healthcare.' },
+          { title: 'Capital Matching', body: 'Lock in dedicated funding attached directly to the healthcare challenge.' },
+          { title: 'Tailored Roadmap', body: 'Set a clear commercial route tailored to clinical, legal, and operational realities.' },
+          { title: 'Stage-Gated Execution', body: 'Deliver required evidence against fixed deadlines. Clear the gate to unlock the next tranche of capital and progress.' },
+          { title: 'Target Acceleration', body: 'Access specialized advisor networks, from clinical trials to hospital procurement, to drive market entry.' },
+        ]}
+      />
 
       {/* Who it's for */}
       <section id="who-its-for" className="nxt-container py-20 sm:py-24 border-b border-[var(--nxt-line)] scroll-mt-20">
-        <Eyebrow>Who it's for</Eyebrow>
-        <H2 className="mt-5">Each side gets something different.</H2>
+        <Eyebrow>Who It's For</Eyebrow>
+        <H2 className="mt-5">Aligning validated healthcare demand with the builders, experts, and capital to scale.</H2>
         <div className="mt-12 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           {AUDIENCES.map(a => (
             <article key={a.id} id={a.id} className="rounded-[18px] border border-[var(--nxt-line)] bg-[var(--nxt-surface)] p-7 flex flex-col scroll-mt-28 transition-colors duration-300 hover:bg-[var(--nxt-bg-soft)]">
-              <p className="text-[15px] text-[var(--nxt-ink-soft)]">{a.who}</p>
+              <p className="text-[15px] font-semibold text-[var(--nxt-ink-soft)]">{a.who}</p>
               <h3 className="font-display font-bold text-[1.65rem] leading-[1.1] mt-4 tracking-[-0.025em]">{a.title}</h3>
               <p className="mt-4 text-[15px] leading-relaxed text-[var(--nxt-ink-soft)]">{a.intro}</p>
               <RuleList items={a.points} className="mt-5" />
@@ -256,9 +300,9 @@ export const HomePage: React.FC = () => {
       <section id="start" className="bg-[#111] text-white scroll-mt-16">
         <div className="nxt-container py-20 sm:py-24 grid gap-12 lg:grid-cols-2 lg:gap-24 items-start">
           <div>
-            <H2 className="max-w-[14ch]">Name the problem. We'll bring the doctor.</H2>
+            <H2 className="max-w-[20ch]">Put capital behind a real clinical need or claim one to scale.</H2>
             <p className="mt-6 text-xl leading-relaxed text-white/85 max-w-xl">
-              Seed one funded problem and watch physician-founders take it through each gate. Or join free and find a problem worth solving.
+              Fund a clinical challenge to deploy screened founder teams or join free to build with guaranteed demand from day one.
             </p>
           </div>
           <div className="rounded-[18px] bg-white p-6 sm:p-8">

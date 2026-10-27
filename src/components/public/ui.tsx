@@ -55,11 +55,10 @@ export const Step: React.FC<{ n: string; title: string; children: React.ReactNod
   </div>
 );
 
-/** A bordered bullet list with hairline separators. */
-export const RuleList: React.FC<{ items: string[]; className?: string }> = ({ items, className = '' }) => (
+export const RuleList: React.FC<{ items: (string | React.ReactNode)[]; className?: string }> = ({ items, className = '' }) => (
   <ul className={`border-t border-[var(--nxt-line)] ${className}`}>
-    {items.map(item => (
-      <li key={item} className="py-3 border-b border-[var(--nxt-line)] text-[15px] leading-snug">{item}</li>
+    {items.map((item, idx) => (
+      <li key={idx} className="py-3 border-b border-[var(--nxt-line)] text-[15px] leading-snug">{item}</li>
     ))}
   </ul>
 );
