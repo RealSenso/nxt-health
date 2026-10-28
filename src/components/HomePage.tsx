@@ -711,8 +711,8 @@ export const HomePage: React.FC = () => {
               </h1>
             </Rise>
             <Rise delay={0.12}>
-              <p className="max-w-xl text-[clamp(1.05rem,1.4vw,1.25rem)] text-[var(--nxt-ink-soft)] leading-relaxed">
-                {site.hero_subtitle || 'SirOsler pairs validated clinical problems with ambitious founders, providing a complete pathway from idea to scale.'}
+              <p className="max-w-[46rem] text-[clamp(1.05rem,1.4vw,1.25rem)] text-[var(--nxt-ink-soft)] leading-relaxed">
+                {site.hero_subtitle || <>SirOsler pairs validated clinical problems with ambitious founders,<br className="hidden md:block" /> providing a complete pathway from idea to scale.</>}
               </p>
             </Rise>
             <Rise delay={0.18}>
