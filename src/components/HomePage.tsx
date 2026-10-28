@@ -17,7 +17,7 @@ import { InquiryForm, LeadRole } from './public/InquiryForm';
 import { BlogCard } from './public/BlogPages';
 import type { Startup } from '../types';
 import { OneInFive, Rise, useBeat } from './public/HomeSections';
-import { Btn, H2, RuleList } from './public/ui';
+import { Btn, RuleList } from './public/ui';
 import { WORLD_OUTLINE } from '../data/worldOutline';
 
 const cssVar = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -400,9 +400,14 @@ const Kicker: React.FC<{ children: React.ReactNode; className?: string }> = ({ c
   </p>
 );
 
+/** Section headline: light, to match the hero. */
+const H2: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => (
+  <h2 className={`font-display font-light text-[clamp(1.75rem,3.4vw,3rem)] leading-[1.12] tracking-[-0.03em] ${className}`}>{children}</h2>
+);
+
 /** The one italic in a headline: the phrase that carries the point, in green. */
 const Accent: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <em className="italic font-bold text-[var(--nxt-green)]">{children}</em>
+  <em className="italic font-normal text-[var(--nxt-green)]">{children}</em>
 );
 
 const GateStack: React.FC = () => {
@@ -962,7 +967,7 @@ export const HomePage: React.FC = () => {
         <div className="nxt-container grid gap-12 lg:grid-cols-2 lg:gap-20 items-start relative z-10">
           <div>
             <Kicker>Commence Today</Kicker>
-            <h2 className="font-display font-bold text-3xl sm:text-4xl lg:text-5xl tracking-[-0.02em] leading-tight mt-6">
+            <h2 className="font-display font-light text-3xl sm:text-4xl lg:text-5xl tracking-[-0.02em] leading-tight mt-6">
               Put capital behind a real clinical need or <Accent>claim one to scale.</Accent>
             </h2>
             <p className="mt-6 text-lg text-white/70 leading-relaxed max-w-xl">
