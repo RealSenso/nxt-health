@@ -18,6 +18,7 @@ import { BlogCard } from './public/BlogPages';
 import type { Startup } from '../types';
 import { OneInFive, Rise, useBeat } from './public/HomeSections';
 import { Btn, H2, RuleList } from './public/ui';
+import { WORLD_OUTLINE } from '../data/worldOutline';
 
 const cssVar = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 
@@ -236,19 +237,26 @@ const Interactive3DGlobe: React.FC = () => {
       return [x * Math.cos(rotY) + z2 * Math.sin(rotY), y2, -x * Math.sin(rotY) + z2 * Math.cos(rotY)];
     };
 
-    const trace = (at: (u: number) => [number, number, number], steps: number, alpha: number) => {
+    /* country borders: unit vectors computed once, rotated and scaled each frame */
+    const outline = WORLD_OUTLINE.map(flat => {
+      const pts: [number, number, number][] = [];
+      for (let i = 0; i < flat.length; i += 2) {
+        const phi = ((90 - flat[i + 1]) * Math.PI) / 180;
+        const theta = ((flat[i] + 180) * Math.PI) / 180;
+        pts.push([Math.sin(phi) * Math.cos(theta), Math.cos(phi), Math.sin(phi) * Math.sin(theta)]);
+      }
+      return pts;
+    });
+    const traceBorder = (pts: [number, number, number][]) => {
       ctx.beginPath();
       let first = true;
-      for (let s = 0; s <= steps; s++) {
-        const r = rotate(at(s / steps));
-        if (r[2] > -R * 0.05) {
+      for (const u of pts) {
+        const r = rotate([u[0] * R, u[1] * R, u[2] * R]);
+        if (r[2] > -R * 0.02) {
           const x = CX + r[0], y = CY - r[1];
           if (first) { ctx.moveTo(x, y); first = false; } else ctx.lineTo(x, y);
-        } else if (!first) {
-          ctx.globalAlpha = alpha; ctx.stroke(); ctx.beginPath(); first = true;
-        }
+        } else first = true;
       }
-      ctx.globalAlpha = alpha;
       ctx.stroke();
     };
 
@@ -263,15 +271,9 @@ const Interactive3DGlobe: React.FC = () => {
       ctx.arc(CX, CY, R, 0, Math.PI * 2);
       ctx.clip();
       ctx.strokeStyle = green;
-      ctx.lineWidth = 0.7;
-      for (let i = 0; i <= 14; i++) {
-        const lat = (i / 14) * 180 - 90;
-        trace(u => latLonTo3D(lat, u * 360 - 180), 56, 0.32);
-      }
-      for (let j = 0; j < 28; j++) {
-        const lon = (j / 28) * 360 - 180;
-        trace(u => latLonTo3D(u * 180 - 90, lon), 28, 0.26);
-      }
+      ctx.lineWidth = 0.9;
+      ctx.globalAlpha = 0.7;
+      outline.forEach(traceBorder);
       hubs.forEach(hub => {
         const r = rotate(latLonTo3D(hub.lat, hub.lon));
         if (r[2] <= -R * 0.05) return;
