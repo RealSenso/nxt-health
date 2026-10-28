@@ -295,3 +295,7 @@ body {
   50% { transform: translateY(-10px); }
 }
 .nxt-bob { animation: nxt-bob 6s ease-in-out infinite; }
+
+/* Typography: balanced headlines and no one-word last lines in running text */
+h1, h2, h3 { text-wrap: balance; }
+p, li, dd { text-wrap: pretty; }

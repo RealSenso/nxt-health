@@ -77,7 +77,7 @@ const HeroHelix: React.FC = () => {
       spin += 0.004;
       px += (tx - px) * 0.06;
       py += (ty - py) * 0.06;
-      const cx = W * 0.5;
+      const cx = W > 900 ? W * 0.74 : W * 0.5;
 
       ctx.clearRect(0, 0, W, H);
       const A: ReturnType<typeof project>[] = [], B: ReturnType<typeof project>[] = [];
@@ -373,18 +373,11 @@ const Kicker: React.FC<{ children: React.ReactNode; className?: string }> = ({ c
   </p>
 );
 
-const FlankedEyebrow: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div className="inline-flex items-center justify-center gap-4 text-xs font-mono font-bold tracking-[0.3em] uppercase text-[var(--nxt-green)]">
-    <span className="h-px w-12 bg-[var(--nxt-green)]/50 block" />
-    <span>{children}</span>
-    <span className="h-px w-12 bg-[var(--nxt-green)]/50 block" />
-  </div>
+/** The one italic in a headline: the phrase that carries the point, in green. */
+const Accent: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <em className="italic font-bold text-[var(--nxt-green)]">{children}</em>
 );
 
-/* =========================================================================
-   STAGE-GATE STACK: five plates that lift in turn on the shared beat.
-   Runs by itself; the same clock drives the "1 in 5" dots.
-   ========================================================================= */
 const GateStack: React.FC = () => {
   const tick = useBeat();
   const sectionRef = useRef<HTMLDivElement>(null);
@@ -670,44 +663,30 @@ export const HomePage: React.FC = () => {
           aria-hidden="true"
           className="absolute inset-0 pointer-events-none"
           style={{
-            background: 'radial-gradient(ellipse 60% 55% at 50% 42%, var(--nxt-green-soft), transparent 70%)',
+            background: 'radial-gradient(ellipse 45% 60% at 74% 45%, var(--nxt-green-soft), transparent 70%)',
             WebkitMaskImage: 'linear-gradient(to bottom, #000 45%, transparent 92%)',
             maskImage: 'linear-gradient(to bottom, #000 45%, transparent 92%)',
           }}
         />
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 pointer-events-none"
-          style={{ background: 'radial-gradient(ellipse 50% 45% at 50% 48%, color-mix(in srgb, var(--nxt-bg) 55%, transparent), transparent 100%)' }}
-        />
-        <div className="relative z-10 flex flex-col items-center justify-center text-center min-h-[clamp(600px,78vh,820px)] px-4 pt-16 pb-20">
-          <div className="max-w-4xl mx-auto flex flex-col items-center">
-            <Rise><FlankedEyebrow>Validated Clinical Demand · Dedicated Funding</FlankedEyebrow></Rise>
+        <div aria-hidden="true" className="absolute inset-0 pointer-events-none bg-[var(--nxt-bg)]/70 lg:bg-transparent" />
+        <div className="nxt-container relative z-10 flex items-center min-h-[clamp(600px,78vh,820px)] py-20">
+          <div className="max-w-[44rem] flex flex-col items-start gap-7">
+            <Rise><Kicker>Validated clinical demand · Dedicated funding</Kicker></Rise>
             <Rise delay={0.06}>
-              <h1 className="font-display font-light text-[clamp(2.5rem,6vw,5rem)] tracking-[0.06em] uppercase leading-[1.06] mt-8 mb-6 text-balance">
+              <h1 className="font-display font-light text-[clamp(2.4rem,5.4vw,4.6rem)] tracking-[0.04em] uppercase leading-[1.08] text-balance">
                 Doctors identify the real-world problems.{' '}
                 <em className="italic text-[var(--nxt-green)] font-normal">You bring the solutions.</em>
               </h1>
             </Rise>
             <Rise delay={0.12}>
-              <p className="max-w-xl text-[clamp(1rem,1.4vw,1.25rem)] text-[var(--nxt-ink-soft)] leading-relaxed mb-10">
+              <p className="max-w-xl text-[clamp(1.05rem,1.4vw,1.25rem)] text-[var(--nxt-ink-soft)] leading-relaxed">
                 {site.hero_subtitle || 'NXT Health pairs validated, funded clinical problems with ambitious founders, providing a structured, end-to-end pathway from challenge to commercial launch.'}
               </p>
             </Rise>
             <Rise delay={0.18}>
-              <div className="flex flex-wrap items-center justify-center gap-4">
-                <Btn variant="green" to="/problems" className="font-mono font-bold tracking-[-0.02em]st uppercase px-8">
-                  Claim a Problem <ArrowRight className="w-4 h-4 ml-1" />
-                </Btn>
-                <Btn variant="outline" to="/#start" className="!border-[var(--nxt-green)]/50 text-[var(--nxt-green)] hover:!bg-[var(--nxt-green-soft)] font-mono tracking-[-0.02em]st uppercase px-8">
-                  Fund a Challenge
-                </Btn>
-              </div>
-            </Rise>
-            <Rise delay={0.24}>
-              <div className="flex flex-col items-center gap-2 mt-16 select-none opacity-60">
-                <span className="font-mono text-[10px] tracking-[0.25em] text-[var(--nxt-ink-soft)] uppercase">Scroll to explore</span>
-                <div className="w-px h-12 bg-gradient-to-b from-[var(--nxt-green)] to-transparent animate-pulse" />
+              <div className="flex flex-wrap items-center gap-3">
+                <Btn variant="green" to="/problems">Claim a problem <ArrowRight className="w-4 h-4" /></Btn>
+                <Btn variant="outline" to="/#start">Fund a challenge</Btn>
               </div>
             </Rise>
           </div>
@@ -725,7 +704,7 @@ export const HomePage: React.FC = () => {
       <section className="nxt-container py-20 sm:py-28 border-b border-[var(--nxt-line)]">
         <Rise className="max-w-3xl">
           <Kicker>The paradigm shift</Kicker>
-          <H2 className="mt-5">Others launch startups in a vacuum. We connect founders with the clinical challenges healthcare is waiting to solve.</H2>
+          <H2 className="mt-5">Others launch startups in a vacuum. We connect founders with the clinical challenges <Accent>healthcare is waiting to solve.</Accent></H2>
         </Rise>
         <div className="mt-12 grid gap-5 md:grid-cols-2">
           <TiltCard className="h-full">
@@ -767,7 +746,7 @@ export const HomePage: React.FC = () => {
       <section id="how-it-works" className="nxt-container py-20 sm:py-28 border-b border-[var(--nxt-line)] scroll-mt-20">
         <Rise className="max-w-3xl mb-10">
           <Kicker>The stage-gate pathway</Kicker>
-          <H2 className="mt-5">From frontline hospital to global launch.</H2>
+          <H2 className="mt-5">From frontline hospital to <Accent>global launch.</Accent></H2>
           <p className="mt-4 text-[var(--nxt-ink-soft)] text-lg max-w-xl">Each gate unlocks the next tranche of capital. A structured, milestone-driven pathway engineered to eliminate startup risk.</p>
         </Rise>
         <GateStack />
@@ -777,7 +756,7 @@ export const HomePage: React.FC = () => {
       <section id="who-its-for" className="nxt-container py-20 sm:py-28 border-b border-[var(--nxt-line)] scroll-mt-20">
         <Rise className="max-w-3xl mb-12">
           <Kicker>Who it's for</Kicker>
-          <H2 className="mt-5">One platform, six ways in.</H2>
+          <H2 className="mt-5">One platform, <Accent>six ways in.</Accent></H2>
         </Rise>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {AUDIENCES.map(a => (
@@ -791,15 +770,15 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* 6. GLOBAL CLINICAL NETWORK */}
-      <section className="nxt-container py-20 sm:py-28 border-b border-[var(--nxt-line)] text-center">
-        <Rise className="max-w-3xl mx-auto">
-          <Kicker>Global clinical network</Kicker>
-          <H2 className="mt-5">From frontline hospital to global launch.</H2>
-          <p className="mt-4 text-[var(--nxt-ink-soft)] max-w-xl mx-auto">
-            Connecting clinical challenges across premier medical research centers, hospital systems, and global regulatory jurisdictions.
-          </p>
-        </Rise>
-        <div className="mt-12">
+      <section className="nxt-container py-20 sm:py-28 border-b border-[var(--nxt-line)]">
+        <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,520px)] items-center">
+          <Rise className="max-w-xl">
+            <Kicker>Global clinical network</Kicker>
+            <H2 className="mt-5">Clinical hubs on <Accent>three continents.</Accent></H2>
+            <p className="mt-4 text-[var(--nxt-ink-soft)] text-lg">
+              Connecting clinical challenges across premier medical research centers, hospital systems, and global regulatory jurisdictions.
+            </p>
+          </Rise>
           <Interactive3DGlobe />
         </div>
       </section>
@@ -808,7 +787,7 @@ export const HomePage: React.FC = () => {
       <section className="nxt-container py-20 sm:py-28 border-b border-[var(--nxt-line)]">
         <Rise className="max-w-3xl mb-12">
           <Kicker>What's inside</Kicker>
-          <H2 className="mt-5">Everything a funded venture runs on.</H2>
+          <H2 className="mt-5">Everything a funded venture <Accent>runs on.</Accent></H2>
         </Rise>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 border-t border-l border-[var(--nxt-line)]">
           {PLATFORM_PILLARS.map(item => (
@@ -827,9 +806,9 @@ export const HomePage: React.FC = () => {
       {/* 8. STARTUPS WORKING WITH US */}
       {site.show_startups && startups.length > 0 && (
         <section id="startups" className="nxt-container py-20 sm:py-24 border-b border-[var(--nxt-line)] scroll-mt-20">
-          <div className="text-center max-w-2xl mx-auto mb-12">
+          <div className="max-w-3xl mb-12">
             <Kicker>Active Cohort</Kicker>
-            <H2 className="mt-4">Companies Taking Problems to Patients</H2>
+            <H2 className="mt-5">Companies taking problems <Accent>to patients.</Accent></H2>
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {startups.map(s => <StartupCard key={s.id} startup={s} />)}
@@ -839,11 +818,11 @@ export const HomePage: React.FC = () => {
 
       {/* 9. PRICING & ACCESS TIERS */}
       <section id="pricing" className="nxt-container py-24 sm:py-32 border-b border-[var(--nxt-line)] scroll-mt-20">
-        <div className="text-center max-w-2xl mx-auto mb-16">
+        <div className="max-w-3xl mb-12">
           <Rise>
             <Kicker>Transparent Pricing</Kicker>
-            <H2 className="mt-4">Free to Start. At Cost to Build.</H2>
-            <p className="mt-3 text-[var(--nxt-ink-soft)] text-lg">
+            <H2 className="mt-5">Free to start. <Accent>At cost to build.</Accent></H2>
+            <p className="mt-4 text-[var(--nxt-ink-soft)] text-lg">
               Founders join free and pay at cost once they are ready to build.
             </p>
           </Rise>
@@ -860,7 +839,7 @@ export const HomePage: React.FC = () => {
               'Starter regulatory & incorporation guides',
               'Community Slack & peer network',
             ]}
-            cta="Join Free"
+            cta="Join free"
             to="/signup"
             outline
           />
@@ -875,7 +854,7 @@ export const HomePage: React.FC = () => {
               'Complete 26-route stage-gate roadmaps',
               'Multi-seat co-founder workspace & notes',
             ]}
-            cta="Become a Member"
+            cta="Become a member"
             to="/signup"
             featured
           />
@@ -890,7 +869,7 @@ export const HomePage: React.FC = () => {
               'Vetted mentor session matching',
               'Direct regulatory liaison review',
             ]}
-            cta="Talk to Us"
+            cta="Talk to us"
             to="/?as=founder#start"
             outline
           />
@@ -899,9 +878,9 @@ export const HomePage: React.FC = () => {
 
       {/* 10. SPONSORSHIP FOR PHARMA & HOSPITALS */}
       <section id="pricing-pharma" className="nxt-container py-24 sm:py-32 border-b border-[var(--nxt-line)] scroll-mt-20">
-        <div className="text-center max-w-3xl mx-auto mb-16">
+        <div className="max-w-3xl mb-12">
           <Kicker>For Enterprise & Health Systems</Kicker>
-          <H2 className="mt-4">Start with One Problem. Grow into a Scalable Pipeline.</H2>
+          <H2 className="mt-5">Start with one problem. <Accent>Grow into a scalable pipeline.</Accent></H2>
         </div>
 
         <div className="grid gap-8 lg:grid-cols-3">
@@ -914,7 +893,7 @@ export const HomePage: React.FC = () => {
               'Screened founder teams & execution protocol',
               'Transparent gate-by-gate progress view',
             ]}
-            cta="Seed a Problem"
+            cta="Seed a problem"
             to="/?as=pharma#start"
             featured
           />
@@ -928,7 +907,7 @@ export const HomePage: React.FC = () => {
               'Quarterly pipeline executive briefings',
               'Keynote slot at founder symposiums',
             ]}
-            cta="Contact Enterprise"
+            cta="Contact enterprise"
             to="/?as=pharma#start"
             outline
           />
@@ -941,7 +920,7 @@ export const HomePage: React.FC = () => {
               'Pro-rata co-investment rights in cohort winners',
               'First-look licensing & commercial rights',
             ]}
-            cta="Partner with Us"
+            cta="Partner with us"
             to="/?as=pharma#start"
             outline
           />
@@ -954,10 +933,10 @@ export const HomePage: React.FC = () => {
           <div className="flex flex-wrap items-end justify-between gap-4 mb-12">
             <div>
               <Kicker>Insights & Dispatches</Kicker>
-              <H2 className="mt-4">Ideas for People Building Health</H2>
+              <H2 className="mt-5">Ideas for people <Accent>building health.</Accent></H2>
             </div>
-            <Btn variant="outline" to="/blog" className="font-mono text-xs tracking-[-0.02em]r uppercase border-[var(--nxt-line)]">
-              All Posts
+            <Btn variant="outline" to="/blog" className="border-[var(--nxt-line)]">
+              All posts
             </Btn>
           </div>
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -972,7 +951,7 @@ export const HomePage: React.FC = () => {
           <div>
             <Kicker>Commence Today</Kicker>
             <h2 className="font-display font-bold text-3xl sm:text-4xl lg:text-5xl tracking-[-0.02em] leading-tight mt-6">
-              Put capital behind a real clinical need or claim one to scale.
+              Put capital behind a real clinical need or <Accent>claim one to scale.</Accent>
             </h2>
             <p className="mt-6 text-lg text-white/70 leading-relaxed max-w-xl">
               Fund a clinical challenge to deploy screened founder teams or join free to build with guaranteed demand from day one.
@@ -998,7 +977,7 @@ export const HomePage: React.FC = () => {
             <h3 className="font-display font-bold text-2xl tracking-[-0.02em] mb-2">
               Start with NXT Health
             </h3>
-            <p className="text-xs text-[var(--nxt-ink-soft)] font-mono mb-6">
+            <p className="text-xs text-[var(--nxt-ink-soft)] mb-6">
               ✦ CLINICAL INNOVATION TEAM // 24-HOUR RESPONSE ✦
             </p>
             <InquiryForm kind="lead" initialRole={initialRole} />
@@ -1018,7 +997,7 @@ const StartupCard: React.FC<{ startup: Startup }> = ({ startup }) => {
           : <div className="w-14 h-14 bg-[#111] text-white font-display font-bold text-xl flex items-center justify-center border border-white/20" aria-hidden="true">{startup.name.slice(0, 1).toUpperCase()}</div>}
         <div className="min-w-0">
           <h3 className="font-display font-bold text-lg tracking-[-0.02em] leading-tight">{startup.name}</h3>
-          <p className="text-[12px] font-mono text-[var(--nxt-ink-soft)] mt-0.5">{[startup.sector, startup.stage, startup.location].filter(Boolean).join(' · ')}</p>
+          <p className="text-[12px] text-[var(--nxt-ink-soft)] mt-0.5">{[startup.sector, startup.stage, startup.location].filter(Boolean).join(' · ')}</p>
         </div>
       </div>
       {startup.tagline && <p className="mt-4 font-semibold text-sm">{startup.tagline}</p>}
@@ -1041,15 +1020,15 @@ const PriceCard: React.FC<{
   }`}>
     <div>
       <div className="flex items-center justify-between">
-        <span className="font-mono text-xs uppercase tracking-[-0.02em]st text-[var(--nxt-green)] font-bold">{label}</span>
+        <span className="text-xs uppercase tracking-widest text-[var(--nxt-green)] font-bold">{label}</span>
         {featured && (
-          <span className="bg-[var(--nxt-green)] text-[var(--nxt-green-ink)] font-mono px-2 py-0.5 text-[10px] font-bold uppercase tracking-[-0.02em]r">
+          <span className="bg-[var(--nxt-green)] text-[var(--nxt-green-ink)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
             RECOMMENDED
           </span>
         )}
       </div>
       <p className={`font-display font-bold text-[2.75rem] leading-none tracking-tight mt-6 ${price === 'Free' ? 'text-[var(--nxt-green)]' : ''}`}>{price}</p>
-      <p className="mt-2 text-xs font-mono text-[var(--nxt-ink-soft)]">{note}</p>
+      <p className="mt-2 text-xs text-[var(--nxt-ink-soft)]">{note}</p>
       <div className="mt-6 mb-8">
         <RuleList items={points} />
       </div>
@@ -1059,7 +1038,7 @@ const PriceCard: React.FC<{
         to={to}
         variant={outline ? 'outline' : 'solid'}
         full
-        className={featured ? 'bg-[var(--nxt-green)] hover:opacity-90 text-[var(--nxt-green-ink)] font-mono font-bold tracking-[-0.02em]st uppercase' : 'font-mono text-xs tracking-[-0.02em]st uppercase border-[var(--nxt-line)]'}
+        className={featured ? 'bg-[var(--nxt-green)] hover:opacity-90 text-[var(--nxt-green-ink)] font-bold' : 'text-xs border-[var(--nxt-line)]'}
       >
         {cta}
       </Btn>
