@@ -669,13 +669,13 @@ export const HomePage: React.FC = () => {
           }}
         />
         <div aria-hidden="true" className="absolute inset-0 pointer-events-none bg-[var(--nxt-bg)]/70 lg:bg-transparent" />
-        <div className="nxt-container relative z-10 flex items-center min-h-[max(600px,calc(100svh-4rem))] py-20">
-          <div className="max-w-[44rem] flex flex-col items-start gap-7">
+        <div className="nxt-container relative z-10 flex items-center min-h-[max(600px,calc(100dvh-4.5rem))] py-20">
+          <div className="max-w-[50rem] flex flex-col items-start gap-7">
             <Rise><Kicker>Validated clinical demand · Dedicated funding</Kicker></Rise>
             <Rise delay={0.06}>
-              <h1 className="font-display font-light text-[clamp(2.4rem,5.4vw,4.6rem)] tracking-[0.04em] uppercase leading-[1.08] text-balance">
-                Doctors identify the real-world problems.{' '}
-                <em className="italic text-[var(--nxt-green)] font-normal">You bring the solutions.</em>
+              <h1 className="font-display font-light text-[clamp(2.2rem,4.8vw,4.2rem)] tracking-[0.04em] uppercase leading-[1.08] text-balance">
+                Doctors identify the real-world problems.
+                <em className="block italic text-[var(--nxt-green)] font-normal mt-1">You bring the solutions.</em>
               </h1>
             </Rise>
             <Rise delay={0.12}>
