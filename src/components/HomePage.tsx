@@ -405,7 +405,7 @@ const GateStack: React.FC = () => {
       const el = stackRef.current;
       if (el && seenRef.current) {
         el.style.setProperty('--sz', `${-38 + Math.sin(t) * 12}deg`);
-        el.style.setProperty('--sx', `${58 + Math.cos(t * 0.8) * 4}deg`);
+        el.style.setProperty('--sx', `${52 + Math.cos(t * 0.8) * 3}deg`);
       }
       raf = requestAnimationFrame(spin);
     };
@@ -415,20 +415,20 @@ const GateStack: React.FC = () => {
 
   return (
     <div ref={sectionRef} className="grid gap-8 lg:grid-cols-2 lg:gap-12 items-center">
-      <div className="relative grid place-items-center h-[clamp(440px,56vw,640px)] pt-[clamp(70px,9vw,120px)]" style={{ perspective: 1800 }} aria-hidden="true">
+      <div className="relative grid place-items-center h-[clamp(600px,66vw,760px)] pt-[clamp(170px,18vw,240px)]" style={{ perspective: 1800 }} aria-hidden="true">
         <div
           ref={stackRef}
-          className="relative w-[min(300px,62%)] aspect-square"
-          style={{ transformStyle: 'preserve-3d', transform: 'rotateX(var(--sx, 58deg)) rotateZ(var(--sz, -38deg))' }}
+          className="relative w-[min(340px,68%)] aspect-square"
+          style={{ transformStyle: 'preserve-3d', transform: 'rotateX(var(--sx, 52deg)) rotateZ(var(--sz, -38deg))' }}
         >
           {STEPS.map((s, k) => {
             const on = k === active;
             return (
               <div
                 key={s.num}
-                className="absolute inset-0 rounded-[18px] border p-4 flex items-start justify-between text-[13px] uppercase tracking-[0.12em]"
+                className="absolute inset-0 rounded-[18px] border px-5 pt-4 pb-3 flex items-end justify-between gap-3 text-[15px] font-semibold uppercase tracking-[0.1em]"
                 style={{
-                  transform: `translateZ(${k * 46 + (k > active ? 70 : 0)}px)`,
+                  transform: `translateZ(${k * 74 + (k > active ? 80 : 0)}px)`,
                   transitionProperty: 'transform, background-color, border-color, box-shadow, color',
                   transitionDuration: '1100ms, 600ms, 600ms, 800ms, 600ms',
                   transitionTimingFunction: 'cubic-bezier(0.22, 1, 0.36, 1)',
@@ -439,8 +439,8 @@ const GateStack: React.FC = () => {
                   boxShadow: on ? '0 0 80px -10px var(--nxt-green)' : 'none',
                 }}
               >
-                <span>Gate</span>
-                <b className={`text-[34px] tracking-[-0.04em] font-bold ${on ? '' : 'text-[var(--nxt-ink)]'}`}>{s.num}</b>
+                <span className={on ? '' : 'text-[var(--nxt-ink)]'}>{s.title}</span>
+                <b className={`text-[22px] tracking-[-0.03em] font-bold ${on ? '' : 'text-[var(--nxt-ink-soft)]'}`}>{s.num}</b>
               </div>
             );
           })}
