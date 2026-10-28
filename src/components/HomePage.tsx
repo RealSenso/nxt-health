@@ -669,7 +669,7 @@ export const HomePage: React.FC = () => {
           }}
         />
         <div aria-hidden="true" className="absolute inset-0 pointer-events-none bg-[var(--nxt-bg)]/70 lg:bg-transparent" />
-        <div className="nxt-container relative z-10 flex items-center min-h-[clamp(600px,78vh,820px)] py-20">
+        <div className="nxt-container relative z-10 flex items-center min-h-[max(600px,calc(100svh-4rem))] py-20">
           <div className="max-w-[44rem] flex flex-col items-start gap-7">
             <Rise><Kicker>Validated clinical demand · Dedicated funding</Kicker></Rise>
             <Rise delay={0.06}>
