@@ -701,8 +701,8 @@ export const HomePage: React.FC = () => {
             <Rise><Kicker>Validated clinical demand · Dedicated funding</Kicker></Rise>
             <Rise delay={0.06}>
               <h1 className="font-display font-light text-[clamp(2.2rem,4.8vw,4.2rem)] tracking-[0.04em] uppercase leading-[1.08] text-balance">
-                Doctors identify the real-world problems.
-                <em className="block italic text-[var(--nxt-green)] font-normal mt-1">You bring the solutions.</em>
+                Roadmaps that direct innovation
+                <em className="block italic text-[var(--nxt-green)] font-normal mt-1">straight to patients.</em>
               </h1>
             </Rise>
             <Rise delay={0.12}>
