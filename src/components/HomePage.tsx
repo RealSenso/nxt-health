@@ -381,21 +381,6 @@ const FlankedEyebrow: React.FC<{ children: React.ReactNode }> = ({ children }) =
   </div>
 );
 
-const TICKER_WORDS = ['Verified clinical problems', 'Non-dilutive grants', 'Stage-gate funding', 'CDSCO / FDA routes', 'Hospital pilots', 'Vetted experts', 'Evidence at every gate'];
-
-const Ticker: React.FC = () => (
-  <div className="border-y border-[var(--nxt-line)] overflow-hidden select-none" aria-hidden="true">
-    <div className="nxt-ticker">
-      {[0, 1, 2, 3].flatMap(n => TICKER_WORDS.map(w => (
-        <span key={`${n}-${w}`} className="flex items-center gap-7 px-7 py-4 text-[13px] uppercase tracking-[0.14em] text-[var(--nxt-ink-soft)] whitespace-nowrap">
-          {w}
-          <span className="w-[7px] h-[7px] rotate-45 bg-[var(--nxt-green)]" />
-        </span>
-      )))}
-    </div>
-  </div>
-);
-
 /* =========================================================================
    STAGE-GATE STACK: five plates that lift in turn on the shared beat.
    Runs by itself; the same clock drives the "1 in 5" dots.
@@ -728,8 +713,6 @@ export const HomePage: React.FC = () => {
           </div>
         </div>
       </section>
-
-      <Ticker />
 
       {/* 2. 1 IN 5: shares a clock with the stage-gate stack below */}
       <OneInFive

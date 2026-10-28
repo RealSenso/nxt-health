@@ -75,12 +75,6 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 .hero-cta { display: flex; flex-wrap: wrap; gap: 12px; }
 .hero h1 em { font-style: normal; color: var(--green); }
 
-/* ticker */
-.ticker { border-block: 1px solid var(--line); overflow: hidden; margin-inline: calc(-1 * max(16px, env(safe-area-inset-left, 0px))); }
-.ticker-track { display: flex; width: max-content; animation: tick 40s linear infinite; }
-.ticker span { padding: 18px 28px; font-size: 14px; text-transform: uppercase; letter-spacing: .14em; color: var(--mute); display: flex; align-items: center; gap: 28px; white-space: nowrap; }
-.ticker span::after { content: ""; width: 7px; height: 7px; background: var(--green); transform: rotate(45deg); }
-@keyframes tick { to { transform: translateX(-50%); } }
 
 section { padding-block: clamp(64px, 10vw, 140px); }
 .sec-head { display: flex; flex-direction: column; gap: 20px; margin-bottom: clamp(32px, 5vw, 64px); max-width: 880px; }
@@ -226,10 +220,6 @@ footer { border-top: 1px solid var(--line); padding-block: 36px 48px; display: f
     </div>
   </main>
 
-  <div class="ticker" aria-hidden="true">
-    <div class="ticker-track" id="ticker"></div>
-  </div>
-
   <section id="one5">
     <div class="one5">
       <div class="dots" id="dots" aria-hidden="true"></div>
@@ -351,11 +341,6 @@ footer { border-top: 1px solid var(--line); padding-block: 36px 48px; display: f
     try { localStorage.setItem('nxt_theme', next); } catch (e) {}
     applyColors();
   });
-
-  /* ---------- ticker ---------- */
-  var words = ['Verified clinical problems', 'Non-dilutive grants', 'Stage-gate funding', 'CDSCO / FDA routes', 'Hospital pilots', 'Vetted experts', 'Evidence at every gate'];
-  var tk = document.getElementById('ticker');
-  tk.innerHTML = words.concat(words).concat(words).concat(words).map(function (w) { return '<span>' + w + '</span>'; }).join('');
 
   /* ---------- one shared clock: the dots and the pathway change on the same beat ---------- */
   var beatFns = [];
