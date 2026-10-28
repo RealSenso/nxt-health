@@ -22,13 +22,10 @@ import { Btn, H2, RuleList } from './public/ui';
 const cssVar = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 
 /* =========================================================================
-   HERO BACKGROUND: A 3D DOUBLE HELIX PROJECTED ON A CANVAS
+   HERO BACKGROUND: A SPINNING HELIX MADE OF STARS, OVER A DRIFTING STAR FIELD
    Sits behind the hero copy. Follows the pointer a little, spins on its own,
    and takes its colours from the theme tokens so it reads in light and dark.
    ========================================================================= */
-const OCT = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]];
-const OCT_EDGES = [[0, 2], [0, 3], [0, 4], [0, 5], [1, 2], [1, 3], [1, 4], [1, 5], [2, 4], [2, 5], [3, 4], [3, 5]];
-
 const HeroHelix: React.FC = () => {
   const ref = useRef<HTMLCanvasElement>(null);
 
@@ -40,6 +37,7 @@ const HeroHelix: React.FC = () => {
     const N = 96, TURNS = 3.2, RAD = 1.7, LEN = 9;
     const orbit = Array.from({ length: 7 }, (_, j) => ({ r: 3 + (j % 3) * 0.8, s: 0.25 + j * 0.05, p: j * 0.9, y: (j - 3) * 1.15, k: 0.28 + (j % 3) * 0.1 }));
 
+    const field = Array.from({ length: 130 }, () => ({ x: Math.random(), y: Math.random(), z: Math.random(), p: Math.random() * 6.28 }));
     let W = 0, H = 0, raf = 0, frame = 0, t = 0, spin = 0, visible = true;
     let tx = 0, ty = 0, px = 0, py = 0;
     let green = '#0B8A44', ink = '#111111', soft = '#5F5F5F';
@@ -87,35 +85,60 @@ const HeroHelix: React.FC = () => {
         B.push(project(Math.cos(a + Math.PI) * RAD, y, Math.sin(a + Math.PI) * RAD, cx));
       }
 
-      ctx.lineWidth = 1;
+      /* distant stars drift with the pointer, nearer ones further */
+      ctx.fillStyle = ink;
+      field.forEach(f => {
+        ctx.globalAlpha = (0.08 + 0.32 * f.z) * (0.55 + 0.45 * Math.sin(t * 1.6 + f.p));
+        ctx.beginPath();
+        ctx.arc(f.x * W + px * f.z * 40, f.y * H + py * f.z * 40, 0.5 + f.z * 1.1, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      /* faint constellation lines instead of base pairs */
+      ctx.lineWidth = 0.8;
       ctx.strokeStyle = soft;
-      for (let i = 2; i < N; i += 3) {
-        ctx.globalAlpha = 0.14 + 0.3 * ((A[i].d + B[i].d) / 2);
+      for (let i = 4; i < N; i += 6) {
+        ctx.globalAlpha = 0.1 + 0.2 * ((A[i].d + B[i].d) / 2);
         ctx.beginPath(); ctx.moveTo(A[i].x, A[i].y); ctx.lineTo(B[i].x, B[i].y); ctx.stroke();
       }
-      const strand = (P: typeof A, color: string, dot: string) => {
-        ctx.strokeStyle = color; ctx.globalAlpha = 0.5; ctx.lineWidth = 1.2;
-        ctx.beginPath(); P.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y))); ctx.stroke();
-        ctx.fillStyle = dot;
-        P.forEach(p => { ctx.globalAlpha = 0.35 + 0.65 * p.d; ctx.beginPath(); ctx.arc(p.x, p.y, 1.6 + p.d * 2.6, 0, Math.PI * 2); ctx.fill(); });
-      };
-      strand(B, soft, ink);
-      strand(A, green, green);
 
-      ctx.strokeStyle = green; ctx.lineWidth = 1;
+      const sparkle = (x: number, y: number, r: number, rot: number) => {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(rot);
+        ctx.beginPath();
+        ctx.moveTo(0, -r); ctx.quadraticCurveTo(0, 0, r, 0);
+        ctx.quadraticCurveTo(0, 0, 0, r); ctx.quadraticCurveTo(0, 0, -r, 0);
+        ctx.quadraticCurveTo(0, 0, 0, -r);
+        ctx.fill();
+        ctx.restore();
+      };
+
+      /* the two strands: a thread of light with stars strung on it */
+      const strand = (P: typeof A, color: string, offset: number) => {
+        ctx.strokeStyle = color; ctx.globalAlpha = 0.2; ctx.lineWidth = 1;
+        ctx.beginPath(); P.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y))); ctx.stroke();
+        ctx.fillStyle = color;
+        P.forEach((p, i) => {
+          const tw = 0.6 + 0.4 * Math.sin(t * 2.2 + i * 0.9 + offset);
+          ctx.globalAlpha = (0.3 + 0.7 * p.d) * tw;
+          ctx.beginPath(); ctx.arc(p.x, p.y, 1.2 + p.d * 1.8, 0, Math.PI * 2); ctx.fill();
+          if (i % 5 === 0) { ctx.globalAlpha = (0.4 + 0.6 * p.d) * tw; sparkle(p.x, p.y, 5 + p.d * 9, 0); }
+        });
+      };
+      strand(B, ink, 0);
+      strand(A, green, 2);
+
+      /* bright guide stars orbiting the helix */
+      ctx.fillStyle = green;
       orbit.forEach(o => {
         const a = t * o.s + o.p;
-        const ox = Math.cos(a) * o.r, oy = o.y + Math.sin(t + o.p) * 0.3, oz = Math.sin(a) * o.r;
-        const rot = t * 0.6 + o.p;
-        const pts = OCT.map(v => {
-          const x = v[0] * o.k, y = v[1] * o.k, z = v[2] * o.k;
-          const xr = x * Math.cos(rot) + z * Math.sin(rot), zr = -x * Math.sin(rot) + z * Math.cos(rot);
-          return project(ox + xr, oy + y, oz + zr, cx);
-        });
-        ctx.globalAlpha = 0.35 + 0.5 * pts[0].d;
-        ctx.beginPath();
-        OCT_EDGES.forEach(([i, j]) => { ctx.moveTo(pts[i].x, pts[i].y); ctx.lineTo(pts[j].x, pts[j].y); });
-        ctx.stroke();
+        const q = project(Math.cos(a) * o.r, o.y + Math.sin(t + o.p) * 0.3, Math.sin(a) * o.r, cx);
+        const tw = 0.6 + 0.4 * Math.sin(t * 2 + o.p * 3);
+        ctx.globalAlpha = (0.35 + 0.65 * q.d) * tw;
+        sparkle(q.x, q.y, 10 + o.k * 40 * (0.5 + q.d), t * 0.3 + o.p);
+        ctx.globalAlpha *= 0.25;
+        ctx.beginPath(); ctx.arc(q.x, q.y, 14 + o.k * 30, 0, Math.PI * 2); ctx.fill();
       });
       ctx.globalAlpha = 1;
     };
@@ -313,7 +336,6 @@ const Interactive3DGlobe: React.FC = () => {
   return (
     <div className="relative flex flex-col items-center justify-center select-none">
       <canvas ref={canvasRef} className="cursor-grab active:cursor-grabbing max-w-full touch-pan-y" aria-label="Interactive wireframe globe of clinical hubs. Drag to rotate." />
-      <p className="mt-3 text-[12px] tracking-[0.16em] uppercase text-[var(--nxt-ink-soft)]">Drag to rotate the global clinical network</p>
     </div>
   );
 };
