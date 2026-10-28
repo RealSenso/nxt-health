@@ -4,7 +4,7 @@ import { Check } from 'lucide-react';
 import { Eyebrow, H2 } from './ui';
 
 /** One shared clock, so the dots and the "How it works" steps always change on the same beat. */
-const BEAT_MS = 2600;
+const BEAT_MS = 5000;
 let beat = 0;
 let timer = 0;
 const listeners = new Set<() => void>();
