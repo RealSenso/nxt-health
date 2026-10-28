@@ -189,7 +189,7 @@ const Interactive3DGlobe: React.FC = () => {
     if (!ctx) return;
 
     let animId = 0;
-    let W = 0, R = 0;
+    let W = 0, H = 0, CX = 0, CY = 0, R = 0;
     let rotX = 0.25, rotY = 0;
     let dragging = false;
     let lastX = 0, lastY = 0;
@@ -210,15 +210,16 @@ const Interactive3DGlobe: React.FC = () => {
     ];
 
     const resize = () => {
-      const s = Math.min(c.parentElement?.clientWidth || 520, 520);
       const d = Math.min(window.devicePixelRatio || 1, 2);
-      c.width = Math.round(s * d);
-      c.height = Math.round(s * d);
-      c.style.width = `${s}px`;
-      c.style.height = `${s}px`;
+      W = c.clientWidth;
+      H = c.clientHeight;
+      c.width = Math.round(W * d);
+      c.height = Math.round(H * d);
       ctx.setTransform(d, 0, 0, d, 0, 0);
-      W = s;
-      R = s * 0.42;
+      /* a big globe on the right of wide screens, centred behind the copy on narrow ones */
+      CX = W > 900 ? W * 0.68 : W * 0.5;
+      CY = H / 2;
+      R = Math.min(H * 0.52, W * (W > 900 ? 0.36 : 0.5));
     };
 
     const latLonTo3D = (lat: number, lon: number): [number, number, number] => {
@@ -239,7 +240,7 @@ const Interactive3DGlobe: React.FC = () => {
       for (let s = 0; s <= steps; s++) {
         const r = rotate(at(s / steps));
         if (r[2] > -R * 0.05) {
-          const x = W / 2 + r[0], y = W / 2 - r[1];
+          const x = CX + r[0], y = CY - r[1];
           if (first) { ctx.moveTo(x, y); first = false; } else ctx.lineTo(x, y);
         } else if (!first) {
           ctx.globalAlpha = alpha; ctx.stroke(); ctx.beginPath(); first = true;
@@ -254,10 +255,10 @@ const Interactive3DGlobe: React.FC = () => {
         green = cssVar('--nxt-green') || green;
         ink = cssVar('--nxt-ink') || ink;
       }
-      ctx.clearRect(0, 0, W, W);
+      ctx.clearRect(0, 0, W, H);
       ctx.save();
       ctx.beginPath();
-      ctx.arc(W / 2, W / 2, R, 0, Math.PI * 2);
+      ctx.arc(CX, CY, R, 0, Math.PI * 2);
       ctx.clip();
       ctx.strokeStyle = green;
       ctx.lineWidth = 0.7;
@@ -272,7 +273,7 @@ const Interactive3DGlobe: React.FC = () => {
       hubs.forEach(hub => {
         const r = rotate(latLonTo3D(hub.lat, hub.lon));
         if (r[2] <= -R * 0.05) return;
-        const x = W / 2 + r[0], y = W / 2 - r[1];
+        const x = CX + r[0], y = CY - r[1];
         const depth = (r[2] + R) / (2 * R);
         const dotR = 2.5 + depth * 2.5, alpha = 0.35 + depth * 0.65;
         ctx.fillStyle = green;
@@ -281,13 +282,13 @@ const Interactive3DGlobe: React.FC = () => {
         ctx.fillStyle = ink;
         ctx.globalAlpha = alpha;
         ctx.beginPath(); ctx.arc(x, y, dotR, 0, Math.PI * 2); ctx.fill();
-        ctx.font = `${10 + depth * 2}px "Helvetica Neue", Helvetica, Arial, sans-serif`;
+        ctx.font = `${11 + depth * 3}px "Helvetica Neue", Helvetica, Arial, sans-serif`;
         ctx.fillText(hub.label, x + dotR + 6, y + 3);
       });
       ctx.restore();
       ctx.globalAlpha = 0.5;
       ctx.strokeStyle = green;
-      ctx.beginPath(); ctx.arc(W / 2, W / 2, R, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(CX, CY, R, 0, Math.PI * 2); ctx.stroke();
       ctx.globalAlpha = 1;
 
       if (!dragging) { rotY += 0.003; velX *= 0.95; }
@@ -334,8 +335,8 @@ const Interactive3DGlobe: React.FC = () => {
   }, []);
 
   return (
-    <div className="relative flex flex-col items-center justify-center select-none">
-      <canvas ref={canvasRef} className="cursor-grab active:cursor-grabbing max-w-full touch-pan-y" aria-label="Interactive wireframe globe of clinical hubs. Drag to rotate." />
+    <div className="absolute inset-0 select-none">
+      <canvas ref={canvasRef} className="block w-full h-full cursor-grab active:cursor-grabbing touch-pan-y" aria-label="Interactive wireframe globe of clinical hubs. Drag to rotate." />
     </div>
   );
 };
@@ -791,9 +792,11 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* 6. GLOBAL CLINICAL NETWORK */}
-      <section className="nxt-container py-20 sm:py-28 border-b border-[var(--nxt-line)]">
-        <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,520px)] items-center">
+      {/* 6. GLOBAL CLINICAL NETWORK: the globe fills the section and is still draggable */}
+      <section className="relative overflow-hidden border-b border-[var(--nxt-line)]">
+        <Interactive3DGlobe />
+        <div aria-hidden="true" className="absolute inset-0 pointer-events-none bg-[var(--nxt-bg)]/60 lg:bg-transparent" />
+        <div className="nxt-container relative z-10 flex items-center min-h-[max(560px,85dvh)] py-20 pointer-events-none">
           <Rise className="max-w-xl">
             <Kicker>Global clinical network</Kicker>
             <H2 className="mt-5">Clinical hubs on <Accent>three continents.</Accent></H2>
@@ -801,7 +804,6 @@ export const HomePage: React.FC = () => {
               Connecting clinical challenges across premier medical research centers, hospital systems, and global regulatory jurisdictions.
             </p>
           </Rise>
-          <Interactive3DGlobe />
         </div>
       </section>
 
