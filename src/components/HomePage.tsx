@@ -703,7 +703,7 @@ export const HomePage: React.FC = () => {
             </Rise>
             <Rise delay={0.12}>
               <p className="max-w-xl text-[clamp(1.05rem,1.4vw,1.25rem)] text-[var(--nxt-ink-soft)] leading-relaxed">
-                {site.hero_subtitle || 'NXT Health pairs validated, funded clinical problems with ambitious founders, providing a structured, end-to-end pathway from challenge to commercial launch.'}
+                {site.hero_subtitle || 'SirOsler pairs validated, funded clinical problems with ambitious founders, providing a structured, end-to-end pathway from challenge to commercial launch.'}
               </p>
             </Rise>
             <Rise delay={0.18}>
@@ -720,7 +720,7 @@ export const HomePage: React.FC = () => {
       <OneInFive
         stat="1 in 5"
         headline="doctors encounters a critical clinical problem every day and waits for someone to solve it."
-        subtitle="NXT Health captures these frontline pains, validates them with industry funding, and connects them to ambitious founders ready to build the solution."
+        subtitle="SirOsler captures these frontline pains, validates them with industry funding, and connects them to ambitious founders ready to build the solution."
       />
 
       {/* 3. THE PARADIGM SHIFT */}
@@ -750,7 +750,7 @@ export const HomePage: React.FC = () => {
             <h3 className="font-display font-bold text-[clamp(1.5rem,2.6vw,2.1rem)] tracking-[-0.025em] leading-tight mt-3">
               <span className="text-[var(--nxt-green)]">Start</span> with guaranteed demand.
             </h3>
-            <p className="mt-4 text-[var(--nxt-ink-soft)] leading-relaxed">Doctors and industry define the clinical problem and fund the solution. NXT Health matches ambitious founders with validated challenges, capital, and the end-to-end support needed to launch.</p>
+            <p className="mt-4 text-[var(--nxt-ink-soft)] leading-relaxed">Doctors and industry define the clinical problem and fund the solution. SirOsler matches ambitious founders with validated challenges, capital, and the end-to-end support needed to launch.</p>
             <p className="font-display font-bold text-[clamp(3.4rem,8vw,6rem)] leading-none tracking-[-0.05em] text-[var(--nxt-green)] mt-8">0%</p>
             <ul className="mt-6">
               {[
@@ -983,7 +983,7 @@ export const HomePage: React.FC = () => {
 
           <div className="bg-[#111111] text-white p-8 sm:p-10 border border-[var(--nxt-green)]/30 shadow-2xl">
             <h3 className="font-display font-bold text-2xl tracking-[-0.02em] mb-2">
-              Start with NXT Health
+              Start with SirOsler
             </h3>
             <p className="text-xs text-[var(--nxt-ink-soft)] mb-6">
               ✦ CLINICAL INNOVATION TEAM // 24-HOUR RESPONSE ✦

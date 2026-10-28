@@ -1,11 +1,11 @@
 import React from 'react';
-import logo from '../../assets/nxt-health-logo.png';
+import { Logo } from '../ui/Logo';
 import { PublicLayout } from './PublicLayout';
 import { InquiryForm } from './InquiryForm';
 import { Btn, Eyebrow, H1, H2, Step } from './ui';
 
 const WHY = [
-  { n: '01', title: 'Be part of NXT Health', text: "You join NXT Health's community and help build the company behind it. Your name stands beside ours, and your judgement shapes what founders are taught." },
+  { n: '01', title: 'Be part of SirOsler', text: "You join SirOsler's community and help build the company behind it. Your name stands beside ours, and your judgement shapes what founders are taught." },
   { n: '02', title: 'Build a community that connects anywhere', text: 'A founder in Pune, Colombo, London or Boston can reach you. Every expert who joins makes the community more useful to every founder in it.' },
   { n: '03', title: 'Work with founders inside a startup system', text: 'Meet physician-founders working on real problems stated by doctors, hospitals and pharma, some with funding already behind them. You see what is being built well before it becomes a pitch deck.' },
   { n: '04', title: "Put your experience behind someone's idea", text: 'Use your passion, experience and expertise to help another person build. An hour with the right expert can spare a founder months of guessing.' },
@@ -15,8 +15,8 @@ const BUILD = [
   { title: 'Shape the roadmaps', text: 'Help write the step-by-step routes founders follow to market, starting with medical devices.' },
   { title: 'Put your name on a problem', text: 'Bring a problem you know needs solving. It is listed with your name, and founders come to you to understand it.' },
   { title: 'Sit on selection panels', text: 'Help choose the founders who take on problems funded by pharma and hospitals.' },
-  { title: 'Be heard on the NXT Health channel', text: 'We record a conversation with you and publish it to founders, clinicians and investors.' },
-  { title: 'Join the advisory board', text: 'Experts who make an outsized difference for founders are invited to advise NXT Health directly.' },
+  { title: 'Be heard on the SirOsler channel', text: 'We record a conversation with you and publish it to founders, clinicians and investors.' },
+  { title: 'Join the advisory board', text: 'Experts who make an outsized difference for founders are invited to advise SirOsler directly.' },
 ];
 
 export const BecomeExpertPage: React.FC = () => (
@@ -26,7 +26,7 @@ export const BecomeExpertPage: React.FC = () => (
       <Eyebrow>For seasoned experts</Eyebrow>
       <H1 className="mt-7 max-w-[20ch]">Help build the largest health innovation community in the world.</H1>
       <p className="mt-8 max-w-[40rem] text-[clamp(1.05rem,1.5vw,1.25rem)] leading-relaxed text-[var(--nxt-ink)]/80">
-        You have already taken ideas to market and to patients. NXT Health invites you to build with us, so that a founder anywhere in the world can reach someone who has done it before.
+        You have already taken ideas to market and to patients. SirOsler invites you to build with us, so that a founder anywhere in the world can reach someone who has done it before.
       </p>
       <div className="mt-9 flex flex-wrap gap-3">
         <Btn to="/experts/join#apply">Build with us</Btn>
@@ -38,7 +38,7 @@ export const BecomeExpertPage: React.FC = () => (
     <section className="bg-[#111] text-white">
       <div className="nxt-container py-16 sm:py-20 grid gap-10 lg:grid-cols-[22rem_1fr] lg:gap-20 items-center">
         <div className="hidden lg:flex aspect-[4/5] rounded-[18px] bg-[#1b1b1b] border border-white/10 items-center justify-center p-12">
-          <img src={logo} alt="NXT Health" className="w-full max-w-[14rem] opacity-90" />
+          <Logo className="!text-[2.4rem]" />
         </div>
         <div>
           <p className="text-[12px] sm:text-[13px] uppercase tracking-[0.14em] text-white/60">A call to all experts</p>
@@ -60,7 +60,7 @@ export const BecomeExpertPage: React.FC = () => (
         <H2 className="mt-5 max-w-[22ch] !text-[clamp(2rem,4.4vw,3.75rem)]">The bridge between innovation and patients.</H2>
         <div className="mt-8 max-w-2xl space-y-6 text-xl leading-relaxed text-white/85">
           <p>About 1 in 5 physicians we speak with has an idea they want to build. Most never start, because they do not know where to begin. The knowledge that would get them moving already exists. It sits with people like you.</p>
-          <p>NXT Health intends to be the world's largest platform connecting clinical problems, physician-founders, capital, hospitals and commercial help. A company cannot build that alone. The people who have done the work build it together.</p>
+          <p>SirOsler intends to be the world's largest platform connecting clinical problems, physician-founders, capital, hospitals and commercial help. A company cannot build that alone. The people who have done the work build it together.</p>
         </div>
       </div>
     </section>
@@ -77,7 +77,7 @@ export const BecomeExpertPage: React.FC = () => (
     <section id="build" className="nxt-container py-20 sm:py-24 border-t border-[var(--nxt-line)] scroll-mt-20">
       <div className="grid gap-10 lg:grid-cols-[22rem_1fr] lg:gap-20">
         <div>
-          <H2 className="max-w-[12ch]">How you build NXT Health with us</H2>
+          <H2 className="max-w-[12ch]">How you build SirOsler with us</H2>
           <p className="mt-5 text-lg text-[var(--nxt-ink-soft)]">Sessions with founders are where it starts. Experts also shape the platform itself.</p>
         </div>
         <ul className="border-t border-[var(--nxt-line)]">

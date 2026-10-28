@@ -1,4 +1,4 @@
-import logo from '../assets/nxt-health-logo.png';
+import { Logo } from './ui/Logo';
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
@@ -110,7 +110,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               title={currentUser ? 'Problem statements' : 'Home'}
               className="flex items-center gap-2.5 shrink-0"
             >
-              <img src={logo} alt={platformName} className="h-9 w-auto" />
+              <Logo />
             </button>
 
             <nav className="hidden md:flex items-center gap-1 min-w-0">

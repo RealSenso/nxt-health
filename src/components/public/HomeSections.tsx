@@ -43,7 +43,7 @@ export const OneInFive: React.FC<{
 }> = ({
   stat = '1 in 5',
   headline = 'doctors encounters a critical clinical problem every day and waits for someone to solve it.',
-  subtitle = 'NXT Health captures these frontline pains, validates them with industry funding, and connects them to ambitious founders ready to build the solution.',
+  subtitle = 'SirOsler captures these frontline pains, validates them with industry funding, and connects them to ambitious founders ready to build the solution.',
 }) => {
   const tick = useBeat();
   const [{ ideas: pattern, starts }, setPick] = useState(() => ({ ideas: [0, 6, 12, 18, 24], starts: 12 }));

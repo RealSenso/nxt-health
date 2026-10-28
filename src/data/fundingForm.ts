@@ -155,7 +155,7 @@ export const FUNDING_FORM: FormSection[] = [
     intro: 'Be honest. It helps us help you.',
     questions: [
       { id: 'top_risks', label: 'What are the three biggest risks to this working?', type: 'long' },
-      { id: 'support_needed', label: 'What support would help you most from NXT Health?', type: 'multi', options: ['Clinical validation', 'Regulatory guidance', 'Hospital pilot access', 'Introductions to experts', 'Fundraising help', 'Technical help', 'Commercial strategy'] },
+      { id: 'support_needed', label: 'What support would help you most from SirOsler?', type: 'multi', options: ['Clinical validation', 'Regulatory guidance', 'Hospital pilot access', 'Introductions to experts', 'Fundraising help', 'Technical help', 'Commercial strategy'] },
       { id: 'supporting_notes', label: 'Anything else we should know?', type: 'long' },
     ],
   },
@@ -166,7 +166,7 @@ export const FUNDING_FORM: FormSection[] = [
     questions: [
       { id: 'hours_per_week', label: 'Hours per week you can give to this', type: 'number' },
       { id: 'start_when', label: 'When could you start?', type: 'select', options: ['Immediately', 'Within a month', 'Within three months', 'Later'] },
-      { id: 'reporting', label: 'Are you willing to share monthly progress updates with NXT Health?', type: 'select', options: YES_NO },
+      { id: 'reporting', label: 'Are you willing to share monthly progress updates with SirOsler?', type: 'select', options: YES_NO },
     ],
   },
   {
@@ -175,7 +175,7 @@ export const FUNDING_FORM: FormSection[] = [
     intro: 'Check your answers, then confirm.',
     questions: [
       { id: 'declare_accurate', label: 'I confirm that the information in this application is accurate to the best of my knowledge.', type: 'checkbox' },
-      { id: 'declare_share', label: 'I agree that NXT Health may share this application with its review panel, experts and the sponsor of this problem statement.', type: 'checkbox' },
+      { id: 'declare_share', label: 'I agree that SirOsler may share this application with its review panel, experts and the sponsor of this problem statement.', type: 'checkbox' },
     ],
   },
 ];

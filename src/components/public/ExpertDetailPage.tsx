@@ -135,8 +135,8 @@ export const ExpertDetailPage: React.FC = () => {
                 </>
               )}
 
-              <h2 className="font-display font-bold text-2xl mt-12 tracking-[-0.02em]">On the NXT Health channel</h2>
-              <div className="mt-4 max-w-xl aspect-video rounded-2xl bg-[#111] flex items-center justify-center" role="img" aria-label="Video from the NXT Health channel">
+              <h2 className="font-display font-bold text-2xl mt-12 tracking-[-0.02em]">On the SirOsler channel</h2>
+              <div className="mt-4 max-w-xl aspect-video rounded-2xl bg-[#111] flex items-center justify-center" role="img" aria-label="Video from the SirOsler channel">
                 <span className="w-16 h-16 rounded-full border-2 border-white flex items-center justify-center"><Play className="w-6 h-6 text-white fill-white ml-1" /></span>
               </div>
               <p className="mt-3 text-[15px]">{SAMPLE.channelTitle}</p>

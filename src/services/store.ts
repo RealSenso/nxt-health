@@ -12,7 +12,7 @@ import {
 import { api, ApiError } from './api';
 import { auth } from './firebase';
 
-export const PLATFORM_NAME = 'NXT Health';
+export const PLATFORM_NAME = 'SirOsler';
 
 export type ProfileUpdates = {
   name?: string;

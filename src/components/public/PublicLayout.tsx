@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { scrollToId, useSmoothScroll } from './smoothScroll';
 import { Link, useLocation } from 'react-router-dom';
-import logo from '../../assets/nxt-health-logo.png';
+import { Logo } from '../ui/Logo';
 import { store } from '../../services/store';
 import { Btn } from './ui';
 import { AnnouncementBar } from '../ui/AnnouncementBar';
@@ -70,8 +70,8 @@ export const PublicLayout: React.FC<{ variant: PublicVariant; children: React.Re
       <AnnouncementBar />
       <header className="nxt-bar-dark sticky top-0 z-40 bg-[var(--nxt-bg)] border-b border-[var(--nxt-line)]">
         <div className="nxt-container flex h-16 items-center justify-between gap-4">
-          <Link to="/" className="flex items-center gap-4 shrink-0" aria-label="NXT Health home">
-            <img src={logo} alt="NXT Health" className="h-9 w-auto" />
+          <Link to="/" className="flex items-center gap-4 shrink-0" aria-label="SirOsler home">
+            <Logo />
             {nav.subBrand && (
               <span className="hidden sm:flex items-center gap-4 text-[15px] text-[var(--nxt-ink-soft)]">
                 <span className="h-5 w-px bg-[var(--nxt-line)]" />
@@ -109,7 +109,7 @@ export const PublicLayout: React.FC<{ variant: PublicVariant; children: React.Re
 
       <footer className="border-t border-[var(--nxt-line)]">
         <div className="nxt-container py-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-[15px] text-[var(--nxt-ink-soft)]">
-          <p>NXT Health · nxthealth.ai · India</p>
+          <p>SirOsler · nxthealth.ai · India</p>
         </div>
       </footer>
     </div>

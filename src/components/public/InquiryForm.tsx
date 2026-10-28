@@ -22,7 +22,7 @@ interface Props {
 }
 
 const sentThanks = {
-  lead: "Thank you — we've got it. Someone from NXT Health will be in touch by email.",
+  lead: "Thank you — we've got it. Someone from SirOsler will be in touch by email.",
   expert: "Thank you — we've got your introduction. We'll be in touch by email to talk it through.",
 };
 

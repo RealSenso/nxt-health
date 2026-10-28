@@ -16,7 +16,7 @@ export const BlogCover: React.FC<{ post: Pick<BlogPost, 'cover_url' | 'domain' |
     ? <img src={post.cover_url} alt="" className={`object-cover ${className}`} loading="lazy" />
     : (
       <div className={`flex items-end bg-[#111] text-white p-5 ${className}`} aria-hidden="true">
-        <span className="text-[12px] uppercase tracking-[0.14em] text-white/70">{post.domain || 'NXT Health'}</span>
+        <span className="text-[12px] uppercase tracking-[0.14em] text-white/70">{post.domain || 'SirOsler'}</span>
       </div>
     )
 );
@@ -50,7 +50,7 @@ export const BlogListPage: React.FC = () => {
   return (
     <PublicLayout variant="home">
       <section className="nxt-container pt-14 sm:pt-20 pb-20">
-        <Eyebrow>The NXT Health blog</Eyebrow>
+        <Eyebrow>The SirOsler blog</Eyebrow>
         <H1 className="mt-6 max-w-[18ch]">Ideas for people building health.</H1>
         <p className="mt-6 max-w-xl text-lg text-[var(--nxt-ink-soft)]">Regulation, hospitals, AI and funding in Indian healthcare, written for founders and clinicians.</p>
 
