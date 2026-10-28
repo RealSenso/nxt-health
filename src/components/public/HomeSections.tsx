@@ -16,7 +16,7 @@ const subscribeBeat = (fn: () => void) => {
     if (listeners.size === 0) window.clearInterval(timer);
   };
 };
-const useBeat = () => useSyncExternalStore(subscribeBeat, () => beat, () => 0);
+export const useBeat = () => useSyncExternalStore(subscribeBeat, () => beat, () => 0);
 
 const inView = { initial: { opacity: 0, y: 24 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true, margin: '-80px' }, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const } };
 

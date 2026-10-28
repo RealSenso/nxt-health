@@ -1,128 +1,160 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useInView } from 'motion/react';
 import {
   ArrowRight,
-  ArrowUpRight,
-  Check,
   CheckCircle2,
-  Clock,
-  Sparkles,
-  ShieldCheck,
-  Layers,
-  Lock,
-  Unlock,
   Stethoscope,
-  Activity,
   FileText,
+  Layers,
   Users,
-  Building2,
-  Hospital,
   Briefcase,
-  Zap,
-  ChevronRight,
-  X,
-  Compass,
-  TrendingUp,
-  BadgeCheck,
-  Globe2,
+  ShieldCheck,
 } from 'lucide-react';
 import { store } from '../services/store';
 import { PublicLayout } from './public/PublicLayout';
 import { InquiryForm, LeadRole } from './public/InquiryForm';
 import { BlogCard } from './public/BlogPages';
 import type { Startup } from '../types';
-import { OneInFive, Rise } from './public/HomeSections';
-import { scrollToId } from './public/smoothScroll';
-import { Btn, Eyebrow, H1, H2, RuleList } from './public/ui';
+import { OneInFive, Rise, useBeat } from './public/HomeSections';
+import { Btn, H2, RuleList } from './public/ui';
+
+const cssVar = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 
 /* =========================================================================
-   CANVAS 1: CONNECTED CONSTELLATION PARTICLES (MIDNIGHT MEDIA SIGNATURE)
+   HERO BACKGROUND: A 3D DOUBLE HELIX PROJECTED ON A CANVAS
+   Sits behind the hero copy. Follows the pointer a little, spins on its own,
+   and takes its colours from the theme tokens so it reads in light and dark.
    ========================================================================= */
-const HeroConstellation: React.FC = () => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+const OCT = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]];
+const OCT_EDGES = [[0, 2], [0, 3], [0, 4], [0, 5], [1, 2], [1, 3], [1, 4], [1, 5], [2, 4], [2, 5], [3, 4], [3, 5]];
+
+const HeroHelix: React.FC = () => {
+  const ref = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    const c = canvasRef.current;
-    if (!c) return;
-    const ctx = c.getContext('2d');
-    if (!ctx) return;
+    const c = ref.current;
+    const ctx = c?.getContext('2d');
+    if (!c || !ctx) return;
 
-    let animId: number;
-    let pts: { x: number; y: number; vx: number; vy: number; r: number }[] = [];
+    const N = 96, TURNS = 3.2, RAD = 1.7, LEN = 9;
+    const orbit = Array.from({ length: 7 }, (_, j) => ({ r: 3 + (j % 3) * 0.8, s: 0.25 + j * 0.05, p: j * 0.9, y: (j - 3) * 1.15, k: 0.28 + (j % 3) * 0.1 }));
+
+    let W = 0, H = 0, raf = 0, frame = 0, t = 0, spin = 0, visible = true;
+    let tx = 0, ty = 0, px = 0, py = 0;
+    let green = '#0B8A44', ink = '#111111', soft = '#5F5F5F';
 
     const resize = () => {
-      c.width = c.offsetWidth;
-      c.height = c.offsetHeight;
+      const d = Math.min(window.devicePixelRatio || 1, 2);
+      W = c.clientWidth;
+      H = c.clientHeight;
+      c.width = Math.round(W * d);
+      c.height = Math.round(H * d);
+      ctx.setTransform(d, 0, 0, d, 0, 0);
     };
 
-    const init = () => {
-      pts = [];
-      const count = Math.min(Math.floor((c.width * c.height) / 14000), 70);
-      for (let i = 0; i < count; i++) {
-        pts.push({
-          x: Math.random() * c.width,
-          y: Math.random() * c.height,
-          vx: (Math.random() - 0.5) * 0.35,
-          vy: (Math.random() - 0.5) * 0.35,
-          r: Math.random() * 1.8 + 0.6,
-        });
-      }
+    const project = (x: number, y: number, z: number, cx: number) => {
+      const ry = spin + px, rx = py;
+      const X = x * Math.cos(ry) + z * Math.sin(ry);
+      const Z = -x * Math.sin(ry) + z * Math.cos(ry);
+      const Y2 = y * Math.cos(rx) - Z * Math.sin(rx);
+      const Z2 = y * Math.sin(rx) + Z * Math.cos(rx);
+      const roll = 0.32;
+      const X3 = X * Math.cos(roll) - Y2 * Math.sin(roll);
+      const Y3 = X * Math.sin(roll) + Y2 * Math.cos(roll);
+      const k = 15 / (15 - Z2);
+      const s = Math.min(Math.max(H, 480), 760) / 10.5;
+      return { x: cx + X3 * k * s, y: H / 2 - Y3 * k * s, d: Math.max(0, Math.min(1, (Z2 + 4) / 8)) };
     };
 
     const draw = () => {
-      ctx.clearRect(0, 0, c.width, c.height);
+      if (frame++ % 30 === 0) {
+        green = cssVar('--nxt-green') || green;
+        ink = cssVar('--nxt-ink') || ink;
+        soft = cssVar('--nxt-ink-soft') || soft;
+      }
+      t += 0.016;
+      spin += 0.004;
+      px += (tx - px) * 0.06;
+      py += (ty - py) * 0.06;
+      const cx = W * 0.5;
 
-      pts.forEach(p => {
-        p.x += p.vx;
-        p.y += p.vy;
-        if (p.x < 0 || p.x > c.width) p.vx *= -1;
-        if (p.y < 0 || p.y > c.height) p.vy *= -1;
-
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(16, 185, 129, 0.45)';
-        ctx.fill();
-      });
-
-      for (let i = 0; i < pts.length; i++) {
-        for (let j = i + 1; j < pts.length; j++) {
-          const a = pts[i];
-          const b = pts[j];
-          const dist = Math.hypot(a.x - b.x, a.y - b.y);
-          if (dist < 130) {
-            ctx.beginPath();
-            ctx.moveTo(a.x, a.y);
-            ctx.lineTo(b.x, b.y);
-            ctx.strokeStyle = `rgba(16, 185, 129, ${0.12 * (1 - dist / 130)})`;
-            ctx.lineWidth = 0.6;
-            ctx.stroke();
-          }
-        }
+      ctx.clearRect(0, 0, W, H);
+      const A: ReturnType<typeof project>[] = [], B: ReturnType<typeof project>[] = [];
+      for (let i = 0; i < N; i++) {
+        const u = i / (N - 1), a = u * Math.PI * 2 * TURNS, y = (u - 0.5) * LEN;
+        A.push(project(Math.cos(a) * RAD, y, Math.sin(a) * RAD, cx));
+        B.push(project(Math.cos(a + Math.PI) * RAD, y, Math.sin(a + Math.PI) * RAD, cx));
       }
 
-      animId = requestAnimationFrame(draw);
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = soft;
+      for (let i = 2; i < N; i += 3) {
+        ctx.globalAlpha = 0.14 + 0.3 * ((A[i].d + B[i].d) / 2);
+        ctx.beginPath(); ctx.moveTo(A[i].x, A[i].y); ctx.lineTo(B[i].x, B[i].y); ctx.stroke();
+      }
+      const strand = (P: typeof A, color: string, dot: string) => {
+        ctx.strokeStyle = color; ctx.globalAlpha = 0.5; ctx.lineWidth = 1.2;
+        ctx.beginPath(); P.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y))); ctx.stroke();
+        ctx.fillStyle = dot;
+        P.forEach(p => { ctx.globalAlpha = 0.35 + 0.65 * p.d; ctx.beginPath(); ctx.arc(p.x, p.y, 1.6 + p.d * 2.6, 0, Math.PI * 2); ctx.fill(); });
+      };
+      strand(B, soft, ink);
+      strand(A, green, green);
+
+      ctx.strokeStyle = green; ctx.lineWidth = 1;
+      orbit.forEach(o => {
+        const a = t * o.s + o.p;
+        const ox = Math.cos(a) * o.r, oy = o.y + Math.sin(t + o.p) * 0.3, oz = Math.sin(a) * o.r;
+        const rot = t * 0.6 + o.p;
+        const pts = OCT.map(v => {
+          const x = v[0] * o.k, y = v[1] * o.k, z = v[2] * o.k;
+          const xr = x * Math.cos(rot) + z * Math.sin(rot), zr = -x * Math.sin(rot) + z * Math.cos(rot);
+          return project(ox + xr, oy + y, oz + zr, cx);
+        });
+        ctx.globalAlpha = 0.35 + 0.5 * pts[0].d;
+        ctx.beginPath();
+        OCT_EDGES.forEach(([i, j]) => { ctx.moveTo(pts[i].x, pts[i].y); ctx.lineTo(pts[j].x, pts[j].y); });
+        ctx.stroke();
+      });
+      ctx.globalAlpha = 1;
     };
+
+    const loop = () => {
+      if (!visible) return;
+      draw();
+      raf = requestAnimationFrame(loop);
+    };
+    const onMove = (e: PointerEvent) => {
+      const r = c.getBoundingClientRect();
+      ty = ((e.clientY - r.top) / r.height - 0.5) * 0.7;
+      tx = ((e.clientX - r.left) / r.width - 0.5) * 0.9;
+    };
+    const io = new IntersectionObserver(([entry]) => {
+      const was = visible;
+      visible = entry.isIntersecting;
+      if (visible && !was) loop();
+    });
 
     resize();
-    init();
-    draw();
-
-    const handleResize = () => {
-      resize();
-      init();
-    };
-    window.addEventListener('resize', handleResize);
+    io.observe(c);
+    window.addEventListener('resize', resize);
+    window.addEventListener('pointermove', onMove);
+    loop();
     return () => {
-      cancelAnimationFrame(animId);
-      window.removeEventListener('resize', handleResize);
+      visible = false;
+      cancelAnimationFrame(raf);
+      io.disconnect();
+      window.removeEventListener('resize', resize);
+      window.removeEventListener('pointermove', onMove);
     };
   }, []);
 
-  return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none z-0" />;
+  return <canvas ref={ref} aria-hidden="true" className="absolute top-0 left-1/2 -translate-x-1/2 w-screen h-full pointer-events-none" />;
 };
 
 /* =========================================================================
-   CANVAS 2: 3D DRAGGABLE WIREFRAME GLOBE (MIDNIGHT MEDIA PRESENCE ENGINE)
+   GLOBE: DRAGGABLE WIREFRAME GLOBE OF CLINICAL HUBS (kept from the previous homepage)
    ========================================================================= */
 const Interactive3DGlobe: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -133,16 +165,17 @@ const Interactive3DGlobe: React.FC = () => {
     const ctx = c.getContext('2d');
     if (!ctx) return;
 
-    let animId: number;
-    let W = 0, H = 0, R = 0;
+    let animId = 0;
+    let W = 0, R = 0;
     let rotX = 0.25, rotY = 0;
     let dragging = false;
     let lastX = 0, lastY = 0;
     let velX = 0;
-    const velY = 0.003;
+    let frame = 0;
+    let visible = false;
+    let green = '#0B8A44', ink = '#111111';
 
-    // Major clinical healthcare innovation hubs
-    const clinicalHubs = [
+    const hubs = [
       { lat: 18.9, lon: 72.8, label: 'Mumbai Hub' },
       { lat: 28.6, lon: 77.2, label: 'Delhi AIIMS' },
       { lat: 12.9, lon: 77.6, label: 'Bengaluru Tech' },
@@ -154,369 +187,311 @@ const Interactive3DGlobe: React.FC = () => {
     ];
 
     const resize = () => {
-      const s = Math.min(c.parentElement?.offsetWidth || 480, 480);
-      c.width = s;
-      c.height = s;
+      const s = Math.min(c.parentElement?.clientWidth || 520, 520);
+      const d = Math.min(window.devicePixelRatio || 1, 2);
+      c.width = Math.round(s * d);
+      c.height = Math.round(s * d);
+      c.style.width = `${s}px`;
+      c.style.height = `${s}px`;
+      ctx.setTransform(d, 0, 0, d, 0, 0);
       W = s;
-      H = s;
       R = s * 0.42;
     };
 
-    const latLonTo3D = (lat: number, lon: number) => {
+    const latLonTo3D = (lat: number, lon: number): [number, number, number] => {
       const phi = ((90 - lat) * Math.PI) / 180;
       const theta = ((lon + 180) * Math.PI) / 180;
-      return {
-        x: R * Math.sin(phi) * Math.cos(theta),
-        y: R * Math.cos(phi),
-        z: R * Math.sin(phi) * Math.sin(theta),
-      };
+      return [R * Math.sin(phi) * Math.cos(theta), R * Math.cos(phi), R * Math.sin(phi) * Math.sin(theta)];
     };
 
-    const rotate = (p: { x: number; y: number; z: number }) => {
-      const { x, y, z } = p;
+    const rotate = ([x, y, z]: [number, number, number]): [number, number, number] => {
       const y2 = y * Math.cos(rotX) - z * Math.sin(rotX);
       const z2 = y * Math.sin(rotX) + z * Math.cos(rotX);
-      const x2 = x * Math.cos(rotY) + z2 * Math.sin(rotY);
-      const z3 = -x * Math.sin(rotY) + z2 * Math.cos(rotY);
-      return { x: x2, y: y2, z: z3 };
+      return [x * Math.cos(rotY) + z2 * Math.sin(rotY), y2, -x * Math.sin(rotY) + z2 * Math.cos(rotY)];
     };
 
-    const project = (p: { x: number; y: number; z: number }) => {
-      const depth = (p.z + R) / (2 * R);
-      return { x: W / 2 + p.x, y: H / 2 - p.y, visible: p.z > -R * 0.05, depth };
+    const trace = (at: (u: number) => [number, number, number], steps: number, alpha: number) => {
+      ctx.beginPath();
+      let first = true;
+      for (let s = 0; s <= steps; s++) {
+        const r = rotate(at(s / steps));
+        if (r[2] > -R * 0.05) {
+          const x = W / 2 + r[0], y = W / 2 - r[1];
+          if (first) { ctx.moveTo(x, y); first = false; } else ctx.lineTo(x, y);
+        } else if (!first) {
+          ctx.globalAlpha = alpha; ctx.stroke(); ctx.beginPath(); first = true;
+        }
+      }
+      ctx.globalAlpha = alpha;
+      ctx.stroke();
     };
 
     const draw = () => {
-      ctx.clearRect(0, 0, W, H);
+      if (frame++ % 30 === 0) {
+        green = cssVar('--nxt-green') || green;
+        ink = cssVar('--nxt-ink') || ink;
+      }
+      ctx.clearRect(0, 0, W, W);
       ctx.save();
-
-      // Atmospheric radial sphere glow
-      const bodyGrad = ctx.createRadialGradient(W / 2 - R * 0.2, H / 2 - R * 0.2, 0, W / 2, H / 2, R);
-      bodyGrad.addColorStop(0, 'rgba(16, 185, 129, 0.12)');
-      bodyGrad.addColorStop(0.6, 'rgba(16, 185, 129, 0.03)');
-      bodyGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-
       ctx.beginPath();
-      ctx.arc(W / 2, H / 2, R, 0, Math.PI * 2);
-      ctx.fillStyle = bodyGrad;
-      ctx.fill();
-
-      // Clip to sphere
-      ctx.beginPath();
-      ctx.arc(W / 2, H / 2, R, 0, Math.PI * 2);
+      ctx.arc(W / 2, W / 2, R, 0, Math.PI * 2);
       ctx.clip();
-
-      // Latitude lines (horizontals)
-      const N = 14, M = 28;
-      for (let i = 0; i <= N; i++) {
-        const lat = (i / N) * 180 - 90;
-        ctx.beginPath();
-        let first = true;
-        for (let j = 0; j <= M * 2; j++) {
-          const lon = (j / (M * 2)) * 360 - 180;
-          const r = rotate(latLonTo3D(lat, lon));
-          const { x, y, visible } = project(r);
-          if (visible) {
-            if (first) { ctx.moveTo(x, y); first = false; }
-            else ctx.lineTo(x, y);
-          } else {
-            if (!first) {
-              ctx.strokeStyle = 'rgba(16, 185, 129, 0.22)';
-              ctx.lineWidth = 0.6;
-              ctx.stroke();
-            }
-            ctx.beginPath();
-            first = true;
-          }
-        }
-        ctx.strokeStyle = 'rgba(16, 185, 129, 0.22)';
-        ctx.lineWidth = 0.6;
-        ctx.stroke();
+      ctx.strokeStyle = green;
+      ctx.lineWidth = 0.7;
+      for (let i = 0; i <= 14; i++) {
+        const lat = (i / 14) * 180 - 90;
+        trace(u => latLonTo3D(lat, u * 360 - 180), 56, 0.32);
       }
-
-      // Longitude lines (verticals)
-      for (let j = 0; j < M; j++) {
-        const lon = (j / M) * 360 - 180;
-        ctx.beginPath();
-        let first = true;
-        for (let i = 0; i <= N * 2; i++) {
-          const lat = (i / (N * 2)) * 180 - 90;
-          const r = rotate(latLonTo3D(lat, lon));
-          const { x, y, visible } = project(r);
-          if (visible) {
-            if (first) { ctx.moveTo(x, y); first = false; }
-            else ctx.lineTo(x, y);
-          } else {
-            if (!first) {
-              ctx.strokeStyle = 'rgba(16, 185, 129, 0.18)';
-              ctx.lineWidth = 0.6;
-              ctx.stroke();
-            }
-            ctx.beginPath();
-            first = true;
-          }
-        }
-        ctx.strokeStyle = 'rgba(16, 185, 129, 0.18)';
-        ctx.lineWidth = 0.6;
-        ctx.stroke();
+      for (let j = 0; j < 28; j++) {
+        const lon = (j / 28) * 360 - 180;
+        trace(u => latLonTo3D(u * 180 - 90, lon), 28, 0.26);
       }
-
-      // Draw Clinical Network Nodes
-      clinicalHubs.forEach(hub => {
+      hubs.forEach(hub => {
         const r = rotate(latLonTo3D(hub.lat, hub.lon));
-        const { x, y, visible, depth } = project(r);
-        if (!visible) return;
-
-        const dotR = 2.5 + depth * 2.5;
-        const alpha = 0.35 + depth * 0.65;
-
-        // Outer beacon ring
-        ctx.beginPath();
-        ctx.arc(x, y, dotR * 2.4, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(16, 185, 129, ${alpha * 0.25})`;
-        ctx.fill();
-
-        // Core dot
-        ctx.beginPath();
-        ctx.arc(x, y, dotR, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
-        ctx.fill();
-
-        // City Label
-        ctx.fillStyle = `rgba(240, 240, 240, ${alpha})`;
-        ctx.font = `${9 + depth * 2}px monospace`;
+        if (r[2] <= -R * 0.05) return;
+        const x = W / 2 + r[0], y = W / 2 - r[1];
+        const depth = (r[2] + R) / (2 * R);
+        const dotR = 2.5 + depth * 2.5, alpha = 0.35 + depth * 0.65;
+        ctx.fillStyle = green;
+        ctx.globalAlpha = alpha * 0.28;
+        ctx.beginPath(); ctx.arc(x, y, dotR * 2.6, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = ink;
+        ctx.globalAlpha = alpha;
+        ctx.beginPath(); ctx.arc(x, y, dotR, 0, Math.PI * 2); ctx.fill();
+        ctx.font = `${10 + depth * 2}px "Helvetica Neue", Helvetica, Arial, sans-serif`;
         ctx.fillText(hub.label, x + dotR + 6, y + 3);
       });
-
       ctx.restore();
+      ctx.globalAlpha = 0.5;
+      ctx.strokeStyle = green;
+      ctx.beginPath(); ctx.arc(W / 2, W / 2, R, 0, Math.PI * 2); ctx.stroke();
+      ctx.globalAlpha = 1;
 
-      if (!dragging) {
-        rotY += velY;
-        velX *= 0.95;
-      }
+      if (!dragging) { rotY += 0.003; velX *= 0.95; }
       rotY += velX;
-      animId = requestAnimationFrame(draw);
     };
 
-    const onMouseDown = (e: MouseEvent) => {
-      dragging = true;
-      lastX = e.clientX;
-      lastY = e.clientY;
-      velX = 0;
+    const loop = () => {
+      if (!visible) return;
+      draw();
+      animId = requestAnimationFrame(loop);
     };
-    const onMouseUp = () => { dragging = false; };
-    const onMouseMove = (e: MouseEvent) => {
+
+    const onDown = (e: PointerEvent) => { dragging = true; lastX = e.clientX; lastY = e.clientY; velX = 0; };
+    const onUp = () => { dragging = false; };
+    const onMove = (e: PointerEvent) => {
       if (!dragging) return;
       velX = (e.clientX - lastX) * 0.005;
-      rotY += (e.clientX - lastX) * 0.005;
-      rotX += (e.clientY - lastY) * 0.003;
-      rotX = Math.max(-1.2, Math.min(1.2, rotX));
-      lastX = e.clientX;
-      lastY = e.clientY;
+      rotY += velX;
+      rotX = Math.max(-1.2, Math.min(1.2, rotX + (e.clientY - lastY) * 0.003));
+      lastX = e.clientX; lastY = e.clientY;
     };
-
-    c.addEventListener('mousedown', onMouseDown);
-    window.addEventListener('mouseup', onMouseUp);
-    window.addEventListener('mousemove', onMouseMove);
+    const io = new IntersectionObserver(([entry]) => {
+      const was = visible;
+      visible = entry.isIntersecting;
+      if (visible && !was) loop();
+    });
 
     resize();
     draw();
-
-    const onResize = () => resize();
-    window.addEventListener('resize', onResize);
-
+    io.observe(c);
+    c.addEventListener('pointerdown', onDown);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('resize', resize);
     return () => {
+      visible = false;
       cancelAnimationFrame(animId);
-      c.removeEventListener('mousedown', onMouseDown);
-      window.removeEventListener('mouseup', onMouseUp);
-      window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('resize', onResize);
+      io.disconnect();
+      c.removeEventListener('pointerdown', onDown);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('resize', resize);
     };
   }, []);
 
   return (
     <div className="relative flex flex-col items-center justify-center select-none">
-      <canvas ref={canvasRef} className="cursor-grab active:cursor-grabbing max-w-full drop-shadow-lg" />
-      <p className="mt-3 text-[11px] font-mono tracking-widest uppercase text-[var(--nxt-ink-soft)] opacity-70">
-        ✦ DRAG TO ROTATE GLOBAL CLINICAL NETWORK ✦
-      </p>
+      <canvas ref={canvasRef} className="cursor-grab active:cursor-grabbing max-w-full touch-pan-y" aria-label="Interactive wireframe globe of clinical hubs. Drag to rotate." />
+      <p className="mt-3 text-[12px] tracking-[0.16em] uppercase text-[var(--nxt-ink-soft)]">Drag to rotate the global clinical network</p>
     </div>
   );
 };
 
 /* =========================================================================
-   CANVAS 3: 3D ROTATING ISOMETRIC WIREFRAME CUBE (MIDNIGHT MEDIA CORE CUBE)
+   TILT CARD: leans toward the pointer in 3D and lights up under it
    ========================================================================= */
-const Rotating3DCube: React.FC = () => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+const TiltCard: React.FC<{ children: React.ReactNode; className?: string; max?: number }> = ({ children, className = '', max = 6 }) => {
+  const ref = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const c = canvasRef.current;
-    if (!c) return;
-    const ctx = c.getContext('2d');
-    if (!ctx) return;
-
-    let animId: number;
-    let W = 0, H = 0;
-    let ry = 0;
-    const rx = 0.42;
-
-    const resize = () => {
-      c.width = c.offsetWidth || 340;
-      c.height = 320;
-      W = c.width;
-      H = c.height;
-    };
-
-    const words = ['DEMAND', 'CAPITAL', 'ROADMAP', 'EVIDENCE', 'FDA/CDSCO', 'SCALE'];
-    const faces = [
-      { verts: [[-1, -1, 1], [1, -1, 1], [1, 1, 1], [-1, 1, 1]], label: words[0] },
-      { verts: [[1, -1, -1], [-1, -1, -1], [-1, 1, -1], [1, 1, -1]], label: words[1] },
-      { verts: [[-1, -1, -1], [-1, -1, 1], [-1, 1, 1], [-1, 1, -1]], label: words[2] },
-      { verts: [[1, -1, 1], [1, -1, -1], [1, 1, -1], [1, 1, 1]], label: words[3] },
-      { verts: [[-1, -1, -1], [1, -1, -1], [1, -1, 1], [-1, -1, 1]], label: words[4] },
-      { verts: [[-1, 1, 1], [1, 1, 1], [1, 1, -1], [-1, 1, -1]], label: words[5] },
-    ];
-    const S = 65;
-
-    const rotPt = (p: number[]) => {
-      const [x, y, z] = p;
-      const y2 = y * Math.cos(rx) - z * Math.sin(rx);
-      const z2 = y * Math.sin(rx) + z * Math.cos(rx);
-      const x2 = x * Math.cos(ry) + z2 * Math.sin(ry);
-      const z3 = -x * Math.sin(ry) + z2 * Math.cos(ry);
-      return [x2, y2, z3];
-    };
-
-    const proj = (p: number[]) => [W / 2 + p[0] * S, H / 2 - p[1] * S];
-
-    const draw = () => {
-      ctx.clearRect(0, 0, W, H);
-
-      const rfaces = faces.map(f => {
-        const rv = f.verts.map(v => rotPt(v));
-        const cx = (rv[0][0] + rv[1][0] + rv[2][0] + rv[3][0]) / 4;
-        const cy = (rv[0][1] + rv[1][1] + rv[2][1] + rv[3][1]) / 4;
-        const cz = (rv[0][2] + rv[1][2] + rv[2][2] + rv[3][2]) / 4;
-        const a = rv[1][0] - rv[0][0], b = rv[1][1] - rv[0][1], c1 = rv[1][2] - rv[0][2];
-        const d = rv[3][0] - rv[0][0], e = rv[3][1] - rv[0][1], ff = rv[3][2] - rv[0][2];
-        const nx = b * ff - c1 * e, ny = c1 * d - a * ff, nz = a * e - b * d;
-        return { rv, cx, cy, cz, nx, ny, nz, label: f.label, depth: cz };
-      });
-
-      rfaces.sort((a, b) => a.depth - b.depth);
-
-      rfaces.forEach(f => {
-        const visible = f.nz < 0;
-        const alpha = visible ? 0.95 : 0;
-        if (alpha < 0.01) return;
-
-        const pts = f.rv.map(v => proj(v));
-        ctx.beginPath();
-        ctx.moveTo(pts[0][0], pts[0][1]);
-        pts.slice(1).forEach(p => ctx.lineTo(p[0], p[1]));
-        ctx.closePath();
-
-        const light = 0.2 + 0.8 * Math.max(0, (f.nx * 0.3 + f.ny * 0.5 + f.nz * -0.8) / Math.sqrt(f.nx ** 2 + f.ny ** 2 + f.nz ** 2 + 0.001));
-        ctx.fillStyle = `rgba(${Math.round(light * 20)}, ${Math.round(light * 35)}, ${Math.round(light * 25)}, ${alpha})`;
-        ctx.fill();
-
-        ctx.strokeStyle = `rgba(16, 185, 129, ${alpha * 0.8})`;
-        ctx.lineWidth = 1;
-        ctx.stroke();
-
-        ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
-        ctx.font = `700 ${S * 0.22}px monospace`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        const ctr = proj([f.cx, f.cy, f.cz]);
-        ctx.fillText(f.label, ctr[0], ctr[1]);
-      });
-
-      ry += 0.008;
-      animId = requestAnimationFrame(draw);
-    };
-
-    resize();
-    draw();
-
-    const onResize = () => resize();
-    window.addEventListener('resize', onResize);
-    return () => {
-      cancelAnimationFrame(animId);
-      window.removeEventListener('resize', onResize);
-    };
-  }, []);
-
-  return <canvas ref={canvasRef} className="w-full h-[320px] block" />;
-};
-
-/* =========================================================================
-   MOUSE-TRACKING SPOTLIGHT CARD (MIDNIGHT MEDIA SIGNATURE INTERACTION)
-   ========================================================================= */
-const SpotlightCard: React.FC<{
-  children: React.ReactNode;
-  className?: string;
-  onClick?: () => void;
-}> = ({ children, className = '', onClick }) => {
-  const cardRef = useRef<HTMLDivElement>(null);
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const el = cardRef.current;
+  const onMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const el = ref.current;
     if (!el) return;
     const r = el.getBoundingClientRect();
-    el.style.setProperty('--mx', `${((e.clientX - r.left) / r.width) * 100}%`);
-    el.style.setProperty('--my', `${((e.clientY - r.top) / r.height) * 100}%`);
+    const x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+    el.style.transition = 'transform 80ms linear';
+    el.style.setProperty('--ry', `${((x - 0.5) * 2 * max).toFixed(2)}deg`);
+    el.style.setProperty('--rx', `${((0.5 - y) * 2 * max).toFixed(2)}deg`);
+    el.style.setProperty('--mx', `${x * 100}%`);
+    el.style.setProperty('--my', `${y * 100}%`);
+  };
+  const onLeave = () => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.transition = 'transform 500ms cubic-bezier(0.22, 1, 0.36, 1)';
+    el.style.setProperty('--rx', '0deg');
+    el.style.setProperty('--ry', '0deg');
   };
 
   return (
-    <div
-      ref={cardRef}
-      onMouseMove={handleMouseMove}
-      onClick={onClick}
-      className={`relative overflow-hidden bg-[var(--nxt-surface)] p-8 transition-colors duration-400 border border-[var(--nxt-line)] ${className}`}
-      style={{
-        backgroundImage: 'radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(16, 185, 129, 0.08), transparent 60%)',
-      }}
-    >
-      {children}
-    </div>
-  );
-};
-
-/* =========================================================================
-   MIDNIGHT MEDIA GOLD/EMERALD MARQUEE BANNER
-   ========================================================================= */
-const MidnightMarquee: React.FC<{ words: string[] }> = ({ words }) => {
-  const repeated = [...words, ...words, ...words, ...words];
-  return (
-    <div className="bg-[#111111] border-y border-emerald-500/30 py-3.5 overflow-hidden select-none relative z-10">
-      <div className="flex gap-8 whitespace-nowrap animate-[marquee_25s_linear_infinite]">
-        {repeated.map((w, idx) => (
-          <span key={idx} className="inline-flex items-center gap-6 font-mono text-xs tracking-[0.25em] uppercase text-emerald-400 font-bold">
-            <span>{w}</span>
-            <span className="text-[var(--nxt-ink-soft)] opacity-40">✦</span>
-          </span>
-        ))}
+    <div style={{ perspective: 1400 }}>
+      <div
+        ref={ref}
+        onPointerMove={onMove}
+        onPointerLeave={onLeave}
+        className={`group relative overflow-hidden rounded-[22px] border border-[var(--nxt-line)] bg-[var(--nxt-surface)] p-6 sm:p-9 ${className}`}
+        style={{ transform: 'rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg))', transformStyle: 'preserve-3d', transition: 'transform 500ms cubic-bezier(0.22, 1, 0.36, 1)' }}
+      >
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+          style={{ background: 'radial-gradient(360px circle at var(--mx, 50%) var(--my, 0%), var(--nxt-green-soft), transparent 65%)' }}
+        />
+        <div className="relative" style={{ transform: 'translateZ(24px)' }}>{children}</div>
       </div>
     </div>
   );
 };
 
 /* =========================================================================
-   MIDNIGHT MEDIA FLANKED EYEBROW (WITH 1px HORIZONTAL EXTENSIONS)
+   SECTION LABEL
    ========================================================================= */
-const FlankedEyebrow: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => (
-  <div className={`inline-flex items-center justify-center gap-4 text-xs font-mono font-bold tracking-[0.3em] uppercase text-emerald-500 ${className}`}>
-    <span className="h-[1px] w-12 bg-emerald-500/50 block" />
+const Kicker: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => (
+  <p className={`inline-flex items-center gap-3 text-[12px] sm:text-[13px] uppercase tracking-[0.16em] text-[var(--nxt-ink-soft)] ${className}`}>
+    <span className="h-px w-6 bg-[var(--nxt-green)]" />
+    {children}
+  </p>
+);
+
+const FlankedEyebrow: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div className="inline-flex items-center justify-center gap-4 text-xs font-mono font-bold tracking-[0.3em] uppercase text-[var(--nxt-green)]">
+    <span className="h-px w-12 bg-[var(--nxt-green)]/50 block" />
     <span>{children}</span>
-    <span className="h-[1px] w-12 bg-emerald-500/50 block" />
+    <span className="h-px w-12 bg-[var(--nxt-green)]/50 block" />
+  </div>
+);
+
+const TICKER_WORDS = ['Verified clinical problems', 'Non-dilutive grants', 'Stage-gate funding', 'CDSCO / FDA routes', 'Hospital pilots', 'Vetted experts', 'Evidence at every gate'];
+
+const Ticker: React.FC = () => (
+  <div className="border-y border-[var(--nxt-line)] overflow-hidden select-none" aria-hidden="true">
+    <div className="nxt-ticker">
+      {[0, 1, 2, 3].flatMap(n => TICKER_WORDS.map(w => (
+        <span key={`${n}-${w}`} className="flex items-center gap-7 px-7 py-4 text-[13px] uppercase tracking-[0.14em] text-[var(--nxt-ink-soft)] whitespace-nowrap">
+          {w}
+          <span className="w-[7px] h-[7px] rotate-45 bg-[var(--nxt-green)]" />
+        </span>
+      )))}
+    </div>
   </div>
 );
 
 /* =========================================================================
-   DATA DEFINITIONS
+   STAGE-GATE STACK: five plates that lift in turn on the shared beat.
+   Runs by itself; the same clock drives the "1 in 5" dots.
    ========================================================================= */
+const GateStack: React.FC = () => {
+  const tick = useBeat();
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const stackRef = useRef<HTMLDivElement>(null);
+  const seen = useInView(sectionRef, { amount: 0.25 });
+  const seenRef = useRef(false);
+  seenRef.current = seen;
+  const [active, setActive] = useState(0);
+
+  useEffect(() => {
+    if (tick > 0 && seenRef.current) setActive(a => (a + 1) % STEPS.length);
+  }, [tick]);
+
+  useEffect(() => {
+    let raf = 0, t = 0;
+    const spin = () => {
+      t += 0.009;
+      const el = stackRef.current;
+      if (el && seenRef.current) {
+        el.style.setProperty('--sz', `${-38 + Math.sin(t) * 12}deg`);
+        el.style.setProperty('--sx', `${58 + Math.cos(t * 0.8) * 4}deg`);
+      }
+      raf = requestAnimationFrame(spin);
+    };
+    raf = requestAnimationFrame(spin);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  return (
+    <div ref={sectionRef} className="grid gap-8 lg:grid-cols-2 lg:gap-12 items-center">
+      <div className="relative grid place-items-center h-[clamp(440px,56vw,640px)] pt-[clamp(70px,9vw,120px)]" style={{ perspective: 1800 }} aria-hidden="true">
+        <div
+          ref={stackRef}
+          className="relative w-[min(300px,62%)] aspect-square"
+          style={{ transformStyle: 'preserve-3d', transform: 'rotateX(var(--sx, 58deg)) rotateZ(var(--sz, -38deg))' }}
+        >
+          {STEPS.map((s, k) => {
+            const on = k === active;
+            return (
+              <div
+                key={s.num}
+                className="absolute inset-0 rounded-[18px] border p-4 flex items-start justify-between text-[13px] uppercase tracking-[0.12em]"
+                style={{
+                  transform: `translateZ(${k * 46 + (k > active ? 70 : 0)}px)`,
+                  transitionProperty: 'transform, background-color, border-color, box-shadow, color',
+                  transitionDuration: '1100ms, 600ms, 600ms, 800ms, 600ms',
+                  transitionTimingFunction: 'cubic-bezier(0.22, 1, 0.36, 1)',
+                  transitionDelay: `${Math.abs(k - active) * 45}ms`,
+                  backgroundColor: on ? 'var(--nxt-green)' : 'color-mix(in srgb, var(--nxt-surface) 92%, transparent)',
+                  borderColor: on ? 'var(--nxt-green)' : k < active ? 'color-mix(in srgb, var(--nxt-green) 40%, var(--nxt-line))' : 'var(--nxt-line)',
+                  color: on ? 'var(--nxt-green-ink)' : 'var(--nxt-ink-soft)',
+                  boxShadow: on ? '0 0 80px -10px var(--nxt-green)' : 'none',
+                }}
+              >
+                <span>Gate</span>
+                <b className={`text-[34px] tracking-[-0.04em] font-bold ${on ? '' : 'text-[var(--nxt-ink)]'}`}>{s.num}</b>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <ol className="flex flex-col">
+        {STEPS.map((s, k) => {
+          const on = k === active;
+          return (
+            <li key={s.num} className={`grid grid-cols-[44px_minmax(0,1fr)] gap-x-4 py-5 border-t border-[var(--nxt-line)] last:border-b transition-colors duration-300 ${on ? '' : 'text-[var(--nxt-ink-soft)]'}`}>
+              <span className={`row-span-2 pt-1.5 text-sm tracking-[0.08em] transition-colors ${on ? 'text-[var(--nxt-green)]' : ''}`}>{s.num}</span>
+              <h3 className="font-display font-bold text-[1.35rem] tracking-[-0.02em] text-[var(--nxt-ink)]">{s.title}</h3>
+              <div className={`col-start-2 grid transition-[grid-template-rows] duration-500 ${on ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
+                <div className="overflow-hidden">
+                  <p className="pt-2.5 text-base">{s.body}</p>
+                  <dl className="mt-4 pt-3.5 border-t border-dashed border-[var(--nxt-line)] grid gap-2 text-sm">
+                    <div>
+                      <dt className="text-[11.5px] uppercase tracking-[0.12em]">Deliverable</dt>
+                      <dd className="text-[var(--nxt-ink)]">{s.deliverable}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-[11.5px] uppercase tracking-[0.12em]">Gatekeeper</dt>
+                      <dd className="text-[var(--nxt-ink)]">{s.gatekeeper}</dd>
+                    </div>
+                  </dl>
+                </div>
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+    </div>
+  );
+};
+
 const AUDIENCES = [
   {
     id: 'who-founders',
@@ -696,374 +671,172 @@ const asRole = (value: string | null): LeadRole => {
 
 export const HomePage: React.FC = () => {
   const [params] = useSearchParams();
-  const categories = store.getCategories();
-  const routeCount = categories.length || 26;
   const initialRole = asRole(params.get('as'));
   const site = store.getSite();
   const blogs = store.getBlogs().filter(b => b.status === 'published').slice(0, 3);
   const startups = store.getStartups();
 
-  const [openAccordion, setOpenAccordion] = useState<number | null>(0);
-
   return (
     <PublicLayout variant="home">
-      {/* 1. HERO SECTION WITH MIDNIGHT MEDIA CONSTELLATION CANVAS & PULSE SCROLL */}
-      <section className="relative min-h-[92vh] flex flex-col items-center justify-center text-center px-4 pt-16 pb-20 overflow-hidden border-b border-[var(--nxt-line)]">
-        {/* Midnight Media Signature Constellation Particle Web */}
-        <HeroConstellation />
-
-        <div className="relative z-10 max-w-4xl mx-auto flex flex-col items-center">
-          {/* Flanked Eyebrow */}
-          <Rise>
-            <FlankedEyebrow>
-              Validated Clinical Demand · Dedicated Funding
-            </FlankedEyebrow>
-          </Rise>
-
-          {/* Monumental Headline */}
-          <Rise delay={0.06}>
-            <h1 className="font-display font-light text-[clamp(2.5rem,6vw,5rem)] tracking-[0.06em] uppercase leading-[1.06] mt-8 mb-6">
-              Doctors identify the real-world problems.{' '}
-              <em className="italic text-emerald-500 font-normal">You bring the solutions.</em>
-            </h1>
-          </Rise>
-
-          {/* Subtitle */}
-          <Rise delay={0.12}>
-            <p className="max-w-xl text-[clamp(1rem,1.4vw,1.25rem)] text-[var(--nxt-ink-soft)] leading-relaxed mb-10">
-              {site.hero_subtitle || 'NXT Health pairs validated, funded clinical problems with ambitious founders, providing a structured, end-to-end pathway from challenge to commercial launch.'}
-            </p>
-          </Rise>
-
-          {/* Action Buttons */}
-          <Rise delay={0.18}>
-            <div className="flex flex-wrap items-center justify-center gap-4">
-              <Btn
-                to="/problems"
-                size="md"
-                className="bg-emerald-500 hover:bg-emerald-400 text-black font-mono font-bold tracking-widest uppercase px-8 shadow-lg"
-              >
-                Claim a Problem <ArrowRight className="w-4 h-4 ml-1" />
-              </Btn>
-              <Btn
-                variant="outline"
-                to="/#start"
-                size="md"
-                className="border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10 font-mono tracking-widest uppercase px-8"
-              >
-                Fund a Challenge
-              </Btn>
-            </div>
-          </Rise>
-
-          {/* Midnight Media Signature Scroll Hint Indicator */}
-          <Rise delay={0.24}>
-            <div className="flex flex-col items-center gap-2 mt-16 select-none opacity-60 hover:opacity-100 transition-opacity">
-              <span className="font-mono text-[10px] tracking-[0.25em] text-[var(--nxt-ink-soft)] uppercase">
-                SCROLL TO EXPLORE
-              </span>
-              <div className="w-[1px] h-12 bg-gradient-to-b from-emerald-500 to-transparent animate-pulse" />
-            </div>
-          </Rise>
-        </div>
-      </section>
-
-      {/* MIDNIGHT MEDIA MARQUEE RIBBON */}
-      <MidnightMarquee
-        words={[
-          'DOCTORS IDENTIFY',
-          'AMBITIOUS BUILDERS',
-          'GUARANTEED DEMAND',
-          'MILESTONE CAPITAL',
-          '26 GTM ROADMAPS',
-          'HOSPITAL PILOTS',
-        ]}
-      />
-
-      {/* 2. THE PARADIGM SHIFT: SPOTLIGHT DUAL GRID */}
-      <section className="nxt-container py-24 sm:py-32 border-b border-[var(--nxt-line)]">
-        <Rise>
-          <FlankedEyebrow>The Paradigm Shift</FlankedEyebrow>
-          <H2 className="text-center mt-4 max-w-3xl mx-auto">
-            Others launch startups in a vacuum. We connect ambitious founders with the real-world clinical challenges healthcare is waiting to solve.
-          </H2>
-        </Rise>
-
-        {/* 1px Gap Grid with Midnight Spotlight Effect */}
-        <div className="mt-16 grid md:grid-cols-2 gap-[1px] bg-[var(--nxt-line)] border border-[var(--nxt-line)]">
-          {/* Traditional Route */}
-          <SpotlightCard className="flex flex-col justify-between">
-            <div>
-              <p className="font-mono text-[11px] tracking-[0.2em] text-[var(--nxt-peach-deep)] font-bold uppercase mb-4 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-red-500" /> THE TRADITIONAL ROUTE
-              </p>
-              <h3 className="font-display font-light text-2xl sm:text-3xl tracking-wide uppercase mb-4">
-                Build first. Search for buyers later.
-              </h3>
-              <p className="text-[var(--nxt-ink-soft)] leading-relaxed text-[15px] mb-8">
-                Founders build a product, craft a pitch deck, and hunt for market fit, wasting critical time and capital on unvalidated ideas.
-              </p>
-
-              <div className="space-y-3 pt-6 border-t border-[var(--nxt-line)]">
-                <div className="flex items-start gap-3 text-sm text-[var(--nxt-ink-soft)]">
-                  <span className="text-red-500 font-mono font-bold">✕</span>
-                  <span>Building in a market vacuum without frontline validation</span>
-                </div>
-                <div className="flex items-start gap-3 text-sm text-[var(--nxt-ink-soft)]">
-                  <span className="text-red-500 font-mono font-bold">✕</span>
-                  <span>Burning capital searching for pilot access and hospital partners</span>
-                </div>
-                <div className="flex items-start gap-3 text-sm text-[var(--nxt-ink-soft)]">
-                  <span className="text-red-500 font-mono font-bold">✕</span>
-                  <span>Over 90% venture mortality from lack of genuine buyer demand</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-8 pt-4 border-t border-[var(--nxt-line)] text-xs font-mono uppercase tracking-wider text-[var(--nxt-ink-soft)]">
-              OUTCOME // CAPITAL EXHAUSTED BEFORE MARKET FIT
-            </div>
-          </SpotlightCard>
-
-          {/* NXT Route */}
-          <SpotlightCard className="flex flex-col justify-between bg-[#0a0a0a] text-white">
-            <div>
-              <p className="font-mono text-[11px] tracking-[0.2em] text-emerald-400 font-bold uppercase mb-4 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" /> THE NXT ROUTE
-              </p>
-              <h3 className="font-display font-light text-2xl sm:text-3xl tracking-wide uppercase mb-4 text-white">
-                <em className="text-emerald-400 not-italic font-normal">Start</em> with guaranteed demand.
-              </h3>
-              <p className="text-white/80 leading-relaxed text-[15px] mb-8">
-                Doctors and Industry define the clinical problem and fund the solution. NXT Health matches ambitious founders with validated challenges, capital, and the end-to-end support needed to launch.
-              </p>
-
-              <div className="space-y-3 pt-6 border-t border-white/10">
-                <div className="flex items-start gap-3 text-sm text-white/85">
-                  <span className="text-emerald-400 font-mono font-bold">✓</span>
-                  <span>Clinicians and industry leaders define verified problem statements</span>
-                </div>
-                <div className="flex items-start gap-3 text-sm text-white/85">
-                  <span className="text-emerald-400 font-mono font-bold">✓</span>
-                  <span>Non-dilutive challenge grant capital locked to clear milestone gates</span>
-                </div>
-                <div className="flex items-start gap-3 text-sm text-white/85">
-                  <span className="text-emerald-400 font-mono font-bold">✓</span>
-                  <span>Step-by-step regulatory, evidence, and hospital procurement pathway</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-8 pt-4 border-t border-white/10 text-xs font-mono uppercase tracking-wider text-emerald-400 flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4" /> OUTCOME // PRE-COMMITTED BUYERS & PILOTS
-            </div>
-          </SpotlightCard>
-        </div>
-      </section>
-
-      {/* 3. 1 IN 5 CLINICAL REALITY */}
-      <section className="relative">
-        <OneInFive
-          stat="1 in 5"
-          headline="doctors encounters a critical clinical problem every day and waits for someone to solve it."
-          subtitle="NXT Health captures these frontline pains, validates them with industry funding, and connects them to ambitious founders ready to build the solution."
+      {/* 1. HERO: the helix is the background of the headline */}
+      <section className="relative overflow-hidden border-b border-[var(--nxt-line)]">
+        <HeroHelix />
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: 'radial-gradient(ellipse 60% 55% at 50% 42%, var(--nxt-green-soft), transparent 70%)',
+            WebkitMaskImage: 'linear-gradient(to bottom, #000 45%, transparent 92%)',
+            maskImage: 'linear-gradient(to bottom, #000 45%, transparent 92%)',
+          }}
         />
-      </section>
-
-      {/* 4. HOW IT WORKS (MIDNIGHT MEDIA ACCORDION LIST + 3D CUBE VISUALIZER) */}
-      <section id="how-it-works" className="nxt-container py-24 sm:py-32 border-b border-[var(--nxt-line)] scroll-mt-20">
-        <div className="text-center max-w-3xl mx-auto">
-          <Rise>
-            <FlankedEyebrow>Execution Architecture</FlankedEyebrow>
-            <H2 className="mt-4">How It Works</H2>
-            <p className="mt-3 text-[var(--nxt-ink-soft)] text-lg">
-              A structured, milestone-driven pathway engineered to eliminate startup risk.
-            </p>
-          </Rise>
-        </div>
-
-        {/* 2-Column Split: Interactive 3D Cube + Accordion */}
-        <div className="mt-16 grid lg:grid-cols-[0.85fr_1.15fr] gap-12 lg:gap-16 items-center">
-          {/* Left: 3D Rotating Cube Canvas */}
-          <div className="rounded-2xl border border-[var(--nxt-line)] bg-[var(--nxt-surface)] p-8 text-center flex flex-col items-center justify-center">
-            <p className="font-mono text-xs tracking-[0.2em] uppercase text-emerald-500 font-bold mb-2">
-              ✦ STAGE-GATE RELAY ENGINE ✦
-            </p>
-            <Rotating3DCube />
-            <p className="text-xs text-[var(--nxt-ink-soft)] font-mono mt-4">
-              Real-time evidence verification across 5 milestone phases
-            </p>
-          </div>
-
-          {/* Right: Midnight Media Style Accordion List */}
-          <div className="divide-y divide-[var(--nxt-line)] border-y border-[var(--nxt-line)]">
-            {STEPS.map((s, idx) => {
-              const isOpen = openAccordion === idx;
-              return (
-                <div key={s.num} className="transition-colors">
-                  <div
-                    onClick={() => setOpenAccordion(isOpen ? null : idx)}
-                    className="py-6 flex items-center justify-between cursor-pointer select-none group"
-                  >
-                    <div className="flex items-center gap-6">
-                      <span className="font-mono text-xs tracking-wider text-emerald-500 font-bold">
-                        {s.num}
-                      </span>
-                      <h3 className="font-display font-light text-xl tracking-wide uppercase group-hover:text-emerald-500 transition-colors">
-                        {s.title}
-                      </h3>
-                    </div>
-
-                    <div className={`w-8 h-8 rounded-sm border border-[var(--nxt-line)] flex items-center justify-center transition-all ${
-                      isOpen ? 'border-emerald-500 bg-emerald-500 text-black' : 'group-hover:border-emerald-500'
-                    }`}>
-                      <span className={`text-base font-mono transition-transform duration-300 ${isOpen ? 'rotate-45' : ''}`}>
-                        +
-                      </span>
-                    </div>
-                  </div>
-
-                  {isOpen && (
-                    <div className="pb-8 pl-12 pr-4 text-sm text-[var(--nxt-ink-soft)] leading-relaxed">
-                      <p className="text-base text-[var(--nxt-ink)] mb-4">{s.body}</p>
-                      <div className="grid sm:grid-cols-2 gap-4 pt-4 border-t border-[var(--nxt-line)]">
-                        <div>
-                          <p className="font-mono text-[11px] uppercase tracking-wider text-emerald-500 font-bold">
-                            Required Deliverable:
-                          </p>
-                          <p className="text-xs text-[var(--nxt-ink)] mt-0.5">{s.deliverable}</p>
-                        </div>
-                        <div>
-                          <p className="font-mono text-[11px] uppercase tracking-wider text-emerald-500 font-bold">
-                            Gate Audit:
-                          </p>
-                          <p className="text-xs text-[var(--nxt-ink)] mt-0.5">{s.gatekeeper}</p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* 5. WHO IT'S FOR (MIDNIGHT MEDIA 1px SPOTLIGHT SERVICES GRID) */}
-      <section id="who-its-for" className="nxt-container py-24 sm:py-32 border-b border-[var(--nxt-line)] scroll-mt-20">
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <Rise>
-            <FlankedEyebrow>Stakeholder Ecosystem</FlankedEyebrow>
-            <H2 className="mt-4">Who It's For</H2>
-            <p className="mt-3 text-[var(--nxt-ink-soft)] text-lg">
-              Aligning validated healthcare demand with the builders, experts, and capital to scale.
-            </p>
-          </Rise>
-        </div>
-
-        {/* 1px Gap Midnight Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-[1px] bg-[var(--nxt-line)] border border-[var(--nxt-line)]">
-          {AUDIENCES.map(a => (
-            <SpotlightCard key={a.id} className="flex flex-col justify-between group">
-              <div>
-                <div className="flex items-center justify-between mb-6">
-                  <span className="font-mono text-xs text-emerald-500 font-bold tracking-widest">
-                    {a.n}
-                  </span>
-                  <div className="w-8 h-8 rounded-sm border border-[var(--nxt-line)] group-hover:border-emerald-500 group-hover:bg-emerald-500 flex items-center justify-center transition-all">
-                    <ArrowUpRight className="w-4 h-4 text-[var(--nxt-ink-soft)] group-hover:text-black transition-colors" />
-                  </div>
-                </div>
-
-                <p className="font-mono text-[11px] tracking-wider uppercase text-[var(--nxt-ink-soft)] mb-2 font-bold">
-                  {a.role}
-                </p>
-                <h3 className="font-display font-light text-xl tracking-wide uppercase mb-3 group-hover:text-emerald-500 transition-colors">
-                  {a.title}
-                </h3>
-                <p className="text-sm text-[var(--nxt-ink-soft)] leading-relaxed mb-6">
-                  {a.intro}
-                </p>
-
-                <ul className="space-y-2.5 pt-4 border-t border-[var(--nxt-line)] text-xs text-[var(--nxt-ink-soft)]">
-                  {a.points.map((pt, i) => (
-                    <li key={i} className="flex items-start gap-2">
-                      <span className="text-emerald-500 shrink-0">✦</span>
-                      <span>{pt}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="mt-8 pt-4">
-                <Btn
-                  to={a.to}
-                  full
-                  variant="outline"
-                  size="sm"
-                  className="font-mono text-xs tracking-widest uppercase border-[var(--nxt-line)] hover:border-emerald-500 hover:text-emerald-500"
-                >
-                  {a.cta}
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 pointer-events-none"
+          style={{ background: 'radial-gradient(ellipse 50% 45% at 50% 48%, color-mix(in srgb, var(--nxt-bg) 55%, transparent), transparent 100%)' }}
+        />
+        <div className="relative z-10 flex flex-col items-center justify-center text-center min-h-[clamp(600px,78vh,820px)] px-4 pt-16 pb-20">
+          <div className="max-w-4xl mx-auto flex flex-col items-center">
+            <Rise><FlankedEyebrow>Validated Clinical Demand · Dedicated Funding</FlankedEyebrow></Rise>
+            <Rise delay={0.06}>
+              <h1 className="font-display font-light text-[clamp(2.5rem,6vw,5rem)] tracking-[0.06em] uppercase leading-[1.06] mt-8 mb-6 text-balance">
+                Doctors identify the real-world problems.{' '}
+                <em className="italic text-[var(--nxt-green)] font-normal">You bring the solutions.</em>
+              </h1>
+            </Rise>
+            <Rise delay={0.12}>
+              <p className="max-w-xl text-[clamp(1rem,1.4vw,1.25rem)] text-[var(--nxt-ink-soft)] leading-relaxed mb-10">
+                {site.hero_subtitle || 'NXT Health pairs validated, funded clinical problems with ambitious founders, providing a structured, end-to-end pathway from challenge to commercial launch.'}
+              </p>
+            </Rise>
+            <Rise delay={0.18}>
+              <div className="flex flex-wrap items-center justify-center gap-4">
+                <Btn variant="green" to="/problems" className="font-mono font-bold tracking-[-0.02em]st uppercase px-8">
+                  Claim a Problem <ArrowRight className="w-4 h-4 ml-1" />
+                </Btn>
+                <Btn variant="outline" to="/#start" className="!border-[var(--nxt-green)]/50 text-[var(--nxt-green)] hover:!bg-[var(--nxt-green-soft)] font-mono tracking-[-0.02em]st uppercase px-8">
+                  Fund a Challenge
                 </Btn>
               </div>
-            </SpotlightCard>
+            </Rise>
+            <Rise delay={0.24}>
+              <div className="flex flex-col items-center gap-2 mt-16 select-none opacity-60">
+                <span className="font-mono text-[10px] tracking-[0.25em] text-[var(--nxt-ink-soft)] uppercase">Scroll to explore</span>
+                <div className="w-px h-12 bg-gradient-to-b from-[var(--nxt-green)] to-transparent animate-pulse" />
+              </div>
+            </Rise>
+          </div>
+        </div>
+      </section>
+
+      <Ticker />
+
+      {/* 2. 1 IN 5: shares a clock with the stage-gate stack below */}
+      <OneInFive
+        stat="1 in 5"
+        headline="doctors encounters a critical clinical problem every day and waits for someone to solve it."
+        subtitle="NXT Health captures these frontline pains, validates them with industry funding, and connects them to ambitious founders ready to build the solution."
+      />
+
+      {/* 3. THE PARADIGM SHIFT */}
+      <section className="nxt-container py-20 sm:py-28 border-b border-[var(--nxt-line)]">
+        <Rise className="max-w-3xl">
+          <Kicker>The paradigm shift</Kicker>
+          <H2 className="mt-5">Others launch startups in a vacuum. We connect founders with the clinical challenges healthcare is waiting to solve.</H2>
+        </Rise>
+        <div className="mt-12 grid gap-5 md:grid-cols-2">
+          <TiltCard className="h-full">
+            <span className="text-[12px] uppercase tracking-[0.14em] text-[var(--nxt-ink-soft)]">The traditional route</span>
+            <h3 className="font-display font-bold text-[clamp(1.5rem,2.6vw,2.1rem)] tracking-[-0.025em] leading-tight mt-3">Build first. Search for buyers later.</h3>
+            <p className="mt-4 text-[var(--nxt-ink-soft)] leading-relaxed">Founders build a product, craft a pitch deck, and hunt for market fit, wasting critical time and capital on unvalidated ideas.</p>
+            <p className="font-display font-bold text-[clamp(3.4rem,8vw,6rem)] leading-none tracking-[-0.05em] text-[var(--nxt-ink-soft)] mt-8">90%+</p>
+            <ul className="mt-6">
+              {[
+                'Building in a market vacuum without frontline validation',
+                'Burning capital searching for pilot access and hospital partners',
+                'Venture mortality from a lack of genuine buyer demand',
+              ].map(t => (
+                <li key={t} className="flex gap-3.5 py-3.5 border-t border-[var(--nxt-line)] text-[15px]"><span className="w-3.5 shrink-0 text-[var(--nxt-ink-soft)]">×</span>{t}</li>
+              ))}
+            </ul>
+          </TiltCard>
+          <TiltCard className="h-full !border-[color-mix(in_srgb,var(--nxt-green)_45%,var(--nxt-line))]">
+            <span className="text-[12px] uppercase tracking-[0.14em] text-[var(--nxt-ink-soft)]">The NXT route</span>
+            <h3 className="font-display font-bold text-[clamp(1.5rem,2.6vw,2.1rem)] tracking-[-0.025em] leading-tight mt-3">
+              <span className="text-[var(--nxt-green)]">Start</span> with guaranteed demand.
+            </h3>
+            <p className="mt-4 text-[var(--nxt-ink-soft)] leading-relaxed">Doctors and industry define the clinical problem and fund the solution. NXT Health matches ambitious founders with validated challenges, capital, and the end-to-end support needed to launch.</p>
+            <p className="font-display font-bold text-[clamp(3.4rem,8vw,6rem)] leading-none tracking-[-0.05em] text-[var(--nxt-green)] mt-8">0%</p>
+            <ul className="mt-6">
+              {[
+                'Clinicians and industry leaders define verified problem statements',
+                'Non-dilutive challenge grant capital tied to clear milestone gates',
+                'Step-by-step regulatory, evidence, and hospital procurement pathway',
+              ].map(t => (
+                <li key={t} className="flex gap-3.5 py-3.5 border-t border-[var(--nxt-line)] text-[15px]"><span className="w-3.5 shrink-0 text-[var(--nxt-green)]">✓</span>{t}</li>
+              ))}
+            </ul>
+          </TiltCard>
+        </div>
+      </section>
+
+      {/* 4. HOW IT WORKS: the stage-gate stack */}
+      <section id="how-it-works" className="nxt-container py-20 sm:py-28 border-b border-[var(--nxt-line)] scroll-mt-20">
+        <Rise className="max-w-3xl mb-10">
+          <Kicker>The stage-gate pathway</Kicker>
+          <H2 className="mt-5">From frontline hospital to global launch.</H2>
+          <p className="mt-4 text-[var(--nxt-ink-soft)] text-lg max-w-xl">Each gate unlocks the next tranche of capital. A structured, milestone-driven pathway engineered to eliminate startup risk.</p>
+        </Rise>
+        <GateStack />
+      </section>
+
+      {/* 5. WHO IT'S FOR */}
+      <section id="who-its-for" className="nxt-container py-20 sm:py-28 border-b border-[var(--nxt-line)] scroll-mt-20">
+        <Rise className="max-w-3xl mb-12">
+          <Kicker>Who it's for</Kicker>
+          <H2 className="mt-5">One platform, six ways in.</H2>
+        </Rise>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {AUDIENCES.map(a => (
+            <TiltCard key={a.id} max={7} className="h-full min-h-[240px]">
+              <p className="text-[12px] uppercase tracking-[0.14em] text-[var(--nxt-green)]">{a.role}</p>
+              <h3 className="font-display font-bold text-[1.5rem] tracking-[-0.02em] leading-tight mt-3.5">{a.title}</h3>
+              <p className="mt-3.5 text-[15.5px] text-[var(--nxt-ink-soft)] leading-relaxed">{a.intro}</p>
+            </TiltCard>
           ))}
         </div>
       </section>
 
-      {/* 6. GLOBAL CLINICAL PRESENCE (MIDNIGHT MEDIA 3D GLOBE SECTION) */}
-      <section className="nxt-container py-24 sm:py-32 border-b border-[var(--nxt-line)] text-center">
-        <Rise>
-          <FlankedEyebrow>Global Clinical Network</FlankedEyebrow>
-          <H2 className="mt-4">From Frontline Hospital to Global Launch</H2>
-          <p className="mt-3 text-[var(--nxt-ink-soft)] max-w-xl mx-auto text-base">
+      {/* 6. GLOBAL CLINICAL NETWORK */}
+      <section className="nxt-container py-20 sm:py-28 border-b border-[var(--nxt-line)] text-center">
+        <Rise className="max-w-3xl mx-auto">
+          <Kicker>Global clinical network</Kicker>
+          <H2 className="mt-5">From frontline hospital to global launch.</H2>
+          <p className="mt-4 text-[var(--nxt-ink-soft)] max-w-xl mx-auto">
             Connecting clinical challenges across premier medical research centers, hospital systems, and global regulatory jurisdictions.
           </p>
         </Rise>
-
         <div className="mt-12">
           <Interactive3DGlobe />
         </div>
       </section>
 
-      {/* 7. WHAT'S INSIDE THE PLATFORM (MIDNIGHT MEDIA ARCHITECTURAL GRID) */}
-      <section className="nxt-container py-24 sm:py-32 border-b border-[var(--nxt-line)]">
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <Rise>
-            <FlankedEyebrow>Product Suite</FlankedEyebrow>
-            <H2 className="mt-4">What's Inside the Platform</H2>
-            <p className="mt-3 text-[var(--nxt-ink-soft)] text-lg">
-              End-to-end tooling engineered to take medical startups from problem statement to commercial adoption.
-            </p>
-          </Rise>
-        </div>
-
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-[1px] bg-[var(--nxt-line)] border border-[var(--nxt-line)]">
+      {/* 7. WHAT'S INSIDE THE PLATFORM */}
+      <section className="nxt-container py-20 sm:py-28 border-b border-[var(--nxt-line)]">
+        <Rise className="max-w-3xl mb-12">
+          <Kicker>What's inside</Kicker>
+          <H2 className="mt-5">Everything a funded venture runs on.</H2>
+        </Rise>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 border-t border-l border-[var(--nxt-line)]">
           {PLATFORM_PILLARS.map(item => (
-            <SpotlightCard key={item.title} className="flex flex-col justify-between group">
-              <div>
-                <div className="flex items-center justify-between mb-6">
-                  <span className="w-10 h-10 border border-[var(--nxt-line)] group-hover:border-emerald-500 flex items-center justify-center transition-colors">
-                    <item.icon className="w-5 h-5 text-emerald-500" />
-                  </span>
-                  <span className="font-mono text-xs text-[var(--nxt-ink-soft)] font-bold">
-                    {item.number}
-                  </span>
-                </div>
-
-                <h3 className="font-display font-light text-lg tracking-wide uppercase mb-2 group-hover:text-emerald-500 transition-colors">
-                  {item.title}
-                </h3>
-                <p className="text-sm text-[var(--nxt-ink-soft)] leading-relaxed">
-                  {item.text}
-                </p>
+            <div key={item.title} className="p-7 border-r border-b border-[var(--nxt-line)] transition-colors hover:bg-[var(--nxt-surface)]">
+              <div className="flex items-center justify-between mb-10">
+                <item.icon className="w-5 h-5 text-[var(--nxt-green)]" />
+                <span className="text-[12px] uppercase tracking-[0.14em] text-[var(--nxt-green)]">{item.tag}</span>
               </div>
-
-              <div className="mt-8 pt-4 border-t border-[var(--nxt-line)] flex items-center justify-between font-mono text-[11px] text-[var(--nxt-ink-soft)]">
-                <span className="text-emerald-500 font-bold">✦ {item.tag}</span>
-                <span className="group-hover:translate-x-1 transition-transform">EXPLORE →</span>
-              </div>
-            </SpotlightCard>
+              <h3 className="font-display font-bold text-[1.35rem] tracking-[-0.02em] mb-2.5">{item.title}</h3>
+              <p className="text-[15.5px] text-[var(--nxt-ink-soft)] leading-relaxed">{item.text}</p>
+            </div>
           ))}
         </div>
       </section>
@@ -1072,7 +845,7 @@ export const HomePage: React.FC = () => {
       {site.show_startups && startups.length > 0 && (
         <section id="startups" className="nxt-container py-20 sm:py-24 border-b border-[var(--nxt-line)] scroll-mt-20">
           <div className="text-center max-w-2xl mx-auto mb-12">
-            <FlankedEyebrow>Active Cohort</FlankedEyebrow>
+            <Kicker>Active Cohort</Kicker>
             <H2 className="mt-4">Companies Taking Problems to Patients</H2>
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -1085,7 +858,7 @@ export const HomePage: React.FC = () => {
       <section id="pricing" className="nxt-container py-24 sm:py-32 border-b border-[var(--nxt-line)] scroll-mt-20">
         <div className="text-center max-w-2xl mx-auto mb-16">
           <Rise>
-            <FlankedEyebrow>Transparent Pricing</FlankedEyebrow>
+            <Kicker>Transparent Pricing</Kicker>
             <H2 className="mt-4">Free to Start. At Cost to Build.</H2>
             <p className="mt-3 text-[var(--nxt-ink-soft)] text-lg">
               Founders join free and pay at cost once they are ready to build.
@@ -1144,7 +917,7 @@ export const HomePage: React.FC = () => {
       {/* 10. SPONSORSHIP FOR PHARMA & HOSPITALS */}
       <section id="pricing-pharma" className="nxt-container py-24 sm:py-32 border-b border-[var(--nxt-line)] scroll-mt-20">
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <FlankedEyebrow>For Enterprise & Health Systems</FlankedEyebrow>
+          <Kicker>For Enterprise & Health Systems</Kicker>
           <H2 className="mt-4">Start with One Problem. Grow into a Scalable Pipeline.</H2>
         </div>
 
@@ -1197,10 +970,10 @@ export const HomePage: React.FC = () => {
         <section id="blog" className="nxt-container py-20 sm:py-24 border-b border-[var(--nxt-line)] scroll-mt-20">
           <div className="flex flex-wrap items-end justify-between gap-4 mb-12">
             <div>
-              <FlankedEyebrow>Insights & Dispatches</FlankedEyebrow>
+              <Kicker>Insights & Dispatches</Kicker>
               <H2 className="mt-4">Ideas for People Building Health</H2>
             </div>
-            <Btn variant="outline" to="/blog" className="font-mono text-xs tracking-wider uppercase border-[var(--nxt-line)]">
+            <Btn variant="outline" to="/blog" className="font-mono text-xs tracking-[-0.02em]r uppercase border-[var(--nxt-line)]">
               All Posts
             </Btn>
           </div>
@@ -1211,11 +984,11 @@ export const HomePage: React.FC = () => {
       )}
 
       {/* 12. FINAL CALL TO ACTION (MIDNIGHT MEDIA HIGH-CONTRAST INTAKE) */}
-      <section id="start" className="bg-[#050505] text-white py-24 sm:py-32 scroll-mt-16 relative overflow-hidden border-t border-emerald-500/20">
+      <section id="start" className="bg-[#050505] text-white py-24 sm:py-32 scroll-mt-16 relative overflow-hidden border-t border-[var(--nxt-green)]/20">
         <div className="nxt-container grid gap-12 lg:grid-cols-2 lg:gap-20 items-start relative z-10">
           <div>
-            <FlankedEyebrow>Commence Today</FlankedEyebrow>
-            <h2 className="font-display font-light text-3xl sm:text-4xl lg:text-5xl tracking-wide uppercase leading-tight mt-6">
+            <Kicker>Commence Today</Kicker>
+            <h2 className="font-display font-bold text-3xl sm:text-4xl lg:text-5xl tracking-[-0.02em] leading-tight mt-6">
               Put capital behind a real clinical need or claim one to scale.
             </h2>
             <p className="mt-6 text-lg text-white/70 leading-relaxed max-w-xl">
@@ -1224,22 +997,22 @@ export const HomePage: React.FC = () => {
 
             <div className="mt-10 space-y-4 pt-8 border-t border-white/10 max-w-lg text-sm text-white/80">
               <div className="flex items-center gap-3">
-                <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+                <CheckCircle2 className="w-5 h-5 text-[var(--nxt-green)] shrink-0" />
                 <span>Zero equity taken on non-dilutive challenge grants</span>
               </div>
               <div className="flex items-center gap-3">
-                <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+                <CheckCircle2 className="w-5 h-5 text-[var(--nxt-green)] shrink-0" />
                 <span>Verified frontline physicians guiding technical product specs</span>
               </div>
               <div className="flex items-center gap-3">
-                <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+                <CheckCircle2 className="w-5 h-5 text-[var(--nxt-green)] shrink-0" />
                 <span>Full stage-gate transparency for funding partners</span>
               </div>
             </div>
           </div>
 
-          <div className="bg-[#111111] text-white p-8 sm:p-10 border border-emerald-500/30 shadow-2xl">
-            <h3 className="font-display font-light text-2xl tracking-wide uppercase mb-2">
+          <div className="bg-[#111111] text-white p-8 sm:p-10 border border-[var(--nxt-green)]/30 shadow-2xl">
+            <h3 className="font-display font-bold text-2xl tracking-[-0.02em] mb-2">
               Start with NXT Health
             </h3>
             <p className="text-xs text-[var(--nxt-ink-soft)] font-mono mb-6">
@@ -1259,9 +1032,9 @@ const StartupCard: React.FC<{ startup: Startup }> = ({ startup }) => {
       <div className="flex items-center gap-4">
         {startup.logo_url
           ? <img src={startup.logo_url} alt="" className="w-14 h-14 object-contain border border-[var(--nxt-line)] bg-white p-1.5" loading="lazy" />
-          : <div className="w-14 h-14 bg-[#111] text-white font-display font-light text-xl flex items-center justify-center border border-white/20" aria-hidden="true">{startup.name.slice(0, 1).toUpperCase()}</div>}
+          : <div className="w-14 h-14 bg-[#111] text-white font-display font-bold text-xl flex items-center justify-center border border-white/20" aria-hidden="true">{startup.name.slice(0, 1).toUpperCase()}</div>}
         <div className="min-w-0">
-          <h3 className="font-display font-light text-lg tracking-wide uppercase leading-tight">{startup.name}</h3>
+          <h3 className="font-display font-bold text-lg tracking-[-0.02em] leading-tight">{startup.name}</h3>
           <p className="text-[12px] font-mono text-[var(--nxt-ink-soft)] mt-0.5">{[startup.sector, startup.stage, startup.location].filter(Boolean).join(' · ')}</p>
         </div>
       </div>
@@ -1269,7 +1042,7 @@ const StartupCard: React.FC<{ startup: Startup }> = ({ startup }) => {
       {startup.description && <p className="mt-2 text-xs text-[var(--nxt-ink-soft)] leading-relaxed line-clamp-3">{startup.description}</p>}
     </>
   );
-  const cls = 'block border border-[var(--nxt-line)] bg-[var(--nxt-surface)] p-6 hover:border-emerald-500 transition-colors';
+  const cls = 'block border border-[var(--nxt-line)] bg-[var(--nxt-surface)] p-6 hover:border-[var(--nxt-green)] transition-colors';
   return startup.website
     ? <a href={startup.website} target="_blank" rel="noreferrer" className={cls}>{body}</a>
     : <article className={cls}>{body}</article>;
@@ -1280,19 +1053,19 @@ const PriceCard: React.FC<{
 }> = ({ label, price, note, points, cta, to, featured, outline }) => (
   <article className={`p-8 border flex flex-col justify-between transition-all ${
     featured
-      ? 'bg-[#111111] text-white border-emerald-500 shadow-xl'
+      ? 'bg-[#111111] text-white border-[var(--nxt-green)] shadow-xl'
       : 'bg-[var(--nxt-surface)] border-[var(--nxt-line)]'
   }`}>
     <div>
       <div className="flex items-center justify-between">
-        <span className="font-mono text-xs uppercase tracking-widest text-emerald-500 font-bold">{label}</span>
+        <span className="font-mono text-xs uppercase tracking-[-0.02em]st text-[var(--nxt-green)] font-bold">{label}</span>
         {featured && (
-          <span className="bg-emerald-500 text-black font-mono px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+          <span className="bg-[var(--nxt-green)] text-[var(--nxt-green-ink)] font-mono px-2 py-0.5 text-[10px] font-bold uppercase tracking-[-0.02em]r">
             RECOMMENDED
           </span>
         )}
       </div>
-      <p className={`font-display font-light text-[2.75rem] leading-none tracking-tight mt-6 ${price === 'Free' ? 'text-emerald-500' : ''}`}>{price}</p>
+      <p className={`font-display font-bold text-[2.75rem] leading-none tracking-tight mt-6 ${price === 'Free' ? 'text-[var(--nxt-green)]' : ''}`}>{price}</p>
       <p className="mt-2 text-xs font-mono text-[var(--nxt-ink-soft)]">{note}</p>
       <div className="mt-6 mb-8">
         <RuleList items={points} />
@@ -1303,7 +1076,7 @@ const PriceCard: React.FC<{
         to={to}
         variant={outline ? 'outline' : 'solid'}
         full
-        className={featured ? 'bg-emerald-500 hover:bg-emerald-400 text-black font-mono font-bold tracking-widest uppercase' : 'font-mono text-xs tracking-widest uppercase border-[var(--nxt-line)]'}
+        className={featured ? 'bg-[var(--nxt-green)] hover:opacity-90 text-[var(--nxt-green-ink)] font-mono font-bold tracking-[-0.02em]st uppercase' : 'font-mono text-xs tracking-[-0.02em]st uppercase border-[var(--nxt-line)]'}
       >
         {cta}
       </Btn>

@@ -44,6 +44,11 @@
   --nxt-ink-soft: #5F5F5F;
   --nxt-line: #E3E3E3;
 
+  /* Green accent for the homepage: deep on light, bright on dark */
+  --nxt-green: #0B8A44;
+  --nxt-green-ink: #FFFFFF;
+  --nxt-green-soft: rgba(11, 138, 68, 0.1);
+
   /* Always-dark, theme-independent */
   --nxt-ink-fixed: #111111;
 
@@ -83,6 +88,9 @@
     --nxt-ink: #F4F4F4;
     --nxt-ink-soft: #A2A2A2;
     --nxt-line: #2A2A2A;
+    --nxt-green: #3DF08A;
+    --nxt-green-ink: #04120A;
+    --nxt-green-soft: rgba(61, 240, 138, 0.12);
 
     color-scheme: dark;
   }
@@ -115,6 +123,9 @@
   --nxt-ink: #F4F4F4;
   --nxt-ink-soft: #A2A2A2;
   --nxt-line: #2A2A2A;
+  --nxt-green: #3DF08A;
+  --nxt-green-ink: #04120A;
+  --nxt-green-soft: rgba(61, 240, 138, 0.12);
 
   color-scheme: dark;
 }
@@ -140,6 +151,8 @@
   --nxt-ink: #FFFFFF;
   --nxt-ink-soft: #B5B5B5;
   --nxt-line: #2F2F2F;
+  --nxt-green: #3DF08A;
+  --nxt-green-ink: #04120A;
   --nxt-peach: #3A2A22;
   --nxt-peach-deep: #E5A98A;
   color-scheme: dark;
@@ -270,3 +283,15 @@ body {
   display: none;
 }
 
+
+/* Homepage motion. Deliberately not switched off by reduced-motion: it is the point of the page. */
+@keyframes nxt-ticker {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.nxt-ticker { display: flex; width: max-content; animation: nxt-ticker 40s linear infinite; }
+@keyframes nxt-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+.nxt-bob { animation: nxt-bob 6s ease-in-out infinite; }

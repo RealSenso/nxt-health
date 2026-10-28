@@ -1,11 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-type Variant = 'solid' | 'outline' | 'light' | 'outline-light';
+type Variant = 'solid' | 'outline' | 'light' | 'outline-light' | 'green';
 
 const VARIANTS: Record<Variant, string> = {
   solid: 'bg-[var(--nxt-mint-strong)] text-white hover:opacity-85',
   outline: 'border border-[var(--nxt-mint-strong)] text-[var(--nxt-ink)] hover:bg-[var(--nxt-bg-soft)]',
+  green: 'bg-[var(--nxt-green)] text-[var(--nxt-green-ink)] hover:opacity-90',
   light: 'bg-white text-[#111] hover:bg-white/85',
   'outline-light': 'border border-white/70 text-white hover:bg-white/10',
 };
