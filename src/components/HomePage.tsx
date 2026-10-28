@@ -839,9 +839,6 @@ export const HomePage: React.FC = () => {
               'Starter regulatory & incorporation guides',
               'Community Slack & peer network',
             ]}
-            cta="Join free"
-            to="/signup"
-            outline
           />
 
           <PriceCard
@@ -854,8 +851,6 @@ export const HomePage: React.FC = () => {
               'Complete 26-route stage-gate roadmaps',
               'Multi-seat co-founder workspace & notes',
             ]}
-            cta="Become a member"
-            to="/signup"
             featured
           />
 
@@ -869,9 +864,6 @@ export const HomePage: React.FC = () => {
               'Vetted mentor session matching',
               'Direct regulatory liaison review',
             ]}
-            cta="Talk to us"
-            to="/?as=founder#start"
-            outline
           />
         </div>
       </section>
@@ -893,8 +885,6 @@ export const HomePage: React.FC = () => {
               'Screened founder teams & execution protocol',
               'Transparent gate-by-gate progress view',
             ]}
-            cta="Seed a problem"
-            to="/?as=pharma#start"
             featured
           />
           <PriceCard
@@ -907,9 +897,6 @@ export const HomePage: React.FC = () => {
               'Quarterly pipeline executive briefings',
               'Keynote slot at founder symposiums',
             ]}
-            cta="Contact enterprise"
-            to="/?as=pharma#start"
-            outline
           />
           <PriceCard
             label="Co-Invest Partner"
@@ -920,9 +907,6 @@ export const HomePage: React.FC = () => {
               'Pro-rata co-investment rights in cohort winners',
               'First-look licensing & commercial rights',
             ]}
-            cta="Partner with us"
-            to="/?as=pharma#start"
-            outline
           />
         </div>
       </section>
@@ -1011,37 +995,21 @@ const StartupCard: React.FC<{ startup: Startup }> = ({ startup }) => {
 };
 
 const PriceCard: React.FC<{
-  label: string; price: string; note: string; points: string[]; cta: string; to: string; featured?: boolean; outline?: boolean;
-}> = ({ label, price, note, points, cta, to, featured, outline }) => (
-  <article className={`p-8 border flex flex-col justify-between transition-all ${
-    featured
-      ? 'bg-[#111111] text-white border-[var(--nxt-green)] shadow-xl'
-      : 'bg-[var(--nxt-surface)] border-[var(--nxt-line)]'
-  }`}>
-    <div>
-      <div className="flex items-center justify-between">
-        <span className="text-xs uppercase tracking-widest text-[var(--nxt-green)] font-bold">{label}</span>
-        {featured && (
-          <span className="bg-[var(--nxt-green)] text-[var(--nxt-green-ink)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
-            RECOMMENDED
-          </span>
-        )}
-      </div>
-      <p className={`font-display font-bold text-[2.75rem] leading-none tracking-tight mt-6 ${price === 'Free' ? 'text-[var(--nxt-green)]' : ''}`}>{price}</p>
-      <p className="mt-2 text-xs text-[var(--nxt-ink-soft)]">{note}</p>
-      <div className="mt-6 mb-8">
-        <RuleList items={points} />
-      </div>
+  label: string; price: string; note: string; points: string[]; featured?: boolean;
+}> = ({ label, price, note, points, featured }) => (
+  <article className={`p-8 border bg-[var(--nxt-surface)] flex flex-col ${featured ? 'border-[var(--nxt-green)]' : 'border-[var(--nxt-line)]'}`}>
+    <div className="flex items-center justify-between">
+      <span className="text-xs uppercase tracking-widest text-[var(--nxt-green)] font-bold">{label}</span>
+      {featured && (
+        <span className="bg-[var(--nxt-green)] text-[var(--nxt-green-ink)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+          Recommended
+        </span>
+      )}
     </div>
-    {to !== '/signup' && (
-      <Btn
-        to={to}
-        variant={outline ? 'outline' : 'solid'}
-        full
-        className={featured ? 'bg-[var(--nxt-green)] hover:opacity-90 text-[var(--nxt-green-ink)] font-bold' : 'text-xs border-[var(--nxt-line)]'}
-      >
-        {cta}
-      </Btn>
-    )}
+    <p className={`font-display font-bold text-[2.75rem] leading-none tracking-[-0.04em] mt-6 ${price === 'Free' ? 'text-[var(--nxt-green)]' : ''}`}>{price}</p>
+    <p className="mt-2 text-xs text-[var(--nxt-ink-soft)]">{note}</p>
+    <div className="mt-6">
+      <RuleList items={points} />
+    </div>
   </article>
 );
