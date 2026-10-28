@@ -712,7 +712,7 @@ export const HomePage: React.FC = () => {
             </Rise>
             <Rise delay={0.12}>
               <p className="max-w-xl text-[clamp(1.05rem,1.4vw,1.25rem)] text-[var(--nxt-ink-soft)] leading-relaxed">
-                {site.hero_subtitle || 'SirOsler pairs validated, funded clinical problems with ambitious founders, providing a structured, end-to-end pathway from challenge to commercial launch.'}
+                {site.hero_subtitle || 'SirOsler pairs validated clinical problems with ambitious founders, providing a complete pathway from idea to scale.'}
               </p>
             </Rise>
             <Rise delay={0.18}>
