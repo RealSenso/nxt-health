@@ -221,7 +221,7 @@ const Interactive3DGlobe: React.FC = () => {
       /* a big globe on the right of wide screens, centred behind the copy on narrow ones */
       CX = W > 900 ? W * 0.68 : W * 0.5;
       CY = H / 2;
-      R = Math.min(H * 0.52, W * (W > 900 ? 0.36 : 0.5));
+      R = Math.min(H * 0.38, W * (W > 900 ? 0.26 : 0.4));
     };
 
     const latLonTo3D = (lat: number, lon: number): [number, number, number] => {
