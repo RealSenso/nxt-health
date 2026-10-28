@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 190 40" fill="none">
-  <g transform="translate(4 4) scale(0.9375)">
-    <circle cx="16" cy="16" r="12.6" stroke="#111111" stroke-width="2.2"/>
-    <path d="M16 6.6Q16 16 25.4 16Q16 16 16 25.4Q16 16 6.6 16Q16 16 16 6.6Z" fill="#0B8A44"/>
-    <circle cx="25.6" cy="6.4" r="2" fill="#0B8A44"/>
-  </g>
-  <text x="44" y="28" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="25" letter-spacing="-1.1" fill="#111111"><tspan font-weight="400">Sir</tspan><tspan font-weight="700">Osler</tspan></text>
-</svg>
