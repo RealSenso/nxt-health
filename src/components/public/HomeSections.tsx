@@ -71,7 +71,7 @@ export const OneInFive: React.FC<{
         })}
       </div>
       <Rise>
-        <p className="font-display font-bold text-[clamp(3rem,8vw,6rem)] leading-none tracking-[-0.05em]">{stat}</p>
+        <p className="font-display font-normal text-[clamp(3rem,8vw,6rem)] leading-none tracking-[-0.05em]">{stat}</p>
         <p className="mt-5 text-[clamp(1.1rem,1.8vw,1.5rem)] leading-snug max-w-2xl">{headline}</p>
         <p className="mt-3 text-[var(--nxt-ink-soft)] max-w-2xl leading-relaxed">{subtitle}</p>
       </Rise>
@@ -114,10 +114,10 @@ export const HowItWorks: React.FC<{
                 aria-current={i === index}
                 className={`w-full text-left flex items-center gap-3 rounded-xl px-3 py-3 transition-colors ${i === index ? 'bg-[var(--nxt-bg-soft)]' : 'hover:bg-[var(--nxt-bg-soft)]/60'}`}
               >
-                <span className={`w-7 h-7 shrink-0 rounded-full text-[11px] font-bold flex items-center justify-center border ${
+                <span className={`w-7 h-7 shrink-0 rounded-full text-[11px] font-normal flex items-center justify-center border ${
                   i < index ? 'bg-[var(--nxt-ink-fixed)] text-white border-transparent' : i === index ? 'bg-[var(--nxt-ink-fixed)] text-white border-transparent' : 'border-[var(--nxt-ink-soft)] text-[var(--nxt-ink-soft)]'
                 }`}>{i < index ? <Check className="w-3.5 h-3.5" /> : i + 1}</span>
-                <span className={`whitespace-nowrap ${i === index ? 'font-semibold' : 'text-[var(--nxt-ink-soft)]'}`}>{s.title}</span>
+                <span className={`whitespace-nowrap ${i === index ? 'font-normal' : 'text-[var(--nxt-ink-soft)]'}`}>{s.title}</span>
               </button>
             </li>
           ))}
@@ -131,8 +131,8 @@ export const HowItWorks: React.FC<{
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.28 }}
             >
-              <p className="font-display font-bold text-[clamp(5rem,10vw,8rem)] leading-none tracking-[-0.05em] text-[var(--nxt-line)]">{String(index + 1).padStart(2, '0')}</p>
-              <h3 className="font-display font-bold text-[clamp(1.5rem,2.6vw,2.25rem)] tracking-[-0.03em] -mt-4">{steps[index].title}</h3>
+              <p className="font-display font-normal text-[clamp(5rem,10vw,8rem)] leading-none tracking-[-0.05em] text-[var(--nxt-line)]">{String(index + 1).padStart(2, '0')}</p>
+              <h3 className="font-display font-normal text-[clamp(1.5rem,2.6vw,2.25rem)] tracking-[-0.03em] -mt-4">{steps[index].title}</h3>
               <p className="mt-3 text-lg leading-relaxed text-[var(--nxt-ink-soft)] max-w-xl">{steps[index].body}</p>
             </motion.div>
           </AnimatePresence>

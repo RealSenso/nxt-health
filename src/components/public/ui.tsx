@@ -27,7 +27,7 @@ interface BtnProps {
 
 /** Pill button / link used across the public pages. */
 export const Btn: React.FC<BtnProps> = ({ variant = 'solid', size = 'md', to, href, onClick, type = 'button', disabled, full, className = '', id, children }) => {
-  const cls = `inline-flex items-center justify-center gap-2 rounded-full font-semibold whitespace-nowrap transition disabled:opacity-50 disabled:pointer-events-none ${
+  const cls = `inline-flex items-center justify-center gap-2 rounded-full font-normal whitespace-nowrap transition disabled:opacity-50 disabled:pointer-events-none ${
     size === 'md' ? 'h-12 px-7 text-[15px]' : 'h-10 px-5 text-sm'
   } ${full ? 'w-full' : ''} ${VARIANTS[variant]} ${className}`;
   if (to) return <Link id={id} to={to} className={cls}>{children}</Link>;
@@ -40,18 +40,18 @@ export const Eyebrow: React.FC<{ children: React.ReactNode; className?: string }
 );
 
 export const H1: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => (
-  <h1 className={`font-display font-bold text-[clamp(2.5rem,6vw,5.25rem)] leading-[1.03] tracking-[-0.035em] ${className}`}>{children}</h1>
+  <h1 className={`font-display font-normal text-[clamp(2.5rem,6vw,5.25rem)] leading-[1.03] tracking-[-0.035em] ${className}`}>{children}</h1>
 );
 
 export const H2: React.FC<{ children: React.ReactNode; className?: string; id?: string }> = ({ children, className = '', id }) => (
-  <h2 id={id} className={`font-display font-bold text-[clamp(1.75rem,3.4vw,3rem)] leading-[1.1] tracking-[-0.03em] ${className}`}>{children}</h2>
+  <h2 id={id} className={`font-display font-normal text-[clamp(1.75rem,3.4vw,3rem)] leading-[1.1] tracking-[-0.03em] ${className}`}>{children}</h2>
 );
 
 /** A numbered column with a heavy top rule, e.g. "01 Find a problem". */
 export const Step: React.FC<{ n: string; title: string; children: React.ReactNode; tone?: 'light' | 'dark' }> = ({ n, title, children, tone = 'light' }) => (
   <div className={`border-t-2 pt-4 ${tone === 'dark' ? 'border-white' : 'border-[var(--nxt-ink)]'}`}>
     <p className="text-[13px] text-[var(--nxt-ink-soft)]">{n}</p>
-    <h3 className="font-display font-bold text-xl mt-3 tracking-[-0.02em]">{title}</h3>
+    <h3 className="font-display font-normal text-xl mt-3 tracking-[-0.02em]">{title}</h3>
     <p className="text-[15px] leading-relaxed text-[var(--nxt-ink-soft)] mt-2">{children}</p>
   </div>
 );

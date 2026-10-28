@@ -451,7 +451,7 @@ const GateStack: React.FC = () => {
             return (
               <div
                 key={s.num}
-                className="absolute inset-0 rounded-[18px] border px-5 pt-4 pb-3 flex items-end justify-between gap-3 text-[15px] font-semibold uppercase tracking-[0.1em]"
+                className="absolute inset-0 rounded-[18px] border px-5 pt-4 pb-3 flex items-end justify-between gap-3 text-[15px] font-normal uppercase tracking-[0.1em]"
                 style={{
                   transform: `translateZ(${k * 74 + (k > active ? 80 : 0)}px)`,
                   transitionProperty: 'transform, background-color, border-color, box-shadow, color',
@@ -465,7 +465,7 @@ const GateStack: React.FC = () => {
                 }}
               >
                 <span className={on ? '' : 'text-[var(--nxt-ink)]'}>{s.title}</span>
-                <b className={`text-[22px] tracking-[-0.03em] font-bold ${on ? '' : 'text-[var(--nxt-ink-soft)]'}`}>{s.num}</b>
+                <span className={`text-[22px] tracking-[-0.03em] font-normal ${on ? '' : 'text-[var(--nxt-ink-soft)]'}`}>{s.num}</span>
               </div>
             );
           })}
@@ -478,7 +478,7 @@ const GateStack: React.FC = () => {
           return (
             <li key={s.num} className={`grid grid-cols-[44px_minmax(0,1fr)] gap-x-4 py-5 border-t border-[var(--nxt-line)] last:border-b transition-colors duration-300 ${on ? '' : 'text-[var(--nxt-ink-soft)]'}`}>
               <span className={`row-span-2 pt-1.5 text-sm tracking-[0.08em] transition-colors ${on ? 'text-[var(--nxt-green)]' : ''}`}>{s.num}</span>
-              <h3 className="font-display font-bold text-[1.35rem] tracking-[-0.02em] text-[var(--nxt-ink)]">{s.title}</h3>
+              <h3 className="font-display font-normal text-[1.35rem] tracking-[-0.02em] text-[var(--nxt-ink)]">{s.title}</h3>
               <div className={`col-start-2 grid transition-[grid-template-rows] duration-500 ${on ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
                 <div className="overflow-hidden">
                   <p className="pt-2.5 text-base">{s.body}</p>
@@ -741,9 +741,9 @@ export const HomePage: React.FC = () => {
         <div className="mt-12 grid gap-5 md:grid-cols-2">
           <TiltCard className="h-full">
             <span className="text-[12px] uppercase tracking-[0.14em] text-[var(--nxt-ink-soft)]">The traditional route</span>
-            <h3 className="font-display font-bold text-[clamp(1.5rem,2.6vw,2.1rem)] tracking-[-0.025em] leading-tight mt-3">Build first. Search for buyers later.</h3>
+            <h3 className="font-display font-normal text-[clamp(1.5rem,2.6vw,2.1rem)] tracking-[-0.025em] leading-tight mt-3">Build first. Search for buyers later.</h3>
             <p className="mt-4 text-[var(--nxt-ink-soft)] leading-relaxed">Founders build a product, craft a pitch deck, and hunt for market fit, wasting critical time and capital on unvalidated ideas.</p>
-            <p className="font-display font-bold text-[clamp(3.4rem,8vw,6rem)] leading-none tracking-[-0.05em] text-[var(--nxt-ink-soft)] mt-8">90%+</p>
+            <p className="font-display font-normal text-[clamp(3.4rem,8vw,6rem)] leading-none tracking-[-0.05em] text-[var(--nxt-ink-soft)] mt-8">90%+</p>
             <ul className="mt-6">
               {[
                 'Building in a market vacuum without frontline validation',
@@ -756,11 +756,11 @@ export const HomePage: React.FC = () => {
           </TiltCard>
           <TiltCard className="h-full !border-[color-mix(in_srgb,var(--nxt-green)_45%,var(--nxt-line))]">
             <span className="text-[12px] uppercase tracking-[0.14em] text-[var(--nxt-ink-soft)]">The NXT route</span>
-            <h3 className="font-display font-bold text-[clamp(1.5rem,2.6vw,2.1rem)] tracking-[-0.025em] leading-tight mt-3">
+            <h3 className="font-display font-normal text-[clamp(1.5rem,2.6vw,2.1rem)] tracking-[-0.025em] leading-tight mt-3">
               <span className="text-[var(--nxt-green)]">Start</span> with guaranteed demand.
             </h3>
             <p className="mt-4 text-[var(--nxt-ink-soft)] leading-relaxed">Doctors and industry define the clinical problem and fund the solution. SirOsler matches ambitious founders with validated challenges, capital, and the end-to-end support needed to launch.</p>
-            <p className="font-display font-bold text-[clamp(3.4rem,8vw,6rem)] leading-none tracking-[-0.05em] text-[var(--nxt-green)] mt-8">0%</p>
+            <p className="font-display font-normal text-[clamp(3.4rem,8vw,6rem)] leading-none tracking-[-0.05em] text-[var(--nxt-green)] mt-8">0%</p>
             <ul className="mt-6">
               {[
                 'Clinicians and industry leaders define verified problem statements',
@@ -794,7 +794,7 @@ export const HomePage: React.FC = () => {
           {AUDIENCES.map(a => (
             <TiltCard key={a.id} max={7} className="h-full min-h-[240px]">
               <p className="text-[12px] uppercase tracking-[0.14em] text-[var(--nxt-green)]">{a.role}</p>
-              <h3 className="font-display font-bold text-[1.5rem] tracking-[-0.02em] leading-tight mt-3.5">{a.title}</h3>
+              <h3 className="font-display font-normal text-[1.5rem] tracking-[-0.02em] leading-tight mt-3.5">{a.title}</h3>
               <p className="mt-3.5 text-[15.5px] text-[var(--nxt-ink-soft)] leading-relaxed">{a.intro}</p>
             </TiltCard>
           ))}
@@ -829,7 +829,7 @@ export const HomePage: React.FC = () => {
                 <item.icon className="w-5 h-5 text-[var(--nxt-green)]" />
                 <span className="text-[12px] uppercase tracking-[0.14em] text-[var(--nxt-green)]">{item.tag}</span>
               </div>
-              <h3 className="font-display font-bold text-[1.35rem] tracking-[-0.02em] mb-2.5">{item.title}</h3>
+              <h3 className="font-display font-normal text-[1.35rem] tracking-[-0.02em] mb-2.5">{item.title}</h3>
               <p className="text-[15.5px] text-[var(--nxt-ink-soft)] leading-relaxed">{item.text}</p>
             </div>
           ))}
@@ -991,7 +991,7 @@ export const HomePage: React.FC = () => {
           </div>
 
           <div className="bg-[#111111] text-white p-8 sm:p-10 border border-[var(--nxt-green)]/30 shadow-2xl">
-            <h3 className="font-display font-bold text-2xl tracking-[-0.02em] mb-2">
+            <h3 className="font-display font-normal text-2xl tracking-[-0.02em] mb-2">
               Start with SirOsler
             </h3>
             <p className="text-xs text-[var(--nxt-ink-soft)] mb-6">
@@ -1011,13 +1011,13 @@ const StartupCard: React.FC<{ startup: Startup }> = ({ startup }) => {
       <div className="flex items-center gap-4">
         {startup.logo_url
           ? <img src={startup.logo_url} alt="" className="w-14 h-14 object-contain border border-[var(--nxt-line)] bg-white p-1.5" loading="lazy" />
-          : <div className="w-14 h-14 bg-[#111] text-white font-display font-bold text-xl flex items-center justify-center border border-white/20" aria-hidden="true">{startup.name.slice(0, 1).toUpperCase()}</div>}
+          : <div className="w-14 h-14 bg-[#111] text-white font-display font-normal text-xl flex items-center justify-center border border-white/20" aria-hidden="true">{startup.name.slice(0, 1).toUpperCase()}</div>}
         <div className="min-w-0">
-          <h3 className="font-display font-bold text-lg tracking-[-0.02em] leading-tight">{startup.name}</h3>
+          <h3 className="font-display font-normal text-lg tracking-[-0.02em] leading-tight">{startup.name}</h3>
           <p className="text-[12px] text-[var(--nxt-ink-soft)] mt-0.5">{[startup.sector, startup.stage, startup.location].filter(Boolean).join(' · ')}</p>
         </div>
       </div>
-      {startup.tagline && <p className="mt-4 font-semibold text-sm">{startup.tagline}</p>}
+      {startup.tagline && <p className="mt-4 font-normal text-sm">{startup.tagline}</p>}
       {startup.description && <p className="mt-2 text-xs text-[var(--nxt-ink-soft)] leading-relaxed line-clamp-3">{startup.description}</p>}
     </>
   );
@@ -1032,14 +1032,14 @@ const PriceCard: React.FC<{
 }> = ({ label, price, note, points, featured }) => (
   <article className={`p-8 border bg-[var(--nxt-surface)] flex flex-col ${featured ? 'border-[var(--nxt-green)]' : 'border-[var(--nxt-line)]'}`}>
     <div className="flex items-center justify-between">
-      <span className="text-xs uppercase tracking-widest text-[var(--nxt-green)] font-bold">{label}</span>
+      <span className="text-xs uppercase tracking-widest text-[var(--nxt-green)] font-normal">{label}</span>
       {featured && (
-        <span className="bg-[var(--nxt-green)] text-[var(--nxt-green-ink)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+        <span className="bg-[var(--nxt-green)] text-[var(--nxt-green-ink)] px-2 py-0.5 text-[10px] font-normal uppercase tracking-wider">
           Recommended
         </span>
       )}
     </div>
-    <p className={`font-display font-bold text-[2.75rem] leading-none tracking-[-0.04em] mt-6 ${price === 'Free' ? 'text-[var(--nxt-green)]' : ''}`}>{price}</p>
+    <p className={`font-display font-normal text-[2.75rem] leading-none tracking-[-0.04em] mt-6 ${price === 'Free' ? 'text-[var(--nxt-green)]' : ''}`}>{price}</p>
     <p className="mt-2 text-xs text-[var(--nxt-ink-soft)]">{note}</p>
     <div className="mt-6">
       <RuleList items={points} />

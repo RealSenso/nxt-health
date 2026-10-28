@@ -27,10 +27,10 @@ export const BlogCard: React.FC<{ post: BlogPost }> = ({ post }) => (
     <BlogCover post={post} className="h-40 w-full" />
     <div className="p-6 flex flex-col flex-1">
       <p className="text-[13px] text-[var(--nxt-ink-soft)] flex flex-wrap gap-x-3">
-        {post.content_type && <span className="font-semibold text-[var(--nxt-ink)]">{post.content_type}</span>}
+        {post.content_type && <span className="font-normal text-[var(--nxt-ink)]">{post.content_type}</span>}
         {post.domain && <span>{post.domain}</span>}
       </p>
-      <h3 className="mt-3 font-display font-bold text-[1.25rem] leading-snug tracking-[-0.02em]">{post.title}</h3>
+      <h3 className="mt-3 font-display font-normal text-[1.25rem] leading-snug tracking-[-0.02em]">{post.title}</h3>
       <p className="mt-3 text-[15px] leading-relaxed text-[var(--nxt-ink-soft)] line-clamp-3">{post.excerpt}</p>
       <p className="mt-auto pt-5 text-[13px] text-[var(--nxt-ink-soft)] flex items-center gap-3">
         <span>NXT</span>
@@ -57,7 +57,7 @@ export const BlogListPage: React.FC = () => {
         {domains.length > 2 && (
           <div className="mt-10 flex flex-wrap gap-2">
             {domains.map(d => (
-              <button key={d} onClick={() => setDomain(d)} className={`rounded-full border px-4 py-1.5 text-sm font-semibold ${domain === d ? 'bg-[var(--nxt-ink-fixed)] text-white border-transparent' : 'border-[var(--nxt-line)] text-[var(--nxt-ink-soft)] hover:text-[var(--nxt-ink)]'}`}>{d}</button>
+              <button key={d} onClick={() => setDomain(d)} className={`rounded-full border px-4 py-1.5 text-sm font-normal ${domain === d ? 'bg-[var(--nxt-ink-fixed)] text-white border-transparent' : 'border-[var(--nxt-line)] text-[var(--nxt-ink-soft)] hover:text-[var(--nxt-ink)]'}`}>{d}</button>
             ))}
           </div>
         )}
@@ -97,7 +97,7 @@ export const BlogPostPage: React.FC = () => {
     return (
       <PublicLayout variant="home">
         <section className="nxt-container py-24">
-          <h1 className="font-display font-bold text-4xl tracking-[-0.03em]">We couldn't find that post.</h1>
+          <h1 className="font-display font-normal text-4xl tracking-[-0.03em]">We couldn't find that post.</h1>
           <Btn to="/blog" className="mt-8">All posts</Btn>
         </section>
       </PublicLayout>
@@ -108,18 +108,18 @@ export const BlogPostPage: React.FC = () => {
     <PublicLayout variant="home">
       <article className="nxt-container pt-10 pb-20">
         <Link to="/blog" className="inline-flex items-center gap-1 text-[15px] hover:underline"><ChevronLeft className="w-4 h-4" /> All posts</Link>
-        {error && <p className="mt-8 font-semibold text-[var(--nxt-peach-deep)]">{error}</p>}
+        {error && <p className="mt-8 font-normal text-[var(--nxt-peach-deep)]">{error}</p>}
         {!post && !error && <p className="mt-8 text-[var(--nxt-ink-soft)]">Loading…</p>}
         {post && (
           <div className="mt-8 max-w-3xl mx-auto">
             <p className="text-[13px] uppercase tracking-[0.14em] text-[var(--nxt-ink-soft)] flex flex-wrap gap-x-4">
               {post.content_type && <span>{post.content_type}</span>}
               {post.domain && <span>{post.domain}</span>}
-              {post.status === 'draft' && <span className="text-[var(--nxt-peach-deep)] font-bold">Draft</span>}
+              {post.status === 'draft' && <span className="text-[var(--nxt-peach-deep)] font-normal">Draft</span>}
             </p>
-            <h1 className="mt-4 font-display font-bold text-[clamp(2rem,4.5vw,3.25rem)] leading-[1.08] tracking-[-0.035em]">{post.title}</h1>
+            <h1 className="mt-4 font-display font-normal text-[clamp(2rem,4.5vw,3.25rem)] leading-[1.08] tracking-[-0.035em]">{post.title}</h1>
             <p className="mt-6 text-[15px] text-[var(--nxt-ink-soft)] flex flex-wrap gap-x-4 gap-y-1">
-              <span>By <span className="font-semibold text-[var(--nxt-ink)]">NXT</span></span>
+              <span>By <span className="font-normal text-[var(--nxt-ink)]">NXT</span></span>
               {post.published_at && <span>{dateLabel(post.published_at)}</span>}
               {post.read_minutes > 0 && <span>{post.read_minutes} min read</span>}
             </p>
@@ -131,7 +131,7 @@ export const BlogPostPage: React.FC = () => {
 
       {more.length > 0 && (
         <section className="nxt-container pb-20 border-t border-[var(--nxt-line)] pt-14">
-          <h2 className="font-display font-bold text-2xl tracking-[-0.025em]">Keep reading</h2>
+          <h2 className="font-display font-normal text-2xl tracking-[-0.025em]">Keep reading</h2>
           <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{more.map(p => <BlogCard key={p.id} post={p} />)}</div>
         </section>
       )}
