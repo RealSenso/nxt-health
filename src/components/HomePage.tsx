@@ -23,12 +23,14 @@ import { WORLD_OUTLINE } from '../data/worldOutline';
 const cssVar = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 
 /* =========================================================================
-   HERO BACKGROUND: SNOWFALL WHOSE TRAILS BECOME THE PATHWAY
-   Snow drifts down the page while travellers run along a route of five
-   gates, leaving glowing trails. Feeder routes from the left merge into the
-   main one: many ideas, one pathway. Follows the pointer (snow parts around
-   it) and takes its colours from the theme tokens, so it reads in light and dark.
+   HERO BACKGROUND: A JOURNEY DOWN THE PATHWAY
+   First-person view along a winding road toward the horizon. Gates (the five
+   stages) rise out of the distance and pass overhead; snow falls through the
+   scene. The pointer steers the view a little. Colours come from the theme
+   tokens, so it reads in light and dark.
    ========================================================================= */
+const GATE_NAMES = ['Problem', 'Validate', 'Build', 'Evidence', 'Launch'];
+
 const HeroPathway: React.FC = () => {
   const ref = useRef<HTMLCanvasElement>(null);
 
@@ -36,9 +38,9 @@ const HeroPathway: React.FC = () => {
     const c = ref.current;
     const ctx = c?.getContext('2d');
     if (!c || !ctx) return;
-    const trail = document.createElement('canvas');
-    const tctx = trail.getContext('2d');
-    if (!tctx) return;
+
+    const FAR = 3200, STEP = 40, GAP = 1000, ROAD = 130, CAM_H = 150, GATE_H = 270;
+    const centre = (z: number) => 190 * Math.sin(z * 0.0014) + 110 * Math.sin(z * 0.00055 + 1.3);
 
     const makeGlow = (color: string) => {
       const g = document.createElement('canvas');
@@ -49,8 +51,8 @@ const HeroPathway: React.FC = () => {
         x.fillRect(0, 0, 64, 64);
         const m = x.createRadialGradient(32, 32, 0, 32, 32, 32);
         m.addColorStop(0, 'rgba(255,255,255,1)');
-        m.addColorStop(0.16, 'rgba(255,255,255,1)');
-        m.addColorStop(0.42, 'rgba(255,255,255,0.3)');
+        m.addColorStop(0.18, 'rgba(255,255,255,1)');
+        m.addColorStop(0.45, 'rgba(255,255,255,0.28)');
         m.addColorStop(1, 'rgba(255,255,255,0)');
         x.globalCompositeOperation = 'destination-in';
         x.fillStyle = m;
@@ -59,95 +61,24 @@ const HeroPathway: React.FC = () => {
       return g;
     };
 
-    type Pt = { x: number; y: number };
-    type Route = { pts: Pt[]; len: number[]; total: number };
-
-    /* a smooth curve through control points (Catmull-Rom), then measured so travellers move at an even pace */
-    const buildRoute = (ctrl: Pt[], tail: Pt[] = []): Route => {
-      const pts: Pt[] = [];
-      for (let i = 0; i < ctrl.length - 1; i++) {
-        const p0 = ctrl[Math.max(i - 1, 0)], p1 = ctrl[i], p2 = ctrl[i + 1], p3 = ctrl[Math.min(i + 2, ctrl.length - 1)];
-        for (let s = 0; s < 24; s++) {
-          const u = s / 24, u2 = u * u, u3 = u2 * u;
-          pts.push({
-            x: 0.5 * (2 * p1.x + (-p0.x + p2.x) * u + (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * u2 + (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * u3),
-            y: 0.5 * (2 * p1.y + (-p0.y + p2.y) * u + (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * u2 + (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * u3),
-          });
-        }
-      }
-      pts.push(ctrl[ctrl.length - 1], ...tail);
-      const len = [0];
-      for (let i = 1; i < pts.length; i++) len.push(len[i - 1] + Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y));
-      return { pts, len, total: len[len.length - 1] };
-    };
-    const at = (r: Route, d: number) => {
-      let lo = 0, hi = r.len.length - 1;
-      while (hi - lo > 1) { const m = (lo + hi) >> 1; if (r.len[m] < d) lo = m; else hi = m; }
-      const seg = r.len[hi] - r.len[lo] || 1, u = (d - r.len[lo]) / seg;
-      const a = r.pts[lo], b = r.pts[hi];
-      return { x: a.x + (b.x - a.x) * u, y: a.y + (b.y - a.y) * u, nx: -(b.y - a.y) / seg, ny: (b.x - a.x) / seg };
-    };
-
-    let main: Route, feeders: Route[] = [], gates: { d: number; x: number; y: number; pulse: number }[] = [];
-    const GATES = [0.2, 0.4, 0.58, 0.76, 0.92];
-
     let W = 0, H = 0, raf = 0, frame = 0, visible = true;
     let green = '#0B8A44', ink = '#111111', soft = '#5F5F5F';
-    let glowGreen = makeGlow(green), glowInk = makeGlow(ink);
-    let mx = -999, my = -999;
+    let glowInk = makeGlow(ink), glowGreen = makeGlow(green);
+    let zc = 0, tx = 0, ty = 0, px = 0, py = 0;
+    let cx = 0, hy = 0, F = 0;
 
-    const flakes = Array.from({ length: 120 }, () => ({ x: Math.random(), y: Math.random(), z: Math.random(), p: Math.random() * 6.28 }));
-    type Runner = { r: number; d: number; v: number; off: number; size: number; hue: number; wait: number };
-    const runners: Runner[] = [];
-
-    const layout = () => {
-      const wide = W > 900;
-      const X = (x: number) => (wide ? x : 0.5 + (x - 0.7) * 0.9) * W;
-      const Y = (y: number) => y * H;
-      const m: Pt[] = [[0.55, 1.08], [0.64, 0.82], [0.56, 0.6], [0.76, 0.42], [0.68, 0.2], [0.9, -0.08]].map(([x, y]) => ({ x: X(x), y: Y(y) }));
-      main = buildRoute(m);
-      /* three feeders join the main route at different points */
-      const joins = [0.3, 0.45, 0.6];
-      const starts: Pt[][] = [
-        [{ x: X(0.04), y: Y(1.02) }, { x: X(0.26), y: Y(0.9) }],
-        [{ x: X(0.0), y: Y(0.7) }, { x: X(0.3), y: Y(0.62) }],
-        [{ x: X(0.06), y: Y(0.3) }, { x: X(0.34), y: Y(0.4) }],
-      ];
-      feeders = starts.map((s, i) => {
-        const jd = main.total * joins[i];
-        const j = at(main, jd);
-        const jIdx = main.len.findIndex(l => l >= jd);
-        return buildRoute([...s, { x: j.x, y: j.y }], main.pts.slice(jIdx));
-      });
-      gates = GATES.map(f => { const p = at(main, main.total * f); return { d: main.total * f, x: p.x, y: p.y, pulse: 0 }; });
-    };
-
-    const spawn = (r: Runner, first: boolean) => {
-      const routes = [main, main, ...feeders];
-      r.r = Math.floor(Math.random() * routes.length);
-      r.d = 0;
-      r.v = 1.1 + Math.random() * 1.7;
-      r.off = (Math.random() - 0.5) * 14;
-      r.size = 6 + Math.random() * 9;
-      r.hue = Math.random() < 0.7 ? 0 : 1;
-      r.wait = first ? Math.random() * 400 : Math.random() * 90;
-    };
-    const routeOf = (r: Runner) => [main, main, ...feeders][r.r];
+    const flakes = Array.from({ length: 170 }, () => ({ x: (Math.random() - 0.5) * 2600, y: Math.random() * 800, z: Math.random() * FAR, s: 0.4 + Math.random() * 0.9, p: Math.random() * 6.28 }));
 
     const resize = () => {
       const d = Math.min(window.devicePixelRatio || 1, 2);
       W = c.clientWidth;
       H = c.clientHeight;
-      c.width = trail.width = Math.round(W * d);
-      c.height = trail.height = Math.round(H * d);
+      c.width = Math.round(W * d);
+      c.height = Math.round(H * d);
       ctx.setTransform(d, 0, 0, d, 0, 0);
-      tctx.setTransform(d, 0, 0, d, 0, 0);
-      layout();
-      runners.length = 0;
-      for (let i = 0; i < 44; i++) { const r = {} as Runner; spawn(r, true); runners.push(r); }
     };
 
-    const stamp = (g: CanvasRenderingContext2D, sprite: HTMLCanvasElement, x: number, y: number, size: number) => g.drawImage(sprite, x - size / 2, y - size / 2, size, size);
+    const fade = (dist: number) => Math.pow(Math.max(0, 1 - dist / FAR), 1.3);
 
     const draw = () => {
       if (frame++ % 30 === 0) {
@@ -157,72 +88,104 @@ const HeroPathway: React.FC = () => {
         glowGreen = makeGlow(green);
         glowInk = makeGlow(ink);
       }
+      zc += 3.2;
+      px += (tx - px) * 0.05;
+      py += (ty - py) * 0.05;
+      cx = (W > 900 ? W * 0.7 : W * 0.5) + px * 160;
+      hy = H * (W > 900 ? 0.44 : 0.4) + py * 60;
+      F = Math.max(H, 520) * 1.05;
+      const camX = centre(zc) ;
       const t = frame * 0.016;
 
-      /* the trail layer fades a little every frame; whatever keeps being drawn stays lit */
-      tctx.globalCompositeOperation = 'destination-out';
-      tctx.fillStyle = 'rgba(0,0,0,0.1)';
-      tctx.fillRect(0, 0, W, H);
-      tctx.globalCompositeOperation = 'source-over';
-
-      /* snow: drifts down and sideways, parts around the pointer */
-      flakes.forEach(f => {
-        const speed = 0.25 + f.z * 0.9;
-        f.y += (speed * 1.1) / H * 1.6;
-        f.x += Math.sin(t * 0.7 + f.p) * 0.00025 + 0.00006;
-        if (f.y > 1.04) { f.y = -0.04; f.x = Math.random(); }
-        if (f.x > 1.02) f.x = -0.02;
-        let x = f.x * W, y = f.y * H;
-        const dx = x - mx, dy = y - my, dist = Math.hypot(dx, dy);
-        if (dist < 110) { const k = (1 - dist / 110) * 26 * f.z; x += (dx / (dist || 1)) * k; y += (dy / (dist || 1)) * k; }
-        tctx.globalAlpha = 0.15 + 0.4 * f.z;
-        stamp(tctx, glowInk, x, y, 2.5 + f.z * 5);
-      });
-
-      /* travellers leave glowing trails that merge into the pathway */
-      runners.forEach(r => {
-        if (r.wait > 0) { r.wait--; return; }
-        const route = routeOf(r);
-        r.d += r.v;
-        if (r.d >= route.total) { spawn(r, false); return; }
-        const p = at(route, r.d);
-        const wob = r.off * (0.55 + 0.45 * Math.sin(r.d * 0.01 + r.off));
-        const x = p.x + p.nx * wob, y = p.y + p.ny * wob;
-        tctx.globalAlpha = 0.9;
-        stamp(tctx, r.hue ? glowInk : glowGreen, x, y, r.size);
-        gates.forEach(g => { if (r.r < 2 && Math.abs(r.d - g.d) < r.v) g.pulse = 1; });
-      });
-      tctx.globalAlpha = 1;
+      const P = (x: number, y: number, z: number) => {
+        const d = Math.max(z - zc, 20), f = F / d;
+        return { x: cx + (x - camX) * f, y: hy + (CAM_H - y) * f, f, d };
+      };
 
       ctx.clearRect(0, 0, W, H);
-      ctx.drawImage(trail, 0, 0, W, H);
 
-      /* the route itself, as a faint guide line under the glow */
-      ctx.lineWidth = 1;
+      /* ground lines rushing toward you give the sense of speed */
       ctx.strokeStyle = soft;
-      ctx.globalAlpha = 0.18;
-      ctx.setLineDash([2, 7]);
-      ctx.beginPath();
-      main.pts.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
-      ctx.stroke();
-      ctx.setLineDash([]);
+      ctx.lineWidth = 1;
+      for (let z = Math.ceil((zc + 60) / 160) * 160; z < zc + FAR; z += 160) {
+        const l = P(centre(z) - 1400, 0, z), r = P(centre(z) + 1400, 0, z);
+        ctx.globalAlpha = 0.09 * fade(z - zc);
+        ctx.beginPath(); ctx.moveTo(Math.max(-50, l.x), l.y); ctx.lineTo(Math.min(W + 50, r.x), r.y); ctx.stroke();
+      }
 
-      /* the five gates: a ring that pulses whenever a traveller clears it */
-      ctx.font = '11px ui-monospace, SFMono-Regular, Menlo, monospace';
-      gates.forEach((g, i) => {
-        g.pulse *= 0.95;
-        const breathe = 0.5 + 0.5 * Math.sin(t * 1.4 + i);
-        ctx.globalAlpha = 0.25 + 0.5 * g.pulse;
-        stamp(ctx, glowGreen, g.x, g.y, 34 + g.pulse * 30 + breathe * 6);
-        ctx.globalAlpha = 0.9;
+      /* the road: two glowing edges, a dashed centre line, and a soft fill between them */
+      const L: ReturnType<typeof P>[] = [], R: ReturnType<typeof P>[] = [];
+      for (let z = zc + 30; z <= zc + FAR; z += STEP) {
+        L.push(P(centre(z) - ROAD, 0, z));
+        R.push(P(centre(z) + ROAD, 0, z));
+      }
+      ctx.globalAlpha = 0.07;
+      ctx.fillStyle = green;
+      ctx.beginPath();
+      L.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+      for (let i = R.length - 1; i >= 0; i--) ctx.lineTo(R[i].x, R[i].y);
+      ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = green;
+      for (const edge of [L, R]) {
+        for (let i = 1; i < edge.length; i++) {
+          ctx.globalAlpha = 0.85 * fade(edge[i].d);
+          ctx.lineWidth = Math.max(0.6, 3.2 * edge[i].f);
+          ctx.beginPath(); ctx.moveTo(edge[i - 1].x, edge[i - 1].y); ctx.lineTo(edge[i].x, edge[i].y); ctx.stroke();
+        }
+      }
+      ctx.strokeStyle = ink;
+      for (let z = Math.floor((zc + 30) / 120) * 120; z < zc + FAR; z += 120) {
+        if (z < zc + 30) continue;
+        const a = P(centre(z), 0, z), b = P(centre(z + 60), 0, z + 60);
+        ctx.globalAlpha = 0.55 * fade(a.d);
+        ctx.lineWidth = Math.max(0.5, 2.4 * a.f);
+        ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+      }
+
+      /* the gates: one per stage, rising out of the distance */
+      ctx.textAlign = 'center';
+      const first = Math.ceil((zc + 120) / GAP) * GAP;
+      for (let z = first + Math.floor(FAR / GAP) * GAP; z >= first; z -= GAP) {
+        const idx = ((z / GAP) % 5 + 5) % 5;
+        const cz = centre(z);
+        const bl = P(cz - ROAD - 20, 0, z), br = P(cz + ROAD + 20, 0, z);
+        const tl = P(cz - ROAD - 20, GATE_H, z), tr = P(cz + ROAD + 20, GATE_H, z);
+        const a = fade(bl.d);
+        const near = Math.max(0, 1 - (bl.d - 120) / 500);
         ctx.strokeStyle = green;
-        ctx.lineWidth = 1.5;
-        ctx.beginPath(); ctx.arc(g.x, g.y, 7 + g.pulse * 3, 0, 6.2832); ctx.stroke();
-        ctx.fillStyle = green;
-        ctx.beginPath(); ctx.arc(g.x, g.y, 2.4, 0, 6.2832); ctx.fill();
-        ctx.globalAlpha = 0.7;
-        ctx.fillStyle = soft;
-        ctx.fillText(`0${i + 1}`, g.x + 16, g.y + 4);
+        ctx.lineWidth = Math.max(1, 5 * bl.f);
+        ctx.globalAlpha = a * (0.7 + 0.3 * near);
+        ctx.beginPath(); ctx.moveTo(bl.x, bl.y); ctx.lineTo(tl.x, tl.y); ctx.lineTo(tr.x, tr.y); ctx.lineTo(br.x, br.y); ctx.stroke();
+        /* a veil of light between the posts */
+        const grd = ctx.createLinearGradient(0, tl.y, 0, bl.y);
+        grd.addColorStop(0, green); grd.addColorStop(1, 'transparent');
+        ctx.fillStyle = grd;
+        ctx.globalAlpha = a * 0.1;
+        ctx.fillRect(tl.x, tl.y, tr.x - tl.x, bl.y - tl.y);
+        ctx.globalAlpha = a * 0.9;
+        ctx.drawImage(glowGreen, tl.x - 18 * tl.f * 6, tl.y - 18 * tl.f * 6, 36 * tl.f * 6, 36 * tl.f * 6);
+        ctx.drawImage(glowGreen, tr.x - 18 * tr.f * 6, tr.y - 18 * tr.f * 6, 36 * tr.f * 6, 36 * tr.f * 6);
+        const size = 56 * tl.f;
+        if (size >= 8) {
+          ctx.fillStyle = ink;
+          ctx.globalAlpha = a;
+          ctx.font = `${Math.round(size)}px ui-monospace, SFMono-Regular, Menlo, monospace`;
+          ctx.fillText(`0${idx + 1}  ${GATE_NAMES[idx]}`, Math.min(W - size * 4.5, Math.max(size * 4.5, (tl.x + tr.x) / 2)), tl.y - size * 0.6);
+        }
+      }
+      ctx.textAlign = 'start';
+
+      /* snow falling through the scene */
+      flakes.forEach(f => {
+        f.y -= f.s * 0.9;
+        f.x += Math.sin(t * 0.8 + f.p) * 0.5;
+        if (f.y < 0) { f.y = 800; f.x = camX + (Math.random() - 0.5) * 2600; f.z = zc + Math.random() * FAR; }
+        if (f.z - zc < 25) { f.z = zc + FAR; f.x = camX + (Math.random() - 0.5) * 2600; }
+        const q = P(f.x, f.y, f.z);
+        if (q.x < -20 || q.x > W + 20 || q.y < -20 || q.y > H + 20) return;
+        ctx.globalAlpha = Math.min(1, fade(q.d) * 1.4) * 0.75;
+        const s = Math.max(2, 22 * q.f * f.s);
+        ctx.drawImage(glowInk, q.x - s / 2, q.y - s / 2, s, s);
       });
       ctx.globalAlpha = 1;
     };
@@ -234,7 +197,8 @@ const HeroPathway: React.FC = () => {
     };
     const onMove = (e: PointerEvent) => {
       const r = c.getBoundingClientRect();
-      mx = e.clientX - r.left; my = e.clientY - r.top;
+      tx = ((e.clientX - r.left) / r.width - 0.5) * 2;
+      ty = ((e.clientY - r.top) / r.height - 0.5) * 2;
     };
     const io = new IntersectionObserver(([entry]) => {
       const was = visible;
