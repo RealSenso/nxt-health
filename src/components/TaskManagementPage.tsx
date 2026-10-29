@@ -380,7 +380,6 @@ export const TaskManagementPage: React.FC<TaskManagementPageProps> = ({
           icon={Layers}
           eyebrow="Choose what to build"
           title="What are you building for this problem?"
-          subtitle={<>For <span className="font-semibold text-[var(--nxt-ink)]">{selectedProblem.title}</span>. Pick one product category — your roadmap, deliverables and resources are tailored to it.</>}
           illustration="roadmap"
         >
           <p className="text-sm text-[var(--nxt-ink-soft)] flex items-start gap-2">

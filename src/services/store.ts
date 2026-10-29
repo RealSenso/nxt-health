@@ -136,6 +136,9 @@ class ApiStore {
     this.errorListeners.forEach(cb => cb(message));
   }
 
+  private writeSeq = 0;
+  private pendingWrites = 0;
+
   public async refresh(): Promise<void> {
     if (this.inFlight) return this.inFlight;
     this.inFlight = (async () => {
@@ -145,7 +148,10 @@ class ApiStore {
           await this.firebaseUser.reload().catch(() => undefined);
           if (this.firebaseUser.emailVerified) await this.firebaseUser.getIdToken(true);
         }
+        const seq = this.writeSeq;
         let data = await api.get<BootstrapData>('/bootstrap');
+        // A write started while this was in flight, so the snapshot may predate it: drop it and fetch again.
+        if (this.pendingWrites > 0 || this.writeSeq !== seq) { this.scheduleRefresh(); return; }
         if (data.needs_profile && this.firebaseUser && !this.signingUp) {
           const fallbackName = this.firebaseUser.displayName || this.firebaseUser.email?.split('@')[0] || 'Founder';
           await api.post('/users/me', { name: fallbackName });
@@ -172,9 +178,11 @@ class ApiStore {
   private mutate(apply: (d: BootstrapData) => void, request: () => Promise<unknown>): Promise<void> {
     apply(this.data);
     this.notify();
+    this.writeSeq++;
+    this.pendingWrites++;
     return request()
-      .then(() => this.scheduleRefresh())
-      .catch((e) => { this.reportError(e); void this.refresh(); });
+      .then(() => { this.pendingWrites--; this.scheduleRefresh(); })
+      .catch((e) => { this.pendingWrites--; this.reportError(e); this.scheduleRefresh(); });
   }
 
   /** Awaited write whose errors the caller handles. */

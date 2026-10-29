@@ -23,22 +23,23 @@ import { WORLD_OUTLINE } from '../data/worldOutline';
 const cssVar = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 
 /* =========================================================================
-   HERO BACKGROUND: A SPINNING HELIX MADE OF STARS, OVER A DRIFTING STAR FIELD
-   Sits behind the hero copy. Follows the pointer a little, spins on its own,
-   and takes its colours from the theme tokens so it reads in light and dark.
+   HERO BACKGROUND: SNOWFALL WHOSE TRAILS BECOME THE PATHWAY
+   Snow drifts down the page while travellers run along a route of five
+   gates, leaving glowing trails. Feeder routes from the left merge into the
+   main one: many ideas, one pathway. Follows the pointer (snow parts around
+   it) and takes its colours from the theme tokens, so it reads in light and dark.
    ========================================================================= */
-const HeroHelix: React.FC = () => {
+const HeroPathway: React.FC = () => {
   const ref = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     const c = ref.current;
     const ctx = c?.getContext('2d');
     if (!c || !ctx) return;
+    const trail = document.createElement('canvas');
+    const tctx = trail.getContext('2d');
+    if (!tctx) return;
 
-    const N = 96, TURNS = 3.2, RAD = 1.7, LEN = 9;
-    const orbit = Array.from({ length: 7 }, (_, j) => ({ r: 3 + (j % 3) * 0.8, s: 0.25 + j * 0.05, p: j * 0.9, y: (j - 3) * 1.15, k: 0.28 + (j % 3) * 0.1 }));
-
-    /* a soft glowing dot, drawn once per colour and stamped wherever a star goes */
     const makeGlow = (color: string) => {
       const g = document.createElement('canvas');
       g.width = g.height = 64;
@@ -48,8 +49,8 @@ const HeroHelix: React.FC = () => {
         x.fillRect(0, 0, 64, 64);
         const m = x.createRadialGradient(32, 32, 0, 32, 32, 32);
         m.addColorStop(0, 'rgba(255,255,255,1)');
-        m.addColorStop(0.14, 'rgba(255,255,255,1)');
-        m.addColorStop(0.4, 'rgba(255,255,255,0.32)');
+        m.addColorStop(0.16, 'rgba(255,255,255,1)');
+        m.addColorStop(0.42, 'rgba(255,255,255,0.3)');
         m.addColorStop(1, 'rgba(255,255,255,0)');
         x.globalCompositeOperation = 'destination-in';
         x.fillStyle = m;
@@ -57,35 +58,96 @@ const HeroHelix: React.FC = () => {
       }
       return g;
     };
-    const dot = (sprite: HTMLCanvasElement, x: number, y: number, size: number) => ctx.drawImage(sprite, x - size / 2, y - size / 2, size, size);
-    let glowGreen = makeGlow('#0B8A44'), glowInk = makeGlow('#111111');
-    const field = Array.from({ length: 130 }, () => ({ x: Math.random(), y: Math.random(), z: Math.random(), p: Math.random() * 6.28 }));
-    let W = 0, H = 0, raf = 0, frame = 0, t = 0, spin = 0, visible = true;
-    let tx = 0, ty = 0, px = 0, py = 0;
+
+    type Pt = { x: number; y: number };
+    type Route = { pts: Pt[]; len: number[]; total: number };
+
+    /* a smooth curve through control points (Catmull-Rom), then measured so travellers move at an even pace */
+    const buildRoute = (ctrl: Pt[], tail: Pt[] = []): Route => {
+      const pts: Pt[] = [];
+      for (let i = 0; i < ctrl.length - 1; i++) {
+        const p0 = ctrl[Math.max(i - 1, 0)], p1 = ctrl[i], p2 = ctrl[i + 1], p3 = ctrl[Math.min(i + 2, ctrl.length - 1)];
+        for (let s = 0; s < 24; s++) {
+          const u = s / 24, u2 = u * u, u3 = u2 * u;
+          pts.push({
+            x: 0.5 * (2 * p1.x + (-p0.x + p2.x) * u + (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * u2 + (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * u3),
+            y: 0.5 * (2 * p1.y + (-p0.y + p2.y) * u + (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * u2 + (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * u3),
+          });
+        }
+      }
+      pts.push(ctrl[ctrl.length - 1], ...tail);
+      const len = [0];
+      for (let i = 1; i < pts.length; i++) len.push(len[i - 1] + Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y));
+      return { pts, len, total: len[len.length - 1] };
+    };
+    const at = (r: Route, d: number) => {
+      let lo = 0, hi = r.len.length - 1;
+      while (hi - lo > 1) { const m = (lo + hi) >> 1; if (r.len[m] < d) lo = m; else hi = m; }
+      const seg = r.len[hi] - r.len[lo] || 1, u = (d - r.len[lo]) / seg;
+      const a = r.pts[lo], b = r.pts[hi];
+      return { x: a.x + (b.x - a.x) * u, y: a.y + (b.y - a.y) * u, nx: -(b.y - a.y) / seg, ny: (b.x - a.x) / seg };
+    };
+
+    let main: Route, feeders: Route[] = [], gates: { d: number; x: number; y: number; pulse: number }[] = [];
+    const GATES = [0.2, 0.4, 0.58, 0.76, 0.92];
+
+    let W = 0, H = 0, raf = 0, frame = 0, visible = true;
     let green = '#0B8A44', ink = '#111111', soft = '#5F5F5F';
+    let glowGreen = makeGlow(green), glowInk = makeGlow(ink);
+    let mx = -999, my = -999;
+
+    const flakes = Array.from({ length: 120 }, () => ({ x: Math.random(), y: Math.random(), z: Math.random(), p: Math.random() * 6.28 }));
+    type Runner = { r: number; d: number; v: number; off: number; size: number; hue: number; wait: number };
+    const runners: Runner[] = [];
+
+    const layout = () => {
+      const wide = W > 900;
+      const X = (x: number) => (wide ? x : 0.5 + (x - 0.7) * 0.9) * W;
+      const Y = (y: number) => y * H;
+      const m: Pt[] = [[0.55, 1.08], [0.64, 0.82], [0.56, 0.6], [0.76, 0.42], [0.68, 0.2], [0.9, -0.08]].map(([x, y]) => ({ x: X(x), y: Y(y) }));
+      main = buildRoute(m);
+      /* three feeders join the main route at different points */
+      const joins = [0.3, 0.45, 0.6];
+      const starts: Pt[][] = [
+        [{ x: X(0.04), y: Y(1.02) }, { x: X(0.26), y: Y(0.9) }],
+        [{ x: X(0.0), y: Y(0.7) }, { x: X(0.3), y: Y(0.62) }],
+        [{ x: X(0.06), y: Y(0.3) }, { x: X(0.34), y: Y(0.4) }],
+      ];
+      feeders = starts.map((s, i) => {
+        const jd = main.total * joins[i];
+        const j = at(main, jd);
+        const jIdx = main.len.findIndex(l => l >= jd);
+        return buildRoute([...s, { x: j.x, y: j.y }], main.pts.slice(jIdx));
+      });
+      gates = GATES.map(f => { const p = at(main, main.total * f); return { d: main.total * f, x: p.x, y: p.y, pulse: 0 }; });
+    };
+
+    const spawn = (r: Runner, first: boolean) => {
+      const routes = [main, main, ...feeders];
+      r.r = Math.floor(Math.random() * routes.length);
+      r.d = 0;
+      r.v = 1.1 + Math.random() * 1.7;
+      r.off = (Math.random() - 0.5) * 14;
+      r.size = 6 + Math.random() * 9;
+      r.hue = Math.random() < 0.7 ? 0 : 1;
+      r.wait = first ? Math.random() * 400 : Math.random() * 90;
+    };
+    const routeOf = (r: Runner) => [main, main, ...feeders][r.r];
 
     const resize = () => {
       const d = Math.min(window.devicePixelRatio || 1, 2);
       W = c.clientWidth;
       H = c.clientHeight;
-      c.width = Math.round(W * d);
-      c.height = Math.round(H * d);
+      c.width = trail.width = Math.round(W * d);
+      c.height = trail.height = Math.round(H * d);
       ctx.setTransform(d, 0, 0, d, 0, 0);
+      tctx.setTransform(d, 0, 0, d, 0, 0);
+      layout();
+      runners.length = 0;
+      for (let i = 0; i < 44; i++) { const r = {} as Runner; spawn(r, true); runners.push(r); }
     };
 
-    const project = (x: number, y: number, z: number, cx: number) => {
-      const ry = spin + px, rx = py;
-      const X = x * Math.cos(ry) + z * Math.sin(ry);
-      const Z = -x * Math.sin(ry) + z * Math.cos(ry);
-      const Y2 = y * Math.cos(rx) - Z * Math.sin(rx);
-      const Z2 = y * Math.sin(rx) + Z * Math.cos(rx);
-      const roll = 0.32;
-      const X3 = X * Math.cos(roll) - Y2 * Math.sin(roll);
-      const Y3 = X * Math.sin(roll) + Y2 * Math.cos(roll);
-      const k = 15 / (15 - Z2);
-      const s = Math.min(Math.max(H, 480), 760) / 10.5;
-      return { x: cx + X3 * k * s, y: H / 2 - Y3 * k * s, d: Math.max(0, Math.min(1, (Z2 + 4) / 8)) };
-    };
+    const stamp = (g: CanvasRenderingContext2D, sprite: HTMLCanvasElement, x: number, y: number, size: number) => g.drawImage(sprite, x - size / 2, y - size / 2, size, size);
 
     const draw = () => {
       if (frame++ % 30 === 0) {
@@ -95,53 +157,72 @@ const HeroHelix: React.FC = () => {
         glowGreen = makeGlow(green);
         glowInk = makeGlow(ink);
       }
-      t += 0.016;
-      spin += 0.004;
-      px += (tx - px) * 0.06;
-      py += (ty - py) * 0.06;
-      const cx = W > 900 ? W * 0.74 : W * 0.5;
+      const t = frame * 0.016;
 
-      ctx.clearRect(0, 0, W, H);
-      const A: ReturnType<typeof project>[] = [], B: ReturnType<typeof project>[] = [];
-      for (let i = 0; i < N; i++) {
-        const u = i / (N - 1), a = u * Math.PI * 2 * TURNS, y = (u - 0.5) * LEN;
-        A.push(project(Math.cos(a) * RAD, y, Math.sin(a) * RAD, cx));
-        B.push(project(Math.cos(a + Math.PI) * RAD, y, Math.sin(a + Math.PI) * RAD, cx));
-      }
+      /* the trail layer fades a little every frame; whatever keeps being drawn stays lit */
+      tctx.globalCompositeOperation = 'destination-out';
+      tctx.fillStyle = 'rgba(0,0,0,0.1)';
+      tctx.fillRect(0, 0, W, H);
+      tctx.globalCompositeOperation = 'source-over';
 
-      /* distant stars drift with the pointer, nearer ones further */
-      field.forEach(f => {
-        ctx.globalAlpha = (0.15 + 0.5 * f.z) * (0.55 + 0.45 * Math.sin(t * 1.6 + f.p));
-        dot(glowInk, f.x * W + px * f.z * 40, f.y * H + py * f.z * 40, 2 + f.z * 4);
+      /* snow: drifts down and sideways, parts around the pointer */
+      flakes.forEach(f => {
+        const speed = 0.25 + f.z * 0.9;
+        f.y += (speed * 1.1) / H * 1.6;
+        f.x += Math.sin(t * 0.7 + f.p) * 0.00025 + 0.00006;
+        if (f.y > 1.04) { f.y = -0.04; f.x = Math.random(); }
+        if (f.x > 1.02) f.x = -0.02;
+        let x = f.x * W, y = f.y * H;
+        const dx = x - mx, dy = y - my, dist = Math.hypot(dx, dy);
+        if (dist < 110) { const k = (1 - dist / 110) * 26 * f.z; x += (dx / (dist || 1)) * k; y += (dy / (dist || 1)) * k; }
+        tctx.globalAlpha = 0.15 + 0.4 * f.z;
+        stamp(tctx, glowInk, x, y, 2.5 + f.z * 5);
       });
 
-      /* faint constellation lines instead of base pairs */
-      ctx.lineWidth = 0.8;
+      /* travellers leave glowing trails that merge into the pathway */
+      runners.forEach(r => {
+        if (r.wait > 0) { r.wait--; return; }
+        const route = routeOf(r);
+        r.d += r.v;
+        if (r.d >= route.total) { spawn(r, false); return; }
+        const p = at(route, r.d);
+        const wob = r.off * (0.55 + 0.45 * Math.sin(r.d * 0.01 + r.off));
+        const x = p.x + p.nx * wob, y = p.y + p.ny * wob;
+        tctx.globalAlpha = 0.9;
+        stamp(tctx, r.hue ? glowInk : glowGreen, x, y, r.size);
+        gates.forEach(g => { if (r.r < 2 && Math.abs(r.d - g.d) < r.v) g.pulse = 1; });
+      });
+      tctx.globalAlpha = 1;
+
+      ctx.clearRect(0, 0, W, H);
+      ctx.drawImage(trail, 0, 0, W, H);
+
+      /* the route itself, as a faint guide line under the glow */
+      ctx.lineWidth = 1;
       ctx.strokeStyle = soft;
-      for (let i = 4; i < N; i += 6) {
-        ctx.globalAlpha = 0.1 + 0.2 * ((A[i].d + B[i].d) / 2);
-        ctx.beginPath(); ctx.moveTo(A[i].x, A[i].y); ctx.lineTo(B[i].x, B[i].y); ctx.stroke();
-      }
+      ctx.globalAlpha = 0.18;
+      ctx.setLineDash([2, 7]);
+      ctx.beginPath();
+      main.pts.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+      ctx.stroke();
+      ctx.setLineDash([]);
 
-      /* the two strands: a thread of light with glowing dots strung on it */
-      const strand = (P: typeof A, color: string, sprite: HTMLCanvasElement, offset: number) => {
-        ctx.strokeStyle = color; ctx.globalAlpha = 0.2; ctx.lineWidth = 1;
-        ctx.beginPath(); P.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y))); ctx.stroke();
-        P.forEach((p, i) => {
-          const tw = 0.65 + 0.35 * Math.sin(t * 2.2 + i * 0.9 + offset);
-          ctx.globalAlpha = (0.35 + 0.65 * p.d) * tw;
-          dot(sprite, p.x, p.y, (i % 5 === 0 ? 14 : 7) + p.d * (i % 5 === 0 ? 14 : 8));
-        });
-      };
-      strand(B, ink, glowInk, 0);
-      strand(A, green, glowGreen, 2);
-
-      /* big bright dots orbiting the helix */
-      orbit.forEach(o => {
-        const a = t * o.s + o.p;
-        const q = project(Math.cos(a) * o.r, o.y + Math.sin(t + o.p) * 0.3, Math.sin(a) * o.r, cx);
-        ctx.globalAlpha = (0.45 + 0.55 * q.d) * (0.65 + 0.35 * Math.sin(t * 2 + o.p * 3));
-        dot(glowGreen, q.x, q.y, 22 + o.k * 70 * (0.5 + q.d));
+      /* the five gates: a ring that pulses whenever a traveller clears it */
+      ctx.font = '11px ui-monospace, SFMono-Regular, Menlo, monospace';
+      gates.forEach((g, i) => {
+        g.pulse *= 0.95;
+        const breathe = 0.5 + 0.5 * Math.sin(t * 1.4 + i);
+        ctx.globalAlpha = 0.25 + 0.5 * g.pulse;
+        stamp(ctx, glowGreen, g.x, g.y, 34 + g.pulse * 30 + breathe * 6);
+        ctx.globalAlpha = 0.9;
+        ctx.strokeStyle = green;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(g.x, g.y, 7 + g.pulse * 3, 0, 6.2832); ctx.stroke();
+        ctx.fillStyle = green;
+        ctx.beginPath(); ctx.arc(g.x, g.y, 2.4, 0, 6.2832); ctx.fill();
+        ctx.globalAlpha = 0.7;
+        ctx.fillStyle = soft;
+        ctx.fillText(`0${i + 1}`, g.x + 16, g.y + 4);
       });
       ctx.globalAlpha = 1;
     };
@@ -153,8 +234,7 @@ const HeroHelix: React.FC = () => {
     };
     const onMove = (e: PointerEvent) => {
       const r = c.getBoundingClientRect();
-      ty = ((e.clientY - r.top) / r.height - 0.5) * 0.7;
-      tx = ((e.clientX - r.left) / r.width - 0.5) * 0.9;
+      mx = e.clientX - r.left; my = e.clientY - r.top;
     };
     const io = new IntersectionObserver(([entry]) => {
       const was = visible;
@@ -690,7 +770,7 @@ export const HomePage: React.FC = () => {
     <PublicLayout variant="home">
       {/* 1. HERO: the helix is the background of the headline */}
       <section className="relative overflow-hidden border-b border-[var(--nxt-line)]">
-        <HeroHelix />
+        <HeroPathway />
         <div
           aria-hidden="true"
           className="absolute inset-0 pointer-events-none"
