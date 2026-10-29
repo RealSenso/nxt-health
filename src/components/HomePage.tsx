@@ -23,173 +23,162 @@ import { WORLD_OUTLINE } from '../data/worldOutline';
 const cssVar = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 
 /* =========================================================================
-   HERO BACKGROUND: A JOURNEY DOWN THE PATHWAY
-   First-person view along a winding road toward the horizon. Gates (the five
-   stages) rise out of the distance and pass overhead; snow falls through the
-   scene. The pointer steers the view a little. Colours come from the theme
-   tokens, so it reads in light and dark.
+   HERO BACKGROUND: A BLIZZARD OF LIGHT THAT FINDS ITS WAY
+   Tens of thousands of particles, all moved on the GPU. They start as falling
+   snow, then drift together into a winding river of light with five gates,
+   hold it while it flows, and fall apart again. The pointer tilts the scene
+   and pushes the particles aside. Colours follow the theme, light or dark.
    ========================================================================= */
-const GATE_NAMES = ['Problem', 'Validate', 'Build', 'Evidence', 'Launch'];
+const GL_VERT = `
+attribute vec4 a_seed;
+uniform float u_t, u_m, u_aspect, u_dpr, u_shift, u_scale, u_boost;
+uniform vec2 u_cam, u_mouse;
+uniform vec3 u_green, u_ink;
+varying vec4 v_col;
+
+vec3 P(float u) { return vec3((u - 0.5) * 8.0 + sin(u * 9.0) * 0.5, sin(u * 7.0) * 0.9 + (u - 0.5) * 0.8, cos(u * 5.0) * 2.4); }
+
+void main() {
+  float t = u_t;
+  float h1 = fract(a_seed.x * 7.13), h2 = fract(a_seed.y * 5.71), h3 = fract(a_seed.z * 3.97);
+  vec3 snow = vec3((h1 - 0.5) * 18.0 + sin(t * 0.5 + h2 * 20.0) * 0.4,
+                   5.0 - mod(h2 * 10.0 + t * (0.35 + a_seed.z * 0.6), 10.0),
+                   (h3 - 0.5) * 9.0);
+  bool ring = a_seed.w < 0.09;
+  float u = ring ? (floor(a_seed.w / 0.09 * 5.0) + 0.8) / 5.6 : fract(a_seed.x + t * 0.035 * (0.7 + a_seed.z * 0.6));
+  vec3 T = normalize(P(u + 0.01) - P(u));
+  vec3 N = normalize(cross(vec3(0.0, 1.0, 0.0), T));
+  vec3 B = cross(T, N);
+  vec3 tgt;
+  if (ring) {
+    float a = a_seed.x * 6.2832 + t * 0.4;
+    tgt = P(u) + (N * cos(a) + B * sin(a)) * 1.35;
+  } else {
+    float cx = a_seed.y * 2.0 - 1.0;
+    cx = sign(cx) * pow(abs(cx), 1.5);
+    float cy = a_seed.z * 2.0 - 1.0;
+    tgt = P(u) + N * cx * 0.95 + B * (cy * 0.1 + sin(u * 40.0 + t * 2.0) * 0.04);
+  }
+  float e = u_m * u_m * (3.0 - 2.0 * u_m);
+  float w = 4.0 * u_m * (1.0 - u_m);
+  vec3 swirl = vec3(sin(a_seed.y * 40.0 + t), cos(a_seed.z * 40.0 + t * 1.3), sin(a_seed.x * 40.0 - t)) * w * 1.6;
+  vec3 p = (mix(snow, tgt, e) + swirl) * u_scale;
+
+  float cy2 = cos(u_cam.x), sy = sin(u_cam.x), cp = cos(u_cam.y), sp = sin(u_cam.y);
+  p = vec3(p.x * cy2 + p.z * sy, p.y, -p.x * sy + p.z * cy2);
+  p = vec3(p.x, p.y * cp - p.z * sp, p.y * sp + p.z * cp);
+  p.z -= 9.0;
+
+  float f = 1.0 / tan(0.4);
+  vec2 s = vec2(p.x * f / u_aspect, p.y * f) / (-p.z) + vec2(u_shift, 0.0);
+  vec2 d = (s - u_mouse) * vec2(u_aspect, 1.0);
+  float dist = length(d);
+  s += (d / (dist + 0.001)) * exp(-dist * 4.0) * 0.14 * vec2(1.0 / u_aspect, 1.0);
+  gl_Position = vec4(s, 0.0, 1.0);
+
+  float depth = clamp(1.0 - (-p.z - 5.0) / 9.0, 0.25, 1.0);
+  gl_PointSize = (1.1 + a_seed.z * 1.6) * (ring ? 1.7 : 1.0) * u_dpr * (15.0 / (-p.z)) * (1.0 + 0.5 * e);
+  vec3 pathCol = ring ? u_green : mix(u_green, u_ink, a_seed.y * 0.25);
+  float tw = 0.75 + 0.25 * sin(t * 2.0 + a_seed.x * 60.0);
+  v_col = vec4(mix(u_ink, pathCol, e), mix(0.5, ring ? 1.0 : 0.85, e) * depth * tw * u_boost);
+}
+`;
+const GL_FRAG = `
+precision mediump float;
+varying vec4 v_col;
+void main() {
+  float d = length(gl_PointCoord - 0.5);
+  float a = smoothstep(0.5, 0.0, d);
+  float k = v_col.a * a * a;
+  gl_FragColor = vec4(v_col.rgb * k, k);
+}
+`;
 
 const HeroPathway: React.FC = () => {
   const ref = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     const c = ref.current;
-    const ctx = c?.getContext('2d');
-    if (!c || !ctx) return;
+    const gl = c?.getContext('webgl', { alpha: true, premultipliedAlpha: true, antialias: false });
+    if (!c || !gl) return;
 
-    const FAR = 3200, STEP = 40, GAP = 1000, ROAD = 130, CAM_H = 150, GATE_H = 270;
-    const centre = (z: number) => 190 * Math.sin(z * 0.0014) + 110 * Math.sin(z * 0.00055 + 1.3);
+    const compile = (type: number, src: string) => {
+      const sh = gl.createShader(type)!;
+      gl.shaderSource(sh, src);
+      gl.compileShader(sh);
+      if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) console.warn('hero shader:', gl.getShaderInfoLog(sh));
+      return sh;
+    };
+    const prog = gl.createProgram()!;
+    gl.attachShader(prog, compile(gl.VERTEX_SHADER, GL_VERT));
+    gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, GL_FRAG));
+    gl.linkProgram(prog);
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return;
+    gl.useProgram(prog);
 
-    const makeGlow = (color: string) => {
-      const g = document.createElement('canvas');
-      g.width = g.height = 64;
-      const x = g.getContext('2d');
-      if (x) {
-        x.fillStyle = color;
-        x.fillRect(0, 0, 64, 64);
-        const m = x.createRadialGradient(32, 32, 0, 32, 32, 32);
-        m.addColorStop(0, 'rgba(255,255,255,1)');
-        m.addColorStop(0.18, 'rgba(255,255,255,1)');
-        m.addColorStop(0.45, 'rgba(255,255,255,0.28)');
-        m.addColorStop(1, 'rgba(255,255,255,0)');
-        x.globalCompositeOperation = 'destination-in';
-        x.fillStyle = m;
-        x.fillRect(0, 0, 64, 64);
-      }
-      return g;
+    const COUNT = window.innerWidth > 900 ? 48000 : 22000;
+    const seeds = new Float32Array(COUNT * 4);
+    for (let i = 0; i < seeds.length; i++) seeds[i] = Math.random();
+    const buf = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, seeds, gl.STATIC_DRAW);
+    const loc = gl.getAttribLocation(prog, 'a_seed');
+    gl.enableVertexAttribArray(loc);
+    gl.vertexAttribPointer(loc, 4, gl.FLOAT, false, 0, 0);
+    gl.enable(gl.BLEND);
+
+    const U = (n: string) => gl.getUniformLocation(prog, n);
+    const uT = U('u_t'), uM = U('u_m'), uAspect = U('u_aspect'), uDpr = U('u_dpr'), uShift = U('u_shift'), uScale = U('u_scale'), uBoost = U('u_boost');
+    const uCam = U('u_cam'), uMouse = U('u_mouse'), uGreen = U('u_green'), uInk = U('u_ink');
+
+    /* any CSS colour to 0..1 rgb, via a one-pixel canvas */
+    const px = document.createElement('canvas');
+    px.width = px.height = 1;
+    const pctx = px.getContext('2d', { willReadFrequently: true })!;
+    const rgb = (css: string, fallback: string): [number, number, number] => {
+      pctx.clearRect(0, 0, 1, 1);
+      pctx.fillStyle = fallback;
+      pctx.fillStyle = css || fallback;
+      pctx.fillRect(0, 0, 1, 1);
+      const d = pctx.getImageData(0, 0, 1, 1).data;
+      return [d[0] / 255, d[1] / 255, d[2] / 255];
     };
 
-    let W = 0, H = 0, raf = 0, frame = 0, visible = true;
-    let green = '#0B8A44', ink = '#111111', soft = '#5F5F5F';
-    let glowInk = makeGlow(ink), glowGreen = makeGlow(green);
-    let zc = 0, tx = 0, ty = 0, px = 0, py = 0;
-    let cx = 0, hy = 0, F = 0;
-
-    const flakes = Array.from({ length: 170 }, () => ({ x: (Math.random() - 0.5) * 2600, y: Math.random() * 800, z: Math.random() * FAR, s: 0.4 + Math.random() * 0.9, p: Math.random() * 6.28 }));
-
+    let W = 0, H = 0, raf = 0, visible = true, last = performance.now(), t = 0, frame = 0;
+    let mx = 0, my = 0, cx = 0, cy = 0, mouseX = 9, mouseY = 9;
     const resize = () => {
-      const d = Math.min(window.devicePixelRatio || 1, 2);
-      W = c.clientWidth;
-      H = c.clientHeight;
-      c.width = Math.round(W * d);
-      c.height = Math.round(H * d);
-      ctx.setTransform(d, 0, 0, d, 0, 0);
+      const d = Math.min(window.devicePixelRatio || 1, 1.5);
+      W = c.clientWidth; H = c.clientHeight;
+      c.width = Math.round(W * d); c.height = Math.round(H * d);
+      gl.viewport(0, 0, c.width, c.height);
+      gl.uniform1f(uDpr, d);
+      gl.uniform1f(uAspect, W / H);
+      gl.uniform1f(uShift, W > 900 ? 0.3 : 0.0);
+      gl.uniform1f(uScale, W > 900 ? 1.2 : 0.95);
     };
-
-    const fade = (dist: number) => Math.pow(Math.max(0, 1 - dist / FAR), 1.3);
 
     const draw = () => {
+      const now = performance.now();
+      t += Math.min(0.05, (now - last) / 1000);
+      last = now;
       if (frame++ % 30 === 0) {
-        green = cssVar('--nxt-green') || green;
-        ink = cssVar('--nxt-ink') || ink;
-        soft = cssVar('--nxt-ink-soft') || soft;
-        glowGreen = makeGlow(green);
-        glowInk = makeGlow(ink);
+        const g = rgb(cssVar('--nxt-green'), '#0B8A44'), k = rgb(cssVar('--nxt-ink'), '#111111');
+        gl.uniform3fv(uGreen, g); gl.uniform3fv(uInk, k);
+        const dark = (k[0] + k[1] + k[2]) / 3 > 0.5;
+        /* light on dark glows (additive); dark on light needs ordinary blending */
+        gl.blendFunc(gl.ONE, dark ? gl.ONE : gl.ONE_MINUS_SRC_ALPHA);
+        gl.uniform1f(uBoost, dark ? 1 : 2.2);
       }
-      zc += 3.2;
-      px += (tx - px) * 0.05;
-      py += (ty - py) * 0.05;
-      cx = (W > 900 ? W * 0.7 : W * 0.5) + px * 160;
-      hy = H * (W > 900 ? 0.44 : 0.4) + py * 60;
-      F = Math.max(H, 520) * 1.05;
-      const camX = centre(zc) ;
-      const t = frame * 0.016;
-
-      const P = (x: number, y: number, z: number) => {
-        const d = Math.max(z - zc, 20), f = F / d;
-        return { x: cx + (x - camX) * f, y: hy + (CAM_H - y) * f, f, d };
-      };
-
-      ctx.clearRect(0, 0, W, H);
-
-      /* ground lines rushing toward you give the sense of speed */
-      ctx.strokeStyle = soft;
-      ctx.lineWidth = 1;
-      for (let z = Math.ceil((zc + 60) / 160) * 160; z < zc + FAR; z += 160) {
-        const l = P(centre(z) - 1400, 0, z), r = P(centre(z) + 1400, 0, z);
-        ctx.globalAlpha = 0.09 * fade(z - zc);
-        ctx.beginPath(); ctx.moveTo(Math.max(-50, l.x), l.y); ctx.lineTo(Math.min(W + 50, r.x), r.y); ctx.stroke();
-      }
-
-      /* the road: two glowing edges, a dashed centre line, and a soft fill between them */
-      const L: ReturnType<typeof P>[] = [], R: ReturnType<typeof P>[] = [];
-      for (let z = zc + 30; z <= zc + FAR; z += STEP) {
-        L.push(P(centre(z) - ROAD, 0, z));
-        R.push(P(centre(z) + ROAD, 0, z));
-      }
-      ctx.globalAlpha = 0.07;
-      ctx.fillStyle = green;
-      ctx.beginPath();
-      L.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
-      for (let i = R.length - 1; i >= 0; i--) ctx.lineTo(R[i].x, R[i].y);
-      ctx.closePath(); ctx.fill();
-      ctx.strokeStyle = green;
-      for (const edge of [L, R]) {
-        for (let i = 1; i < edge.length; i++) {
-          ctx.globalAlpha = 0.85 * fade(edge[i].d);
-          ctx.lineWidth = Math.max(0.6, 3.2 * edge[i].f);
-          ctx.beginPath(); ctx.moveTo(edge[i - 1].x, edge[i - 1].y); ctx.lineTo(edge[i].x, edge[i].y); ctx.stroke();
-        }
-      }
-      ctx.strokeStyle = ink;
-      for (let z = Math.floor((zc + 30) / 120) * 120; z < zc + FAR; z += 120) {
-        if (z < zc + 30) continue;
-        const a = P(centre(z), 0, z), b = P(centre(z + 60), 0, z + 60);
-        ctx.globalAlpha = 0.55 * fade(a.d);
-        ctx.lineWidth = Math.max(0.5, 2.4 * a.f);
-        ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
-      }
-
-      /* the gates: one per stage, rising out of the distance */
-      ctx.textAlign = 'center';
-      const first = Math.ceil((zc + 120) / GAP) * GAP;
-      for (let z = first + Math.floor(FAR / GAP) * GAP; z >= first; z -= GAP) {
-        const idx = ((z / GAP) % 5 + 5) % 5;
-        const cz = centre(z);
-        const bl = P(cz - ROAD - 20, 0, z), br = P(cz + ROAD + 20, 0, z);
-        const tl = P(cz - ROAD - 20, GATE_H, z), tr = P(cz + ROAD + 20, GATE_H, z);
-        const a = fade(bl.d);
-        const near = Math.max(0, 1 - (bl.d - 120) / 500);
-        ctx.strokeStyle = green;
-        ctx.lineWidth = Math.max(1, 5 * bl.f);
-        ctx.globalAlpha = a * (0.7 + 0.3 * near);
-        ctx.beginPath(); ctx.moveTo(bl.x, bl.y); ctx.lineTo(tl.x, tl.y); ctx.lineTo(tr.x, tr.y); ctx.lineTo(br.x, br.y); ctx.stroke();
-        /* a veil of light between the posts */
-        const grd = ctx.createLinearGradient(0, tl.y, 0, bl.y);
-        grd.addColorStop(0, green); grd.addColorStop(1, 'transparent');
-        ctx.fillStyle = grd;
-        ctx.globalAlpha = a * 0.1;
-        ctx.fillRect(tl.x, tl.y, tr.x - tl.x, bl.y - tl.y);
-        ctx.globalAlpha = a * 0.9;
-        ctx.drawImage(glowGreen, tl.x - 18 * tl.f * 6, tl.y - 18 * tl.f * 6, 36 * tl.f * 6, 36 * tl.f * 6);
-        ctx.drawImage(glowGreen, tr.x - 18 * tr.f * 6, tr.y - 18 * tr.f * 6, 36 * tr.f * 6, 36 * tr.f * 6);
-        const size = 56 * tl.f;
-        if (size >= 8) {
-          ctx.fillStyle = ink;
-          ctx.globalAlpha = a;
-          ctx.font = `${Math.round(size)}px ui-monospace, SFMono-Regular, Menlo, monospace`;
-          ctx.fillText(`0${idx + 1}  ${GATE_NAMES[idx]}`, Math.min(W - size * 4.5, Math.max(size * 4.5, (tl.x + tr.x) / 2)), tl.y - size * 0.6);
-        }
-      }
-      ctx.textAlign = 'start';
-
-      /* snow falling through the scene */
-      flakes.forEach(f => {
-        f.y -= f.s * 0.9;
-        f.x += Math.sin(t * 0.8 + f.p) * 0.5;
-        if (f.y < 0) { f.y = 800; f.x = camX + (Math.random() - 0.5) * 2600; f.z = zc + Math.random() * FAR; }
-        if (f.z - zc < 25) { f.z = zc + FAR; f.x = camX + (Math.random() - 0.5) * 2600; }
-        const q = P(f.x, f.y, f.z);
-        if (q.x < -20 || q.x > W + 20 || q.y < -20 || q.y > H + 20) return;
-        ctx.globalAlpha = Math.min(1, fade(q.d) * 1.4) * 0.75;
-        const s = Math.max(2, 22 * q.f * f.s);
-        ctx.drawImage(glowInk, q.x - s / 2, q.y - s / 2, s, s);
-      });
-      ctx.globalAlpha = 1;
+      cx += (mx - cx) * 0.05; cy += (my - cy) * 0.05;
+      const m = Math.min(1, Math.max(0, 0.5 + 1.1 * Math.sin(t * 0.33 - 1.3)));
+      gl.uniform1f(uT, t);
+      gl.uniform1f(uM, m);
+      gl.uniform2f(uCam, cx * 0.4 + Math.sin(t * 0.12) * 0.12, 0.55 + cy * 0.18);
+      gl.uniform2f(uMouse, mouseX, mouseY);
+      gl.clearColor(0, 0, 0, 0);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.drawArrays(gl.POINTS, 0, COUNT);
     };
-
     const loop = () => {
       if (!visible) return;
       draw();
@@ -197,13 +186,14 @@ const HeroPathway: React.FC = () => {
     };
     const onMove = (e: PointerEvent) => {
       const r = c.getBoundingClientRect();
-      tx = ((e.clientX - r.left) / r.width - 0.5) * 2;
-      ty = ((e.clientY - r.top) / r.height - 0.5) * 2;
+      mx = ((e.clientX - r.left) / r.width - 0.5) * 2;
+      my = ((e.clientY - r.top) / r.height - 0.5) * 2;
+      mouseX = mx; mouseY = -my;
     };
     const io = new IntersectionObserver(([entry]) => {
       const was = visible;
       visible = entry.isIntersecting;
-      if (visible && !was) loop();
+      if (visible && !was) { last = performance.now(); loop(); }
     });
 
     resize();
