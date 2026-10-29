@@ -294,7 +294,7 @@ function Shell({ currentUser, modals }: { currentUser: User | null; modals: Moda
         <div className="nxt-container py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-sm text-[var(--nxt-ink-soft)]">{PLATFORM_NAME} · nxthealth.ai · India</p>
           <div className="flex items-center gap-5 text-sm text-[var(--nxt-ink-soft)]">
-            <Link to="/start-in-india" className="underline underline-offset-2 hover:text-[var(--nxt-ink)] transition-colors">Start in India</Link>
+            <Link to="/start-in-india" className="underline underline-offset-2 hover:text-[var(--nxt-ink)] transition-colors">How to?</Link>
             <Link to="/blog" className="underline underline-offset-2 hover:text-[var(--nxt-ink)] transition-colors">Blog</Link>
             {currentUser?.is_member && <Link to="/experts" className="underline underline-offset-2 hover:text-[var(--nxt-ink)] transition-colors">Find an expert</Link>}
             <button onClick={modals.openSlack} className="hover:text-[var(--nxt-ink)] transition-colors">Community Slack</button>

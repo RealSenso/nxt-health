@@ -16,7 +16,7 @@ const NAV: Record<PublicVariant, { items: NavItem[]; cta: NavItem; subBrand?: st
   home: {
     items: [
       { label: 'Problem statements', to: '/problems' },
-      { label: 'Start in India', to: '/start-in-india' },
+      { label: 'How to?', to: '/start-in-india' },
     ],
     cta: { label: 'Log in / Sign up', to: '/login' },
   },

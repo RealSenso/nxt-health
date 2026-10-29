@@ -193,7 +193,7 @@ const Interactive3DGlobe: React.FC = () => {
 
     let animId = 0;
     let W = 0, H = 0, CX = 0, CY = 0, R = 0;
-    let rotX = 0.25, rotY = 0;
+    let rotX = 0.25, rotY = -1.3; /* India faces the viewer first */
     let dragging = false;
     let lastX = 0, lastY = 0;
     let velX = 0;
@@ -227,8 +227,8 @@ const Interactive3DGlobe: React.FC = () => {
 
     const latLonTo3D = (lat: number, lon: number): [number, number, number] => {
       const phi = ((90 - lat) * Math.PI) / 180;
-      const theta = ((lon + 180) * Math.PI) / 180;
-      return [R * Math.sin(phi) * Math.cos(theta), R * Math.cos(phi), R * Math.sin(phi) * Math.sin(theta)];
+      const theta = (lon * Math.PI) / 180;
+      return [R * Math.sin(phi) * Math.sin(theta), R * Math.cos(phi), R * Math.sin(phi) * Math.cos(theta)];
     };
 
     const rotate = ([x, y, z]: [number, number, number]): [number, number, number] => {
@@ -242,8 +242,8 @@ const Interactive3DGlobe: React.FC = () => {
       const pts: [number, number, number][] = [];
       for (let i = 0; i < flat.length; i += 2) {
         const phi = ((90 - flat[i + 1]) * Math.PI) / 180;
-        const theta = ((flat[i] + 180) * Math.PI) / 180;
-        pts.push([Math.sin(phi) * Math.cos(theta), Math.cos(phi), Math.sin(phi) * Math.sin(theta)]);
+        const theta = (flat[i] * Math.PI) / 180;
+        pts.push([Math.sin(phi) * Math.sin(theta), Math.cos(phi), Math.sin(phi) * Math.cos(theta)]);
       }
       return pts;
     });
@@ -295,7 +295,7 @@ const Interactive3DGlobe: React.FC = () => {
       ctx.beginPath(); ctx.arc(CX, CY, R, 0, Math.PI * 2); ctx.stroke();
       ctx.globalAlpha = 1;
 
-      if (!dragging) { rotY += 0.003; velX *= 0.95; }
+      if (!dragging) { rotY -= 0.003; velX *= 0.95; }
       rotY += velX;
     };
 
