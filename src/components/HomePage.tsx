@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useInView } from 'motion/react';
+import { motion, useInView, useMotionValueEvent, useScroll, useSpring, animate } from 'motion/react';
 import {
   ArrowRight,
   CheckCircle2,
@@ -292,6 +292,9 @@ const Interactive3DGlobe: React.FC = () => {
       { lat: 37.7, lon: -122.4, label: 'San Francisco' },
     ];
 
+    const ARCS: [number, number][] = [[0, 4], [1, 5], [2, 6], [3, 7], [4, 5], [6, 1]];
+    let arcT = 0;
+
     const resize = () => {
       const d = Math.min(window.devicePixelRatio || 1, 2);
       W = c.clientWidth;
@@ -354,6 +357,39 @@ const Interactive3DGlobe: React.FC = () => {
       ctx.lineWidth = 0.9;
       ctx.globalAlpha = 0.7;
       outline.forEach(traceBorder);
+
+      /* routes between hubs: an arc lifted off the surface with a pulse running along it */
+      arcT += 0.006;
+      ARCS.forEach(([a, b], k) => {
+        const A = hubs[a], B = hubs[b];
+        const pa = latLonTo3D(A.lat, A.lon).map(v => v / R), pb = latLonTo3D(B.lat, B.lon).map(v => v / R);
+        const dot = Math.max(-1, Math.min(1, pa[0] * pb[0] + pa[1] * pb[1] + pa[2] * pb[2]));
+        const om = Math.acos(dot) || 1e-3, so = Math.sin(om);
+        const point = (u: number): [number, number, number] => {
+          const w1 = Math.sin((1 - u) * om) / so, w2 = Math.sin(u * om) / so;
+          const lift = R * (1 + 0.28 * Math.sin(Math.PI * u) * Math.min(1, om / 1.2));
+          return rotate([(pa[0] * w1 + pb[0] * w2) * lift, (pa[1] * w1 + pb[1] * w2) * lift, (pa[2] * w1 + pb[2] * w2) * lift]);
+        };
+        ctx.strokeStyle = green;
+        ctx.lineWidth = 1;
+        ctx.globalAlpha = 0.32;
+        ctx.beginPath();
+        let pen = false;
+        for (let i = 0; i <= 40; i++) {
+          const q = point(i / 40);
+          if (q[2] > -R * 0.05) { const x = CX + q[0], y = CY - q[1]; if (pen) ctx.lineTo(x, y); else { ctx.moveTo(x, y); pen = true; } } else pen = false;
+        }
+        ctx.stroke();
+        const u = (arcT * 0.9 + k * 0.23) % 1;
+        const q = point(u);
+        if (q[2] > -R * 0.05) {
+          ctx.globalAlpha = 0.95;
+          ctx.fillStyle = green;
+          ctx.beginPath(); ctx.arc(CX + q[0], CY - q[1], 2.6, 0, 6.2832); ctx.fill();
+          ctx.globalAlpha = 0.25;
+          ctx.beginPath(); ctx.arc(CX + q[0], CY - q[1], 7, 0, 6.2832); ctx.fill();
+        }
+      });
       hubs.forEach(hub => {
         const r = rotate(latLonTo3D(hub.lat, hub.lon));
         if (r[2] <= -R * 0.05) return;
@@ -470,12 +506,42 @@ const TiltCard: React.FC<{ children: React.ReactNode; className?: string; max?: 
   );
 };
 
+/** A number that counts up to its value the first time it scrolls into view. */
+const CountUp: React.FC<{ to: number; suffix?: string; className?: string }> = ({ to, suffix = '', className }) => {
+  const ref = useRef<HTMLParagraphElement>(null);
+  const inView = useInView(ref, { once: true, margin: '-10%' });
+  const [n, setN] = useState(0);
+  useEffect(() => {
+    if (!inView) return;
+    const controls = animate(0, to, { duration: 1.6, ease: [0.22, 1, 0.36, 1], onUpdate: v => setN(Math.round(v)) });
+    return () => controls.stop();
+  }, [inView, to]);
+  return <p ref={ref} className={className}>{n}{suffix}</p>;
+};
+
+/** A thin route down the right edge of wide screens: it lights up as the page is read, with a glowing head. */
+const ScrollRoute: React.FC = () => {
+  const { scrollYProgress } = useScroll();
+  const grow = useSpring(scrollYProgress, { stiffness: 120, damping: 28, mass: 0.4 });
+  const [pct, setPct] = useState(0);
+  useMotionValueEvent(grow, 'change', v => setPct(v));
+  return (
+    <div aria-hidden="true" className="hidden xl:block fixed right-6 top-1/2 -translate-y-1/2 h-[46vh] w-px bg-[var(--nxt-line)] z-30 pointer-events-none">
+      <motion.div className="absolute inset-x-0 top-0 bg-[var(--nxt-green)]" style={{ height: `${pct * 100}%` }} />
+      <span className="absolute left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-[var(--nxt-green)] shadow-[0_0_14px_3px_var(--nxt-green)]" style={{ top: `calc(${pct * 100}% - 4px)` }} />
+      {[0, 0.25, 0.5, 0.75, 1].map(f => (
+        <span key={f} className={`absolute left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full border transition-colors duration-300 ${pct >= f - 0.01 ? 'border-[var(--nxt-green)] bg-[var(--nxt-green)]' : 'border-[var(--nxt-line)] bg-[var(--nxt-bg)]'}`} style={{ top: `calc(${f * 100}% - 3px)` }} />
+      ))}
+    </div>
+  );
+};
+
 /* =========================================================================
    SECTION LABEL
    ========================================================================= */
 const Kicker: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => (
   <p className={`inline-flex items-center gap-3 text-[12px] sm:text-[13px] uppercase tracking-[0.16em] text-[var(--nxt-ink-soft)] ${className}`}>
-    <span className="h-px w-6 bg-[var(--nxt-green)]" />
+    <motion.span initial={{ scaleX: 0 }} whileInView={{ scaleX: 1 }} viewport={{ once: true }} transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }} className="h-px w-6 bg-[var(--nxt-green)] origin-left" />
     {children}
   </p>
 );
@@ -768,6 +834,7 @@ export const HomePage: React.FC = () => {
 
   return (
     <PublicLayout variant="home">
+      <ScrollRoute />
       {/* 1. HERO: the helix is the background of the headline */}
       <section className="relative overflow-hidden border-b border-[var(--nxt-line)]">
         <HeroPathway />
@@ -823,7 +890,7 @@ export const HomePage: React.FC = () => {
             <span className="text-[12px] uppercase tracking-[0.14em] text-[var(--nxt-ink-soft)]">The traditional route</span>
             <h3 className="font-display font-normal text-[clamp(1.5rem,2.6vw,2.1rem)] tracking-[-0.025em] leading-tight mt-3">Build first. Search for buyers later.</h3>
             <p className="mt-4 text-[var(--nxt-ink-soft)] leading-relaxed">Founders build a product, craft a pitch deck, and hunt for market fit, wasting critical time and capital on unvalidated ideas.</p>
-            <p className="font-display font-normal text-[clamp(3.4rem,8vw,6rem)] leading-none tracking-[-0.05em] text-[var(--nxt-ink-soft)] mt-8">90%+</p>
+            <CountUp to={90} suffix="%+" className="font-display font-normal text-[clamp(3.4rem,8vw,6rem)] leading-none tracking-[-0.05em] text-[var(--nxt-ink-soft)] mt-8" />
             <ul className="mt-6">
               {[
                 'Building in a market vacuum without frontline validation',
@@ -906,7 +973,7 @@ export const HomePage: React.FC = () => {
           {PLATFORM_PILLARS.map(item => (
             <div key={item.title} className="p-7 border-r border-b border-[var(--nxt-line)] transition-colors hover:bg-[var(--nxt-surface)]">
               <div className="flex items-center justify-between mb-10">
-                <item.icon className="w-5 h-5 text-[var(--nxt-green)]" />
+                <item.icon className="w-5 h-5 text-[var(--nxt-green)] nxt-bob" />
                 <span className="text-[12px] uppercase tracking-[0.14em] text-[var(--nxt-green)]">{item.tag}</span>
               </div>
               <h3 className="font-display font-normal text-[1.35rem] tracking-[-0.02em] mb-2.5">{item.title}</h3>

@@ -299,3 +299,8 @@ body {
 /* Typography: balanced headlines and no one-word last lines in running text */
 h1, h2, h3 { text-wrap: balance; }
 p, li, dd { text-wrap: pretty; }
+
+/* routes drifting behind forms and hero sections */
+@keyframes nxt-dash { to { stroke-dashoffset: -200; } }
+.nxt-flow { stroke-dasharray: 6 14; animation: nxt-dash 7s linear infinite; }
+.nxt-flow-slow { animation-duration: 14s; animation-direction: reverse; }
