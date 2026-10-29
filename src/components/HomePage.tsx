@@ -23,20 +23,20 @@ import { WORLD_OUTLINE } from '../data/worldOutline';
 const cssVar = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 
 /* =========================================================================
-   HERO BACKGROUND: A BLIZZARD OF LIGHT THAT FINDS ITS WAY
-   Tens of thousands of particles, all moved on the GPU. They start as falling
-   snow, then drift together into a winding river of light with five gates,
-   hold it while it flows, and fall apart again. The pointer tilts the scene
-   and pushes the particles aside. Colours follow the theme, light or dark.
+   HERO BACKGROUND: A SNOWFALL THAT BECOMES THE CLIMB
+   Tens of thousands of particles, all moved on the GPU. They fall as snow,
+   settle into a mountain, and a trail of light winds up it through five
+   waypoints to the summit while a climber of light works its way up. Then the
+   mountain lets go and it snows again. The pointer tilts the scene and pushes
+   the particles aside. Colours follow the theme, light or dark.
    ========================================================================= */
 const GL_VERT = `
 attribute vec4 a_seed;
+attribute vec4 a_mount;
 uniform float u_t, u_m, u_aspect, u_dpr, u_shift, u_scale, u_boost;
 uniform vec2 u_cam, u_mouse;
 uniform vec3 u_green, u_ink;
 varying vec4 v_col;
-
-vec3 P(float u) { return vec3((u - 0.5) * 8.0 + sin(u * 9.0) * 0.5, sin(u * 7.0) * 0.9 + (u - 0.5) * 0.8, cos(u * 5.0) * 2.4); }
 
 void main() {
   float t = u_t;
@@ -44,25 +44,15 @@ void main() {
   vec3 snow = vec3((h1 - 0.5) * 18.0 + sin(t * 0.5 + h2 * 20.0) * 0.4,
                    5.0 - mod(h2 * 10.0 + t * (0.35 + a_seed.z * 0.6), 10.0),
                    (h3 - 0.5) * 9.0);
-  bool ring = a_seed.w < 0.09;
-  float u = ring ? (floor(a_seed.w / 0.09 * 5.0) + 0.8) / 5.6 : fract(a_seed.x + t * 0.035 * (0.7 + a_seed.z * 0.6));
-  vec3 T = normalize(P(u + 0.01) - P(u));
-  vec3 N = normalize(cross(vec3(0.0, 1.0, 0.0), T));
-  vec3 B = cross(T, N);
-  vec3 tgt;
-  if (ring) {
-    float a = a_seed.x * 6.2832 + t * 0.4;
-    tgt = P(u) + (N * cos(a) + B * sin(a)) * 1.35;
-  } else {
-    float cx = a_seed.y * 2.0 - 1.0;
-    cx = sign(cx) * pow(abs(cx), 1.5);
-    float cy = a_seed.z * 2.0 - 1.0;
-    tgt = P(u) + N * cx * 0.95 + B * (cy * 0.1 + sin(u * 40.0 + t * 2.0) * 0.04);
-  }
+
+  /* the mountain turns slowly */
+  float ang = t * 0.1;
+  vec3 mt = vec3(a_mount.x * cos(ang) + a_mount.z * sin(ang), a_mount.y - 1.7, -a_mount.x * sin(ang) + a_mount.z * cos(ang));
+
   float e = u_m * u_m * (3.0 - 2.0 * u_m);
   float w = 4.0 * u_m * (1.0 - u_m);
   vec3 swirl = vec3(sin(a_seed.y * 40.0 + t), cos(a_seed.z * 40.0 + t * 1.3), sin(a_seed.x * 40.0 - t)) * w * 1.6;
-  vec3 p = (mix(snow, tgt, e) + swirl) * u_scale;
+  vec3 p = (mix(snow, mt, e) + swirl) * u_scale;
 
   float cy2 = cos(u_cam.x), sy = sin(u_cam.x), cp = cos(u_cam.y), sp = sin(u_cam.y);
   p = vec3(p.x * cy2 + p.z * sy, p.y, -p.x * sy + p.z * cy2);
@@ -76,11 +66,19 @@ void main() {
   s += (d / (dist + 0.001)) * exp(-dist * 4.0) * 0.14 * vec2(1.0 / u_aspect, 1.0);
   gl_Position = vec4(s, 0.0, 1.0);
 
-  float depth = clamp(1.0 - (-p.z - 5.0) / 9.0, 0.25, 1.0);
-  gl_PointSize = (1.1 + a_seed.z * 1.6) * (ring ? 1.7 : 1.0) * u_dpr * (15.0 / (-p.z)) * (1.0 + 0.5 * e);
-  vec3 pathCol = ring ? u_green : mix(u_green, u_ink, a_seed.y * 0.25);
-  float tw = 0.75 + 0.25 * sin(t * 2.0 + a_seed.x * 60.0);
-  v_col = vec4(mix(u_ink, pathCol, e), mix(0.5, ring ? 1.0 : 0.85, e) * depth * tw * u_boost);
+  float kind = a_mount.w;                      /* -1 terrain, 0..1 trail, 10+ waypoint, 20 summit flag */
+  bool trail = kind >= 0.0 && kind <= 1.0;
+  bool mark = kind >= 10.0;
+  float climber = trail ? exp(-pow(kind - fract(t * 0.06), 2.0) / 0.0006) : 0.0;
+
+  float depth = clamp(1.0 - (-p.z - 6.0) / 8.0, 0.35, 1.0);
+  float size = (1.0 + a_seed.z * 1.5) * (trail ? 1.15 : 1.0) * (mark ? 1.7 : 1.0) * (1.0 + 3.2 * climber);
+  gl_PointSize = size * u_dpr * (15.0 / (-p.z)) * (1.0 + 0.3 * e);
+  vec3 formCol = (trail || mark) ? u_green : u_ink;
+  float formA = trail ? 0.95 : mark ? 1.0 : 0.9;
+  float tw = 0.8 + 0.2 * sin(t * 2.0 + a_seed.x * 60.0);
+  float pulse = mark ? 0.7 + 0.3 * sin(t * 2.4 + kind) : 1.0;
+  v_col = vec4(mix(u_ink, formCol, e), (mix(0.5, formA, e) * tw * pulse + climber) * depth * u_boost);
 }
 `;
 const GL_FRAG = `
@@ -93,6 +91,55 @@ void main() {
   gl_FragColor = vec4(v_col.rgb * k, k);
 }
 `;
+
+/** Height of the mountain at (x, z): a main peak with two shoulders and some ridging, falling to flat at the edge. */
+const peak = (x: number, z: number) => {
+  const r2 = x * x + z * z;
+  const h = 4.8 * Math.exp(-r2 / 1.9) + 2.3 * Math.exp(-((x - 2.4) ** 2 + (z + 0.9) ** 2) / 1.5) + 1.9 * Math.exp(-((x + 2.5) ** 2 + (z - 0.7) ** 2) / 1.3)
+    + 0.22 * Math.abs(Math.sin(x * 2.3 + z * 1.4)) * Math.exp(-r2 / 14);
+  return h * Math.max(0, 1 - Math.pow(Math.sqrt(r2) / 5.2, 3));
+};
+/** Where the particles go when it settles: the terrain, a switchback trail to the summit, five waypoints and a flag. */
+const sampleMountain = (count: number): Float32Array => {
+  const out = new Float32Array(count * 4);
+  const onTrail = (u: number): [number, number, number] => {
+    const th = 0.6 + u * Math.PI * 4.4, r = 2.7 * Math.pow(1 - u, 0.9) + 0.08;
+    const x = Math.cos(th) * r, z = Math.sin(th) * r;
+    return [x, peak(x, z) + 0.07, z];
+  };
+  for (let i = 0; i < count; i++) {
+    const k = Math.random();
+    let x: number, y: number, z: number, kind: number;
+    if (k < 0.66) {
+      x = 0; z = 0; y = 0;
+      for (let tries = 0; tries < 8 && y < 0.06; tries++) { x = (Math.random() * 2 - 1) * 5.2; z = (Math.random() * 2 - 1) * 5.2; y = peak(x, z); }
+      y += (Math.random() - 0.5) * 0.04; kind = -1;
+    } else if (k < 0.9) {
+      kind = Math.random();
+      const p = onTrail(kind);
+      x = p[0] + (Math.random() - 0.5) * 0.05; y = p[1] + (Math.random() - 0.5) * 0.04; z = p[2] + (Math.random() - 0.5) * 0.05;
+    } else if (k < 0.98) {
+      const n = (Math.random() * 5) | 0;
+      const p = onTrail((n + 1) / 5.4);
+      const a = Math.random() * 6.283, b = Math.acos(2 * Math.random() - 1), rr = 0.16 * Math.cbrt(Math.random());
+      x = p[0] + rr * Math.sin(b) * Math.cos(a); y = p[1] + 0.08 + rr * Math.cos(b); z = p[2] + rr * Math.sin(b) * Math.sin(a);
+      kind = 10 + n;
+    } else {
+      const top = peak(0, 0);
+      x = (Math.random() - 0.5) * 0.03; z = (Math.random() - 0.5) * 0.03; y = top + Math.random() * 1.1; kind = 20;
+    }
+    out[i * 4] = x; out[i * 4 + 1] = y; out[i * 4 + 2] = z; out[i * 4 + 3] = kind;
+  }
+  return out;
+};
+
+/** 0 to 1 and back: eases in over `rise`, holds, eases out over `fall`, all in seconds from `start`. */
+const pulse = (t: number, start: number, rise: number, hold: number, fall: number) => {
+  if (t < start || t > start + rise + hold + fall) return 0;
+  if (t < start + rise) return (t - start) / rise;
+  if (t < start + rise + hold) return 1;
+  return 1 - (t - start - rise - hold) / fall;
+};
 
 const HeroPathway: React.FC = () => {
   const ref = useRef<HTMLCanvasElement>(null);
@@ -119,12 +166,16 @@ const HeroPathway: React.FC = () => {
     const COUNT = window.innerWidth > 900 ? 48000 : 22000;
     const seeds = new Float32Array(COUNT * 4);
     for (let i = 0; i < seeds.length; i++) seeds[i] = Math.random();
-    const buf = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-    gl.bufferData(gl.ARRAY_BUFFER, seeds, gl.STATIC_DRAW);
-    const loc = gl.getAttribLocation(prog, 'a_seed');
-    gl.enableVertexAttribArray(loc);
-    gl.vertexAttribPointer(loc, 4, gl.FLOAT, false, 0, 0);
+    const attr = (name: string, data: Float32Array, size: number) => {
+      const buf = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+      gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+      const loc = gl.getAttribLocation(prog, name);
+      gl.enableVertexAttribArray(loc);
+      gl.vertexAttribPointer(loc, size, gl.FLOAT, false, 0, 0);
+    };
+    attr('a_seed', seeds, 4);
+    attr('a_mount', sampleMountain(COUNT), 4);
     gl.enable(gl.BLEND);
 
     const U = (n: string) => gl.getUniformLocation(prog, n);
@@ -153,8 +204,8 @@ const HeroPathway: React.FC = () => {
       gl.viewport(0, 0, c.width, c.height);
       gl.uniform1f(uDpr, d);
       gl.uniform1f(uAspect, W / H);
-      gl.uniform1f(uShift, W > 900 ? 0.3 : 0.0);
-      gl.uniform1f(uScale, W > 900 ? 1.2 : 0.95);
+      gl.uniform1f(uShift, W > 900 ? 0.28 : 0.0);
+      gl.uniform1f(uScale, W > 900 ? 1.1 : Math.max(0.4, Math.min(0.7, (W / H) * 0.65)));
     };
 
     const draw = () => {
@@ -170,10 +221,11 @@ const HeroPathway: React.FC = () => {
         gl.uniform1f(uBoost, dark ? 1 : 2.2);
       }
       cx += (mx - cx) * 0.05; cy += (my - cy) * 0.05;
-      const m = Math.min(1, Math.max(0, 0.5 + 1.1 * Math.sin(t * 0.33 - 1.3)));
+      /* a 28 second loop: a little snow, the mountain settles and is climbed, then it lets go */
+      const cyc = (t + 1.5) % 28;
       gl.uniform1f(uT, t);
-      gl.uniform1f(uM, m);
-      gl.uniform2f(uCam, cx * 0.4 + Math.sin(t * 0.12) * 0.12, 0.55 + cy * 0.18);
+      gl.uniform1f(uM, pulse(cyc, 1, 3, 19, 3));
+      gl.uniform2f(uCam, cx * 0.35 + Math.sin(t * 0.12) * 0.08, 0.42 + cy * 0.14);
       gl.uniform2f(uMouse, mouseX, mouseY);
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT);
