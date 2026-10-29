@@ -57,6 +57,18 @@ export const GuidePage: React.FC = () => {
   const total = guide?.steps.length || 0;
   const playbook = guide?.category.playbook;
 
+  const extras = (
+    <ul className="pb-6 max-w-xl">
+      {['Checklist', 'Podcast', 'Information'].map((label, i) => (
+        <li key={label} className="flex items-center gap-4 py-3 border-t border-[var(--nxt-line)] text-[15px]">
+          <span className="w-5 font-mono text-[var(--nxt-ink-soft)]">{String.fromCharCode(97 + i)}.</span>
+          <span className="flex-1">{label}</span>
+          <span className="text-[13px] text-[var(--nxt-ink-soft)]">Coming soon</span>
+        </li>
+      ))}
+    </ul>
+  );
+
   const roadmap = (
     <div className="pb-6 grid gap-10 lg:grid-cols-[1fr_20rem] items-start">
       <div>
@@ -168,7 +180,7 @@ export const GuidePage: React.FC = () => {
                 </button>
                 {isOpen && (
                   i === 0
-                    ? <div className="pl-[3.25rem]">{roadmap}</div>
+                    ? <div className="pl-[3.25rem]">{extras}{roadmap}</div>
                     : <p className="pl-[3.25rem] pb-6 text-[15px] text-[var(--nxt-ink-soft)]">Coming soon.</p>
                 )}
               </li>
