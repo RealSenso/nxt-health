@@ -16,7 +16,7 @@ export const ADMIN_SECTIONS: AdminSection[] = [
   { id: 'submissions', label: 'Step evidence', icon: Paperclip, keywords: 'submissions evidence files review', group: 'Review' },
   { id: 'users', label: 'Members', icon: Users, keywords: 'users founders membership admins experts mentors', group: 'Review' },
   { id: 'inquiries', label: 'Enquiries', icon: Inbox, keywords: 'leads contact forms sponsors', group: 'Review' },
-  { id: 'problems', label: 'Problem statements', icon: ListFilter, keywords: 'problems statements posters votes', group: 'Content' },
+  { id: 'problems', label: 'Problems', icon: ListFilter, keywords: 'problems statements posters votes', group: 'Content' },
   { id: 'categories', label: 'Categories', icon: FolderPlus, keywords: 'categories roadmaps coming soon', group: 'Content' },
   { id: 'steps', label: 'Steps and roadmaps', icon: Layers, keywords: 'steps tasks roadmap cost', group: 'Content' },
   { id: 'resources', label: 'Resources and hospital hub', icon: Hospital, keywords: 'resources webinars sessions hospital events', group: 'Content' },

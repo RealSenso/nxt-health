@@ -140,7 +140,7 @@ const CostsPanel: React.FC = () => {
   );
 };
 
-/** Agree / disagree votes on each problem statement, from signed-in members and from guests. */
+/** Agree / disagree votes on each problem, from signed-in members and from guests. */
 const VotesPanel: React.FC = () => {
   const problems = store.getProblems();
   const byProblem = new Map(store.getVoteBreakdown().map(v => [v.problem_id, v]));

@@ -175,7 +175,7 @@ export const FUNDING_FORM: FormSection[] = [
     intro: 'Check your answers, then confirm.',
     questions: [
       { id: 'declare_accurate', label: 'I confirm that the information in this application is accurate to the best of my knowledge.', type: 'checkbox' },
-      { id: 'declare_share', label: 'I agree that SirOsler may share this application with its review panel, experts and the sponsor of this problem statement.', type: 'checkbox' },
+      { id: 'declare_share', label: 'I agree that SirOsler may share this application with its review panel, experts and the sponsor of this problem.', type: 'checkbox' },
     ],
   },
 ];

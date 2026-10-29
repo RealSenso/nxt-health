@@ -129,7 +129,7 @@ export const ProblemStatementsList: React.FC<ProblemStatementsListProps> = ({
           className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--nxt-ink-soft)] hover:text-[var(--nxt-ink)] transition-colors"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
-          <span>Back to Problem Statements</span>
+          <span>Back to Problems</span>
         </button>
 
         <Reveal className="relative bg-[var(--nxt-surface)] border border-[var(--nxt-line)] rounded-3xl p-6 sm:p-8 text-[var(--nxt-ink)]">
@@ -338,8 +338,8 @@ export const ProblemStatementsList: React.FC<ProblemStatementsListProps> = ({
               </p>
               <p className="text-xs text-[var(--nxt-ink-soft)]">
                 {currentUser
-                  ? 'You are currently previewing problem statements as a visitor. Membership is required to submit funding applications and access the step-by-step roadmaps and hospital connections.'
-                  : 'Problem statements are open to everyone. Log in from the top of the page and become a member to submit funding applications and access the step-by-step roadmaps and hospital connections.'}
+                  ? 'You are currently previewing problems as a visitor. Membership is required to submit funding applications and access the step-by-step roadmaps and hospital connections.'
+                  : 'Problems are open to everyone. Log in from the top of the page and become a member to submit funding applications and access the step-by-step roadmaps and hospital connections.'}
               </p>
             </div>
           </div>
@@ -546,7 +546,7 @@ export const ProblemStatementsList: React.FC<ProblemStatementsListProps> = ({
         {filteredProblems.length === 0 && (
           <div className="col-span-2 py-12 text-center bg-[var(--nxt-surface)] rounded-2xl border border-dashed border-[var(--nxt-line)] p-8">
             <Stethoscope className="w-10 h-10 text-[var(--nxt-ink-soft)] mx-auto mb-3" />
-            <p className="text-sm font-bold text-[var(--nxt-ink)]">No medical problem statements found</p>
+            <p className="text-sm font-bold text-[var(--nxt-ink)]">No medical problems found</p>
             <p className="text-xs text-[var(--nxt-ink-soft)] mt-1">Try resetting the filter or search query.</p>
             <button
               onClick={() => { setFilter('all'); setSearchQuery(''); }}

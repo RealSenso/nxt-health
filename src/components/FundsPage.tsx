@@ -81,7 +81,7 @@ export const FundsPage: React.FC<FundsPageProps> = ({
         icon={BadgeDollarSign}
         eyebrow="Funding"
         title="Your grant applications"
-        subtitle="Track every application from draft to decision. To apply, open a funded problem statement and choose Apply for funding."
+        subtitle="Track every application from draft to decision. To apply, open a funded problem and choose Apply for funding."
         illustration="funds"
         actions={
           <>
@@ -100,13 +100,13 @@ export const FundsPage: React.FC<FundsPageProps> = ({
           <FileText className="w-10 h-10 text-[var(--nxt-ink-soft)] mx-auto mb-3" />
           <h3 className="text-sm font-bold text-[var(--nxt-ink)]">No Funding Applications Yet</h3>
           <p className="text-xs text-[var(--nxt-ink-soft)] mt-1 max-w-sm mx-auto">
-            Applications open from a problem statement's card — click "Apply for Funding" there to get started.
+            Applications open from a problem's card — click "Apply for Funding" there to get started.
           </p>
           <button
             onClick={onNavigateToProblems}
             className="mt-4 px-4 py-2 bg-[var(--nxt-mint-strong)] text-white rounded-full text-xs font-semibold hover:bg-[var(--nxt-mint-deep)] transition-colors"
           >
-            Browse Problem Statements
+            Browse Problems
           </button>
         </div>
       ) : (

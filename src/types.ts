@@ -87,7 +87,7 @@ export interface ProblemStatement {
   department: string;
   funded: boolean;
   funding_amount?: string;
-  /** The free guide project. Not listed with problem statements; available in Roadmaps to everyone signed in. */
+  /** The free guide project. Not listed with problems; available in Roadmaps to everyone signed in. */
   guide?: boolean;
   /** The person who posted the problem. */
   sponsor_name?: string;

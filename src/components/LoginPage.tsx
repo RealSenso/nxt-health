@@ -141,7 +141,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBack, initialMode = 'log
           </h1>
           <p className="text-xs text-[var(--nxt-ink-soft)] mb-5">
             {mode === 'login'
-              ? 'Log in to continue working on your problem statements and roadmaps.'
+              ? 'Log in to continue working on your problems and roadmaps.'
               : mode === 'signup'
               ? "We'll email you a link to verify your address. Membership is requested separately after you sign up."
               : "Enter your account email and we'll send you a link to choose a new password."}

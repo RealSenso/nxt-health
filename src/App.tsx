@@ -398,7 +398,7 @@ function NotFound() {
     <div className="max-w-xl mx-auto rounded-3xl border border-dashed border-[var(--nxt-line)] p-10 text-center">
       <h1 className="font-display text-xl font-bold text-[var(--nxt-ink)]">Page not found</h1>
       <p className="text-sm text-[var(--nxt-ink-soft)] mt-2">That link may be out of date.</p>
-      <button onClick={() => navigate('/problems')} className="mt-5 px-5 py-2.5 rounded-full bg-[var(--nxt-mint-strong)] text-white text-sm font-semibold">Go to problem statements</button>
+      <button onClick={() => navigate('/problems')} className="mt-5 px-5 py-2.5 rounded-full bg-[var(--nxt-mint-strong)] text-white text-sm font-semibold">Go to problems</button>
     </div>
   );
 }

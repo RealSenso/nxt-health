@@ -46,7 +46,7 @@ export function applicationsRouter(database: Database): Router {
 
   async function problemTitle(problemId: string) {
     const problem = await database.col('problems').findOne({ _id: problemId });
-    if (!problem) throw new HttpError(404, 'Problem statement not found.');
+    if (!problem) throw new HttpError(404, 'Problem not found.');
     return problem.title as string;
   }
 

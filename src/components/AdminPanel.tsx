@@ -154,7 +154,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser }) => {
   };
 
   const handleDeleteProblem = (id: string) => {
-    if (window.confirm('Are you sure you want to delete this problem statement?')) {
+    if (window.confirm('Are you sure you want to delete this problem?')) {
       store.deleteProblem(id);
     }
   };
@@ -286,7 +286,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser }) => {
         icon={Shield}
         eyebrow="Admin"
         title="Admin console"
-        subtitle="Manage problem statements, review grant applications and evidence, configure roadmaps and resources, and track how founders are doing."
+        subtitle="Manage problems, review grant applications and evidence, configure roadmaps and resources, and track how founders are doing."
         illustration="analytics"
         actions={store.isContentEmpty() ? (
           <button
@@ -302,7 +302,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser }) => {
 
       {store.isContentEmpty() && !resetSuccess && (
         <div className="p-4 bg-[var(--nxt-blue)] border border-[var(--nxt-blue-strong)]/20 text-[var(--nxt-blue-deep)] text-sm rounded-2xl">
-          The database has no categories or problem statements yet. Click <strong>Load starter content</strong> to add the 25 categories (6 open, 19 coming soon), the roadmap and the problem statements — you can edit or delete any of them afterwards.
+          The database has no categories or problems yet. Click <strong>Load starter content</strong> to add the 25 categories (6 open, 19 coming soon), the roadmap and the problems — you can edit or delete any of them afterwards.
         </div>
       )}
 
@@ -495,7 +495,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser }) => {
         <div className="space-y-4">
           <div className="flex items-center justify-between bg-[var(--nxt-surface)] p-4 rounded-xl border border-[var(--nxt-line)] shadow-sm">
             <div>
-              <h3 className="font-display text-sm font-bold text-[var(--nxt-ink)]">Problem Statements Management</h3>
+              <h3 className="font-display text-sm font-bold text-[var(--nxt-ink)]">Problems Management</h3>
               <p className="text-xs text-[var(--nxt-ink-soft)]">Create, edit, delete, or toggle Funded / Unfunded status on clinical problems.</p>
             </div>
             <button
@@ -504,14 +504,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser }) => {
               className="px-3 py-1.5 bg-[var(--nxt-mint-strong)] hover:bg-[var(--nxt-mint-deep)] text-white rounded-full text-xs font-semibold flex items-center gap-1 shadow-sm"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>Create Problem Statement</span>
+              <span>Create Problem</span>
             </button>
           </div>
 
           {editingProblem && (
             <form onSubmit={handleSaveProblem} className="bg-[var(--nxt-bg-soft)] border border-[var(--nxt-mint-strong)]/20 rounded-xl p-5 space-y-3 shadow-sm">
               <h4 className="text-xs font-bold text-[var(--nxt-ink)] uppercase tracking-wider">
-                {editingProblem.id ? 'Edit Problem Statement' : 'New Problem Statement'}
+                {editingProblem.id ? 'Edit Problem' : 'New Problem'}
               </h4>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -616,7 +616,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser }) => {
                   type="submit"
                   className="px-4 py-1.5 bg-[var(--nxt-mint-strong)] text-white rounded-full text-xs font-semibold hover:bg-[var(--nxt-mint-deep)]"
                 >
-                  Save Problem Statement
+                  Save Problem
                 </button>
                 <button
                   type="button"
@@ -1656,7 +1656,7 @@ const AdminAnalytics: React.FC = () => {
   }).sort((a, b) => b.pct - a.pct);
 
   const funnelSteps = [
-    { label: 'Problem Statements', value: problems.length, tone: 'mint' as const },
+    { label: 'Problems', value: problems.length, tone: 'mint' as const },
     { label: 'Applications Submitted', value: applications.length, tone: 'blue' as const },
     { label: 'Approved', value: approvedCount, tone: 'mint' as const },
     { label: 'Roadmaps Started', value: scopesWithWorkingProblems.size, tone: 'blue' as const },
@@ -1671,7 +1671,7 @@ const AdminAnalytics: React.FC = () => {
           <TrendingUp className="w-4 h-4 text-[var(--nxt-blue-strong)]" />
           Platform Funnel
         </h3>
-        <p className="text-xs text-[var(--nxt-ink-soft)]">From problem statement to active roadmap execution.</p>
+        <p className="text-xs text-[var(--nxt-ink-soft)]">From problem to active roadmap execution.</p>
       </div>
 
       <div className="bg-[var(--nxt-surface)] rounded-xl border border-[var(--nxt-line)] p-5 shadow-sm space-y-3">

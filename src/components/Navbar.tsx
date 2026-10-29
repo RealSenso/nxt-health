@@ -25,7 +25,7 @@ interface NavbarProps {
 
 type Mode = { id: string; label: string; icon: React.ElementType; locked?: boolean; preview?: boolean };
 
-const PROBLEMS_MODE: Mode = { id: 'problems', label: 'Problem Statements', icon: FileQuestion };
+const PROBLEMS_MODE: Mode = { id: 'problems', label: 'Problems', icon: FileQuestion };
 const ROADMAP_SUBMODES: Mode[] = [
   { id: 'tasks', label: 'Roadmaps', icon: ListTodo, locked: true, preview: true },
   { id: 'resources', label: 'Resources', icon: BookMarked, locked: true, preview: true },
@@ -107,7 +107,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               id="btn-logo-home"
               onClick={() => setCurrentTab(currentUser ? 'problems' : 'home')}
-              title={currentUser ? 'Problem statements' : 'Home'}
+              title={currentUser ? 'Problems' : 'Home'}
               className="flex items-center gap-2.5 shrink-0"
             >
               <Logo />

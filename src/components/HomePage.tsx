@@ -763,7 +763,7 @@ export const HomePage: React.FC = () => {
             <p className="font-display font-normal text-[clamp(3.4rem,8vw,6rem)] leading-none tracking-[-0.05em] text-[var(--nxt-green)] mt-8">0%</p>
             <ul className="mt-6">
               {[
-                'Clinicians and industry leaders define verified problem statements',
+                'Clinicians and industry leaders define verified problems',
                 'Non-dilutive challenge grant capital tied to clear milestone gates',
                 'Step-by-step regulatory, evidence, and hospital procurement pathway',
               ].map(t => (
@@ -879,7 +879,7 @@ export const HomePage: React.FC = () => {
             price="₹2,000"
             note="per month · about $22 · at cost"
             points={[
-              'Full clinical problem statements & data',
+              'Full clinical problems & data',
               'Apply for funded challenge grants',
               'Complete 26-route stage-gate roadmaps',
               'Multi-seat co-founder workspace & notes',

@@ -15,7 +15,7 @@ interface NavItem { label: string; to: string }
 const NAV: Record<PublicVariant, { items: NavItem[]; cta: NavItem; subBrand?: string }> = {
   home: {
     items: [
-      { label: 'Problem statements', to: '/problems' },
+      { label: 'Problems', to: '/problems' },
       { label: 'How to?', to: '/start-in-india' },
     ],
     cta: { label: 'Log in / Sign up', to: '/login' },
@@ -24,7 +24,7 @@ const NAV: Record<PublicVariant, { items: NavItem[]; cta: NavItem; subBrand?: st
     subBrand: 'Experts',
     items: [
       { label: 'Find an expert', to: '/experts#find' },
-      { label: 'Problem statements', to: '/problems' },
+      { label: 'Problems', to: '/problems' },
       { label: 'Become an expert', to: '/experts/join' },
       { label: 'Our mission', to: '/experts#mission' },
     ],
@@ -34,7 +34,7 @@ const NAV: Record<PublicVariant, { items: NavItem[]; cta: NavItem; subBrand?: st
     subBrand: 'Experts',
     items: [
       { label: 'Find an expert', to: '/experts' },
-      { label: 'Problem statements', to: '/problems' },
+      { label: 'Problems', to: '/problems' },
       { label: 'Why experts join', to: '/experts/join#why' },
       { label: 'What you build', to: '/experts/join#build' },
     ],

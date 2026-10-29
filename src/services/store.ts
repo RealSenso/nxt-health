@@ -462,7 +462,7 @@ class ApiStore {
     return this.data.my_votes?.[problemId] || null;
   }
 
-  /** Votes agree/disagree on a problem statement; voting the same way again takes the vote back. */
+  /** Votes agree/disagree on a problem; voting the same way again takes the vote back. */
   public voteOnProblem(problemId: string, vote: ProblemVote): Promise<void> {
     const signedIn = this.isAuthenticated();
     const guest = signedIn ? null : this.guestVotes();
@@ -488,7 +488,7 @@ class ApiStore {
     );
   }
 
-  /** Admin: votes per problem statement, split by signed-in members and guests. */
+  /** Admin: votes per problem, split by signed-in members and guests. */
   public getVoteBreakdown(): VoteBreakdown {
     return this.data.admin?.problem_votes || [];
   }
@@ -510,7 +510,7 @@ class ApiStore {
     return this.write(() => api.post('/admin/starter-content'));
   }
 
-  /** Problem statements. The free guide project is not one of them. */
+  /** Problems. The free guide project is not one of them. */
   public getProblems(): ProblemStatement[] {
     return this.data.content.problems.filter(p => !p.guide);
   }

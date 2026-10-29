@@ -5,7 +5,7 @@ import type { RoadmapContent } from './roadmapTypes.js';
 
 type Doc = Record<string, unknown> & { id: string };
 
-/** The free guide project: not a problem statement, but the project every signed-in person can open in Roadmaps. */
+/** The free guide project: not a problem, but the project every signed-in person can open in Roadmaps. */
 export const GUIDE_PROBLEM: Doc = {
   id: 'prob-start-in-india',
   title: 'How to start a startup in India',
@@ -180,5 +180,5 @@ export const STARTER_RESOURCES: Doc[] = [];
 
 /** Ids from earlier starter content that the current content replaces. */
 export const OBSOLETE_CATEGORY_ID = /^cat-\d+$/;
-/** The six sample problem statements that were never in the Drive sheets (prob-1 … prob-6). */
+/** The six sample problems that were never in the Drive sheets (prob-1 … prob-6). */
 export const OBSOLETE_PROBLEM_ID = /^prob-[1-6]$/;

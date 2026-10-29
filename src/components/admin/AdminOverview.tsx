@@ -24,7 +24,7 @@ export const AdminOverview: React.FC<Props> = ({ counts, onNavigate }) => {
   const votes = store.getVoteBreakdown().reduce((n, v) => n + v.agree + v.disagree, 0);
   const stats: { label: string; value: number; tab: AdminTab }[] = [
     { label: 'Founders', value: users.filter(u => u.role === 'member').length, tab: 'users' },
-    { label: 'Problem statements', value: store.getProblems().length, tab: 'problems' },
+    { label: 'Problems', value: store.getProblems().length, tab: 'problems' },
     { label: 'Open categories', value: store.getCategories().filter(c => !c.coming_soon).length, tab: 'categories' },
     { label: 'Published posts', value: store.getBlogs().filter(b => b.status === 'published').length, tab: 'blogs' },
     { label: 'Startups promoted', value: store.getStartups().length, tab: 'startups' },
@@ -64,7 +64,7 @@ export const AdminOverview: React.FC<Props> = ({ counts, onNavigate }) => {
         <div className="flex flex-wrap gap-2.5">
           <Button onClick={() => onNavigate('blogs')}>Write a blog post</Button>
           <Button onClick={() => onNavigate('startups')}>Add a startup</Button>
-          <Button onClick={() => onNavigate('problems')}>Add a problem statement</Button>
+          <Button onClick={() => onNavigate('problems')}>Add a problem</Button>
           <Button onClick={() => onNavigate('experts')}>Manage experts</Button>
           <Button onClick={() => onNavigate('site')}>Set an announcement</Button>
         </div>

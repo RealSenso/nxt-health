@@ -24,7 +24,7 @@ const Private: React.FC<{ kind: string }> = ({ kind }) => (
     <Lock className="w-10 h-10 mx-auto text-[var(--nxt-ink-soft)]" />
     <h1 className="font-display text-xl font-bold text-[var(--nxt-ink)] mt-3">This {kind} is private</h1>
     <p className="text-sm text-[var(--nxt-ink-soft)] mt-1">It may not exist, or its owner hasn't made it public.</p>
-    <Link to="/problems" className="inline-block mt-5 px-5 py-2.5 rounded-full bg-[var(--nxt-mint-strong)] text-white text-sm font-semibold">Browse problem statements</Link>
+    <Link to="/problems" className="inline-block mt-5 px-5 py-2.5 rounded-full bg-[var(--nxt-mint-strong)] text-white text-sm font-semibold">Browse problems</Link>
   </div>
 );
 

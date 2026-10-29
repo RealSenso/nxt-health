@@ -16,7 +16,7 @@ export interface SyncResult {
 /**
  * Brings the database up to date with the starter content. Safe to run any time:
  *  - categories are written by id (a re-run refreshes them) and, when a roadmap is supplied, so are its steps,
- *  - problem statements and resources are only added when missing, so edits are never overwritten,
+ *  - problems and resources are only added when missing, so edits are never overwritten,
  *  - the six sample problems (prob-1 … prob-6) are removed, along with the working/locked/saved references to them,
  *  - the first-generation starter categories (cat-1 … cat-21) and everything hanging off them are removed.
  */
@@ -105,7 +105,7 @@ export async function removeObsoleteStarterContent(database: Database): Promise<
     ]);
   }
 
-  // Remove the sample problem statements that are not in the Drive sheets, and tidy what pointed at them.
+  // Remove the sample problems that are not in the Drive sheets, and tidy what pointed at them.
   const oldProblems = (await col('problems').find({ _id: { $regex: OBSOLETE_PROBLEM_ID.source } }).toArray()).map(p => p._id);
   if (oldProblems.length) {
     await Promise.all([
@@ -125,7 +125,7 @@ export async function removeObsoleteStarterContent(database: Database): Promise<
     ]);
   }
 
-  // Spelling correction for the sponsor's name on the first problem statement (starter problems are never overwritten).
+  // Spelling correction for the sponsor's name on the first problem (starter problems are never overwritten).
   await col('problems').updateMany(
     { _id: 'prob-womens-psychological', description: { $regex: '— Ashwath$' } },
     [{ $set: { description: { $replaceOne: { input: '$description', find: '— Ashwath', replacement: '— Aswath' } } } }],

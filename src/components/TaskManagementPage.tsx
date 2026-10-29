@@ -103,7 +103,7 @@ export const TaskManagementPage: React.FC<TaskManagementPageProps> = ({
     return (
       <div className="bg-[var(--nxt-surface)] rounded-3xl border border-dashed border-[var(--nxt-line)] p-10 text-center">
         <h2 className="font-display text-lg font-bold text-[var(--nxt-ink)]">We couldn't find that project</h2>
-        <p className="text-sm text-[var(--nxt-ink-soft)] mt-1">The problem statement may have been removed.</p>
+        <p className="text-sm text-[var(--nxt-ink-soft)] mt-1">The problem may have been removed.</p>
         <button onClick={() => goTo(null)} className="mt-4 px-4 py-2 rounded-full bg-[var(--nxt-mint-strong)] text-white text-sm font-semibold">Back to my projects</button>
       </div>
     );
@@ -338,7 +338,7 @@ export const TaskManagementPage: React.FC<TaskManagementPageProps> = ({
                 </button>
                 <h3 className="font-display text-lg font-bold text-[var(--nxt-ink)] mb-4">Add a problem to work on</h3>
                 {unselectedProblems.length === 0 ? (
-                  <p className="text-xs text-[var(--nxt-ink-soft)]">You've already added every available problem statement.</p>
+                  <p className="text-xs text-[var(--nxt-ink-soft)]">You've already added every available problem.</p>
                 ) : (
                   <ProblemPickerGrid problems={unselectedProblems} onPick={handleAddProblem} appliedIds={appliedProblemIds} savedIds={savedProblemIds} />
                 )}
@@ -885,7 +885,7 @@ const ProblemPickerGrid: React.FC<{
         <div>
           {priorityProblems.length > 0 && (
             <p className="text-xs font-bold uppercase tracking-wider text-[var(--nxt-ink-soft)] mb-3">
-              Other Problem Statements
+              Other Problems
             </p>
           )}
           <RevealGroup className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8" stagger={0.04}>

@@ -19,8 +19,8 @@ export const START_IN_INDIA_ROADMAP: RoadmapContent = {
           "detail": "Write down, in a page, the specific problem, who suffers from it, how often, and what they do about it today.",
           "sub_stage": "Validate the idea",
           "experts": "You; a mentor or domain expert",
-          "resources": "Problem statement canvas; this platform's problem statements",
-          "deliverable": "One-page problem statement",
+          "resources": "Problem canvas; this platform's problems",
+          "deliverable": "One-page problem",
           "depends_on": "",
           "duration": "1 week",
           "owner": "Founders"
@@ -33,7 +33,7 @@ export const START_IN_INDIA_ROADMAP: RoadmapContent = {
           "experts": "You; a clinical or domain advisor",
           "resources": "Interview guide; notes template",
           "deliverable": "Interview notes and a list of repeated pain points",
-          "depends_on": "Problem statement",
+          "depends_on": "Problem",
           "duration": "2-3 weeks",
           "owner": "Founders"
         },
@@ -504,7 +504,7 @@ export const START_IN_INDIA_ROADMAP: RoadmapContent = {
           "experts": "A regulatory affairs expert",
           "resources": "NXT Health category roadmaps; CDSCO website",
           "deliverable": "Licence map for your product",
-          "depends_on": "Problem statement",
+          "depends_on": "Problem",
           "duration": "1-2 weeks",
           "owner": "Founders"
         }
@@ -607,7 +607,7 @@ export const START_IN_INDIA_ROADMAP: RoadmapContent = {
           "detail": "Look at government and institutional support for startups, such as BIRAC, DST schemes, ICMR and the Startup India Seed Fund Scheme through approved incubators, and state startup policies. Rules, fees and thresholds change — confirm the current position with a chartered accountant or company secretary.",
           "sub_stage": "Plan",
           "experts": "An incubator; mentors",
-          "resources": "Scheme websites; this platform's funded problem statements",
+          "resources": "Scheme websites; this platform's funded problems",
           "deliverable": "Grant shortlist",
           "depends_on": "12-month budget",
           "duration": "2 weeks",

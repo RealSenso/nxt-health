@@ -163,7 +163,7 @@ export function contentRouter(database: Database): Router {
     res.json({ ok: true });
   });
 
-  /** Loads the starter categories and problem statements, or refreshes them on a site that already has some. */
+  /** Loads the starter categories and problems, or refreshes them on a site that already has some. */
   r.post('/admin/starter-content', async (req, res) => {
     const admin = requireAdmin(req);
     res.status(201).json({ ok: true, ...(await syncStarterContent(database, admin._id)) });

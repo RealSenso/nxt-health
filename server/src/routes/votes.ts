@@ -8,7 +8,7 @@ import { now, parse } from '../util.js';
 export type VoteTally = Record<string, { agree: number; disagree: number }>;
 export type VoteBreakdown = { problem_id: string; agree: number; disagree: number; members: number; guests: number }[];
 
-/** Agree / disagree counts for every problem statement. */
+/** Agree / disagree counts for every problem. */
 export async function voteTally(database: Database): Promise<VoteTally> {
   const rows = await database.col('problemVotes').aggregate<{ _id: { problem_id: string; vote: string }; n: number }>([
     { $group: { _id: { problem_id: '$problem_id', vote: '$vote' }, n: { $sum: 1 } } },
@@ -37,7 +37,7 @@ export async function voteBreakdown(database: Database): Promise<VoteBreakdown> 
 }
 
 /**
- * Anyone can vote on whether a problem statement is a real problem — no account needed. One vote each, changeable.
+ * Anyone can vote on whether a problem is a real problem — no account needed. One vote each, changeable.
  * Signed-in people vote under their account. Visitors vote under a random id their browser keeps, and a per-IP limit
  * keeps casual ballot-stuffing in check.
  */
