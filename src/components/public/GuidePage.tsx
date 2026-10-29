@@ -151,7 +151,7 @@ export const GuidePage: React.FC = () => {
         <H1 className="mt-6">How to?</H1>
       </section>
 
-      <section className="nxt-container py-10 max-w-4xl">
+      <section className="nxt-container py-10">
         <ol className="border-t border-[var(--nxt-line)]">
           {TOPICS.map((title, i) => {
             const isOpen = topicOpen === i;
