@@ -43,6 +43,7 @@
   --nxt-ink: #111111;
   --nxt-ink-soft: #5F5F5F;
   --nxt-line: #E3E3E3;
+  --nxt-plate-shadow: 0 1px 0 rgba(0,0,0,0.04), 0 14px 28px -14px rgba(0,0,0,0.28);
 
   /* Green accent for the homepage: deep on light, bright on dark */
   --nxt-green: #0B8A44;
@@ -88,6 +89,7 @@
     --nxt-ink: #F4F4F4;
     --nxt-ink-soft: #A2A2A2;
     --nxt-line: #2A2A2A;
+    --nxt-plate-shadow: none;
     --nxt-green: #3DF08A;
     --nxt-green-ink: #04120A;
     --nxt-green-soft: rgba(61, 240, 138, 0.12);
@@ -123,6 +125,7 @@
   --nxt-ink: #F4F4F4;
   --nxt-ink-soft: #A2A2A2;
   --nxt-line: #2A2A2A;
+    --nxt-plate-shadow: none;
   --nxt-green: #3DF08A;
   --nxt-green-ink: #04120A;
   --nxt-green-soft: rgba(61, 240, 138, 0.12);
@@ -151,6 +154,7 @@
   --nxt-ink: #FFFFFF;
   --nxt-ink-soft: #B5B5B5;
   --nxt-line: #2F2F2F;
+  --nxt-plate-shadow: none;
   --nxt-green: #3DF08A;
   --nxt-green-ink: #04120A;
   --nxt-peach: #3A2A22;

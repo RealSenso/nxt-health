@@ -63,6 +63,7 @@ const HeroHelix: React.FC = () => {
     let W = 0, H = 0, raf = 0, frame = 0, t = 0, spin = 0, visible = true;
     let tx = 0, ty = 0, px = 0, py = 0;
     let green = '#0B8A44', ink = '#111111', soft = '#5F5F5F';
+    let gain = 1; /* dark dots on a light page need more weight than light dots on a dark one */
 
     const resize = () => {
       const d = Math.min(window.devicePixelRatio || 1, 2);
@@ -94,6 +95,8 @@ const HeroHelix: React.FC = () => {
         soft = cssVar('--nxt-ink-soft') || soft;
         glowGreen = makeGlow(green);
         glowInk = makeGlow(ink);
+        const m = /^#([0-9a-f]{6})$/i.exec(ink);
+        gain = m && parseInt(m[1].slice(0, 2), 16) < 128 ? 2.1 : 1;
       }
       t += 0.016;
       spin += 0.004;
@@ -111,7 +114,7 @@ const HeroHelix: React.FC = () => {
 
       /* distant stars drift with the pointer, nearer ones further */
       field.forEach(f => {
-        ctx.globalAlpha = (0.15 + 0.5 * f.z) * (0.55 + 0.45 * Math.sin(t * 1.6 + f.p));
+        ctx.globalAlpha = Math.min(1, (0.15 + 0.5 * f.z) * (0.55 + 0.45 * Math.sin(t * 1.6 + f.p)) * gain);
         dot(glowInk, f.x * W + px * f.z * 40, f.y * H + py * f.z * 40, 2 + f.z * 4);
       });
 
@@ -119,17 +122,17 @@ const HeroHelix: React.FC = () => {
       ctx.lineWidth = 0.8;
       ctx.strokeStyle = soft;
       for (let i = 4; i < N; i += 6) {
-        ctx.globalAlpha = 0.1 + 0.2 * ((A[i].d + B[i].d) / 2);
+        ctx.globalAlpha = Math.min(1, (0.1 + 0.2 * ((A[i].d + B[i].d) / 2)) * gain);
         ctx.beginPath(); ctx.moveTo(A[i].x, A[i].y); ctx.lineTo(B[i].x, B[i].y); ctx.stroke();
       }
 
       /* the two strands: a thread of light with glowing dots strung on it */
       const strand = (P: typeof A, color: string, sprite: HTMLCanvasElement, offset: number) => {
-        ctx.strokeStyle = color; ctx.globalAlpha = 0.2; ctx.lineWidth = 1;
+        ctx.strokeStyle = color; ctx.globalAlpha = Math.min(1, 0.2 * gain); ctx.lineWidth = 1;
         ctx.beginPath(); P.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y))); ctx.stroke();
         P.forEach((p, i) => {
           const tw = 0.65 + 0.35 * Math.sin(t * 2.2 + i * 0.9 + offset);
-          ctx.globalAlpha = (0.35 + 0.65 * p.d) * tw;
+          ctx.globalAlpha = Math.min(1, (0.35 + 0.65 * p.d) * tw * gain);
           dot(sprite, p.x, p.y, (i % 5 === 0 ? 14 : 7) + p.d * (i % 5 === 0 ? 14 : 8));
         });
       };
@@ -140,7 +143,7 @@ const HeroHelix: React.FC = () => {
       orbit.forEach(o => {
         const a = t * o.s + o.p;
         const q = project(Math.cos(a) * o.r, o.y + Math.sin(t + o.p) * 0.3, Math.sin(a) * o.r, cx);
-        ctx.globalAlpha = (0.45 + 0.55 * q.d) * (0.65 + 0.35 * Math.sin(t * 2 + o.p * 3));
+        ctx.globalAlpha = Math.min(1, (0.45 + 0.55 * q.d) * (0.65 + 0.35 * Math.sin(t * 2 + o.p * 3)) * gain);
         dot(glowGreen, q.x, q.y, 22 + o.k * 70 * (0.5 + q.d));
       });
       ctx.globalAlpha = 1;
@@ -193,7 +196,8 @@ const Interactive3DGlobe: React.FC = () => {
 
     let animId = 0;
     let W = 0, H = 0, CX = 0, CY = 0, R = 0;
-    let rotX = 0.25, rotY = -1.3; /* India faces the viewer first */
+    let light = false; /* dark ink on a light page: lines and labels need more weight */
+    const rotX = 0.2; let rotY = -1.3; /* India faces the viewer first */
     let dragging = false;
     let lastX = 0, lastY = 0;
     let velX = 0;
@@ -267,6 +271,8 @@ const Interactive3DGlobe: React.FC = () => {
       if (frame++ % 30 === 0) {
         green = cssVar('--nxt-green') || green;
         ink = cssVar('--nxt-ink') || ink;
+        const m = /^#([0-9a-f]{6})$/i.exec(ink);
+        light = !!m && parseInt(m[1].slice(0, 2), 16) < 128;
       }
       ctx.clearRect(0, 0, W, H);
       ctx.save();
@@ -274,8 +280,8 @@ const Interactive3DGlobe: React.FC = () => {
       ctx.arc(CX, CY, R, 0, Math.PI * 2);
       ctx.clip();
       ctx.strokeStyle = green;
-      ctx.lineWidth = 0.9;
-      ctx.globalAlpha = 0.7;
+      ctx.lineWidth = light ? 1.3 : 0.9;
+      ctx.globalAlpha = light ? 0.95 : 0.7;
       outline.forEach(traceBorder);
 
       /* routes between hubs: an arc lifted off the surface with a pulse running along it */
@@ -292,7 +298,7 @@ const Interactive3DGlobe: React.FC = () => {
         };
         ctx.strokeStyle = green;
         ctx.lineWidth = 1;
-        ctx.globalAlpha = 0.32;
+        ctx.globalAlpha = light ? 0.6 : 0.32;
         ctx.beginPath();
         let pen = false;
         for (let i = 0; i <= 40; i++) {
@@ -310,21 +316,33 @@ const Interactive3DGlobe: React.FC = () => {
           ctx.beginPath(); ctx.arc(CX + q[0], CY - q[1], 7, 0, 6.2832); ctx.fill();
         }
       });
-      hubs.forEach(hub => {
-        const r = rotate(latLonTo3D(hub.lat, hub.lon));
-        if (r[2] <= -R * 0.05) return;
-        const x = CX + r[0], y = CY - r[1];
-        const depth = (r[2] + R) / (2 * R);
-        const dotR = 2.5 + depth * 2.5, alpha = 0.35 + depth * 0.65;
-        ctx.fillStyle = green;
-        ctx.globalAlpha = alpha * 0.28;
-        ctx.beginPath(); ctx.arc(x, y, dotR * 2.6, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = ink;
-        ctx.globalAlpha = alpha;
-        ctx.beginPath(); ctx.arc(x, y, dotR, 0, Math.PI * 2); ctx.fill();
-        ctx.font = `${11 + depth * 3}px "Helvetica Neue", Helvetica, Arial, sans-serif`;
-        ctx.fillText(hub.label, x + dotR + 6, y + 3);
-      });
+      /* labels: nearest first, faded out toward the edge, and skipped where they would sit on one already drawn */
+      const placed: { x: number; y: number; w: number; h: number }[] = [];
+      hubs
+        .map(hub => ({ hub, r: rotate(latLonTo3D(hub.lat, hub.lon)) }))
+        .filter(({ r }) => r[2] > -R * 0.05)
+        .sort((a, b) => b.r[2] - a.r[2])
+        .forEach(({ hub, r }) => {
+          const x = CX + r[0], y = CY - r[1];
+          const depth = (r[2] + R) / (2 * R);
+          const dotR = 2.5 + depth * 2.5, alpha = Math.min(1, (0.35 + depth * 0.65) * (light ? 1.4 : 1));
+          ctx.fillStyle = green;
+          ctx.globalAlpha = alpha * 0.28;
+          ctx.beginPath(); ctx.arc(x, y, dotR * 2.6, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = ink;
+          ctx.globalAlpha = alpha;
+          ctx.beginPath(); ctx.arc(x, y, dotR, 0, Math.PI * 2); ctx.fill();
+          const size = 11 + depth * 3;
+          ctx.font = `${size}px "Helvetica Neue", Helvetica, Arial, sans-serif`;
+          const w = ctx.measureText(hub.label).width, h = size + 2;
+          const box = { x: x + dotR + 6, y: y - h / 2 - 1, w, h };
+          const fade = Math.max(0, Math.min(1, (depth - 0.5) / 0.25));
+          if (fade > 0 && !placed.some(q => box.x < q.x + q.w + 6 && box.x + box.w + 6 > q.x && box.y < q.y + q.h && box.y + box.h > q.y)) {
+            placed.push(box);
+            ctx.globalAlpha = alpha * fade;
+            ctx.fillText(hub.label, box.x, y + 3);
+          }
+        });
       ctx.restore();
       ctx.globalAlpha = 0.5;
       ctx.strokeStyle = green;
@@ -347,7 +365,6 @@ const Interactive3DGlobe: React.FC = () => {
       if (!dragging) return;
       velX = (e.clientX - lastX) * 0.005;
       rotY += velX;
-      rotX = Math.max(-1.2, Math.min(1.2, rotX + (e.clientY - lastY) * 0.003));
       lastX = e.clientX; lastY = e.clientY;
     };
     const io = new IntersectionObserver(([entry]) => {
@@ -527,7 +544,7 @@ const GateStack: React.FC = () => {
                   backgroundColor: on ? 'var(--nxt-green)' : 'color-mix(in srgb, var(--nxt-surface) 92%, transparent)',
                   borderColor: on ? 'var(--nxt-green)' : k < active ? 'color-mix(in srgb, var(--nxt-green) 40%, var(--nxt-line))' : 'var(--nxt-line)',
                   color: on ? 'var(--nxt-green-ink)' : 'var(--nxt-ink-soft)',
-                  boxShadow: on ? '0 0 80px -10px var(--nxt-green)' : 'none',
+                  boxShadow: on ? '0 0 80px -10px var(--nxt-green)' : 'var(--nxt-plate-shadow, none)',
                 }}
               >
                 <span className={on ? '' : 'text-[var(--nxt-ink)]'}>{s.title}</span>
