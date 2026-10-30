@@ -23,233 +23,129 @@ import { WORLD_OUTLINE } from '../data/worldOutline';
 const cssVar = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 
 /* =========================================================================
-   HERO BACKGROUND: ONE PATHWAY THAT SPLITS INTO MANY
-   Tens of thousands of particles, all moved on the GPU. They fall as snow,
-   gather into a single trunk of light that splits, and splits again, into a
-   canopy of routes, with pulses running out along every branch to its end.
-   Then it lets go and it snows again. The pointer tilts the scene and pushes
-   the particles aside. Colours follow the theme, light or dark.
+   HERO BACKGROUND: A SPINNING HELIX MADE OF STARS, OVER A DRIFTING STAR FIELD
+   Sits behind the hero copy. Follows the pointer a little, spins on its own,
+   and takes its colours from the theme tokens so it reads in light and dark.
    ========================================================================= */
-const GL_VERT = `
-attribute vec4 a_seed;
-attribute vec4 a_mount;
-uniform float u_t, u_m, u_aspect, u_dpr, u_shift, u_scale, u_boost;
-uniform vec2 u_cam, u_mouse;
-uniform vec3 u_green, u_ink;
-varying vec4 v_col;
-
-void main() {
-  float t = u_t;
-  float h1 = fract(a_seed.x * 7.13), h2 = fract(a_seed.y * 5.71), h3 = fract(a_seed.z * 3.97);
-  vec3 snow = vec3((h1 - 0.5) * 18.0 + sin(t * 0.5 + h2 * 20.0) * 0.4,
-                   5.0 - mod(h2 * 10.0 + t * (0.35 + a_seed.z * 0.6), 10.0),
-                   (h3 - 0.5) * 9.0);
-
-  /* the tree turns slowly */
-  float ang = t * 0.12;
-  vec3 mt = vec3(a_mount.x * cos(ang) + a_mount.z * sin(ang), a_mount.y, -a_mount.x * sin(ang) + a_mount.z * cos(ang));
-
-  float e = u_m * u_m * (3.0 - 2.0 * u_m);
-  float w = 4.0 * u_m * (1.0 - u_m);
-  vec3 swirl = vec3(sin(a_seed.y * 40.0 + t), cos(a_seed.z * 40.0 + t * 1.3), sin(a_seed.x * 40.0 - t)) * w * 1.6;
-  vec3 p = (mix(snow, mt, e) + swirl) * u_scale;
-
-  float cy2 = cos(u_cam.x), sy = sin(u_cam.x), cp = cos(u_cam.y), sp = sin(u_cam.y);
-  p = vec3(p.x * cy2 + p.z * sy, p.y, -p.x * sy + p.z * cy2);
-  p = vec3(p.x, p.y * cp - p.z * sp, p.y * sp + p.z * cp);
-  p.z -= 9.0;
-
-  float f = 1.0 / tan(0.4);
-  vec2 s = vec2(p.x * f / u_aspect, p.y * f) / (-p.z) + vec2(u_shift, 0.0);
-  vec2 d = (s - u_mouse) * vec2(u_aspect, 1.0);
-  float dist = length(d);
-  s += (d / (dist + 0.001)) * exp(-dist * 4.0) * 0.14 * vec2(1.0 / u_aspect, 1.0);
-  gl_Position = vec4(s, 0.0, 1.0);
-
-  float kind = a_mount.w;                      /* 0..1 distance from the root, or 10+ for the end of a branch */
-  bool mark = kind >= 10.0;
-  float ph = fract(t * 0.11);
-  float wave = mark ? 0.0 : exp(-pow(kind - ph, 2.0) / 0.0025) + 0.6 * exp(-pow(kind - fract(ph + 0.5), 2.0) / 0.0025);
-  float lit = mark ? 0.5 + 0.5 * sin(t * 2.4 + kind * 3.0) : 0.0;
-
-  float depth = clamp(1.0 - (-p.z - 6.0) / 8.0, 0.35, 1.0);
-  float size = (1.0 + a_seed.z * 1.4) * (mark ? 1.8 : 1.0) * (1.0 + 1.6 * wave);
-  gl_PointSize = size * u_dpr * (15.0 / (-p.z)) * (1.0 + 0.3 * e);
-  vec3 formCol = u_green;
-  float formA = mark ? 0.8 : 0.42;
-  float tw = 0.8 + 0.2 * sin(t * 2.0 + a_seed.x * 60.0);
-  v_col = vec4(mix(u_ink, formCol, e), (mix(0.5, formA, e) * tw * (0.8 + 0.2 * lit) + 0.55 * wave) * depth * u_boost);
-}
-`;
-const GL_FRAG = `
-precision mediump float;
-varying vec4 v_col;
-void main() {
-  float d = length(gl_PointCoord - 0.5);
-  float a = smoothstep(0.5, 0.0, d);
-  float k = v_col.a * a * a;
-  gl_FragColor = vec4(v_col.rgb * k, k);
-}
-`;
-
-type V3 = [number, number, number];
-/** One pathway that splits into many: a trunk, then three routes, then two from each, then two again. Points sampled along every branch. */
-const sampleTree = (count: number): Float32Array => {
-  const out = new Float32Array(count * 4);
-  type Branch = { a: V3; c: V3; b: V3; len: number; level: number; d0: number };
-  const branches: Branch[] = [];
-  const norm = (v: V3): V3 => { const l = Math.hypot(v[0], v[1], v[2]) || 1; return [v[0] / l, v[1] / l, v[2] / l]; };
-  const cross = (p: V3, q: V3): V3 => [p[1] * q[2] - p[2] * q[1], p[2] * q[0] - p[0] * q[2], p[0] * q[1] - p[1] * q[0]];
-  const grow = (start: V3, dir: V3, from: V3, len: number, level: number, d0: number) => {
-    const end: V3 = [start[0] + dir[0] * len, start[1] + dir[1] * len, start[2] + dir[2] * len];
-    const ctl: V3 = [start[0] + from[0] * len * 0.55, start[1] + from[1] * len * 0.55, start[2] + from[2] * len * 0.55];
-    branches.push({ a: start, c: ctl, b: end, len, level, d0 });
-    if (level >= 3) return;
-    const kids = level === 0 ? 3 : 2;
-    const u = norm(cross(dir, Math.abs(dir[1]) > 0.9 ? [1, 0, 0] : [0, 1, 0]));
-    const v = cross(dir, u);
-    for (let k = 0; k < kids; k++) {
-      const az = (k / kids) * Math.PI * 2 + level * 0.9 + Math.random() * 0.5;
-      const ang = 0.68 + level * 0.1 + Math.random() * 0.18;
-      const nd = norm([
-        dir[0] * Math.cos(ang) + (u[0] * Math.cos(az) + v[0] * Math.sin(az)) * Math.sin(ang),
-        dir[1] * Math.cos(ang) + (u[1] * Math.cos(az) + v[1] * Math.sin(az)) * Math.sin(ang) + 0.22,
-        dir[2] * Math.cos(ang) + (u[2] * Math.cos(az) + v[2] * Math.sin(az)) * Math.sin(ang),
-      ]);
-      grow(end, nd, dir, len * 0.78, level + 1, d0 + len);
-    }
-  };
-  grow([0, -3.7, 0], [0, 1, 0], [0, 1, 0], 2.5, 0, 0);
-
-  let maxD = 0;
-  branches.forEach(b => { maxD = Math.max(maxD, b.d0 + b.len); });
-  const thick = (level: number) => 0.12 * Math.pow(0.66, level) + 0.018;
-  const weights = branches.map(b => b.len * (0.5 + thick(b.level) * 4));
-  const total = weights.reduce((x, y) => x + y, 0);
-  const pick = () => { let r = Math.random() * total; for (let i = 0; i < branches.length; i++) { r -= weights[i]; if (r <= 0) return branches[i]; } return branches[0]; };
-  const leaves = branches.filter(b => b.level === 3);
-  const gauss = () => (Math.random() + Math.random() + Math.random() - 1.5) / 1.5;
-
-  for (let i = 0; i < count; i++) {
-    let x: number, y: number, z: number, kind: number;
-    if (Math.random() < 0.07) {
-      /* the end of a branch: a small bright cluster */
-      const idx = (Math.random() * leaves.length) | 0, l = leaves[idx];
-      const a = Math.random() * 6.283, bb = Math.acos(2 * Math.random() - 1), rr = 0.14 * Math.cbrt(Math.random());
-      x = l.b[0] + rr * Math.sin(bb) * Math.cos(a); y = l.b[1] + rr * Math.cos(bb); z = l.b[2] + rr * Math.sin(bb) * Math.sin(a);
-      kind = 10 + idx;
-    } else {
-      const br = pick(), u = Math.random(), w = 1 - u;
-      const px = w * w * br.a[0] + 2 * w * u * br.c[0] + u * u * br.b[0];
-      const py = w * w * br.a[1] + 2 * w * u * br.c[1] + u * u * br.b[1];
-      const pz = w * w * br.a[2] + 2 * w * u * br.c[2] + u * u * br.b[2];
-      const th = thick(br.level);
-      x = px + gauss() * th; y = py + gauss() * th * 0.6; z = pz + gauss() * th;
-      kind = (br.d0 + u * br.len) / maxD;
-    }
-    out[i * 4] = x; out[i * 4 + 1] = y + 0.3; out[i * 4 + 2] = z; out[i * 4 + 3] = kind;
-  }
-  return out;
-};
-
-/** 0 to 1 and back: eases in over `rise`, holds, eases out over `fall`, all in seconds from `start`. */
-const pulse = (t: number, start: number, rise: number, hold: number, fall: number) => {
-  if (t < start || t > start + rise + hold + fall) return 0;
-  if (t < start + rise) return (t - start) / rise;
-  if (t < start + rise + hold) return 1;
-  return 1 - (t - start - rise - hold) / fall;
-};
-
-const HeroPathway: React.FC = () => {
+const HeroHelix: React.FC = () => {
   const ref = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     const c = ref.current;
-    const gl = c?.getContext('webgl', { alpha: true, premultipliedAlpha: true, antialias: false });
-    if (!c || !gl) return;
+    const ctx = c?.getContext('2d');
+    if (!c || !ctx) return;
 
-    const compile = (type: number, src: string) => {
-      const sh = gl.createShader(type)!;
-      gl.shaderSource(sh, src);
-      gl.compileShader(sh);
-      if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) console.warn('hero shader:', gl.getShaderInfoLog(sh));
-      return sh;
+    const N = 96, TURNS = 3.2, RAD = 1.7, LEN = 9;
+    const orbit = Array.from({ length: 7 }, (_, j) => ({ r: 3 + (j % 3) * 0.8, s: 0.25 + j * 0.05, p: j * 0.9, y: (j - 3) * 1.15, k: 0.28 + (j % 3) * 0.1 }));
+
+    /* a soft glowing dot, drawn once per colour and stamped wherever a star goes */
+    const makeGlow = (color: string) => {
+      const g = document.createElement('canvas');
+      g.width = g.height = 64;
+      const x = g.getContext('2d');
+      if (x) {
+        x.fillStyle = color;
+        x.fillRect(0, 0, 64, 64);
+        const m = x.createRadialGradient(32, 32, 0, 32, 32, 32);
+        m.addColorStop(0, 'rgba(255,255,255,1)');
+        m.addColorStop(0.14, 'rgba(255,255,255,1)');
+        m.addColorStop(0.4, 'rgba(255,255,255,0.32)');
+        m.addColorStop(1, 'rgba(255,255,255,0)');
+        x.globalCompositeOperation = 'destination-in';
+        x.fillStyle = m;
+        x.fillRect(0, 0, 64, 64);
+      }
+      return g;
     };
-    const prog = gl.createProgram()!;
-    gl.attachShader(prog, compile(gl.VERTEX_SHADER, GL_VERT));
-    gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, GL_FRAG));
-    gl.linkProgram(prog);
-    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return;
-    gl.useProgram(prog);
+    const dot = (sprite: HTMLCanvasElement, x: number, y: number, size: number) => ctx.drawImage(sprite, x - size / 2, y - size / 2, size, size);
+    let glowGreen = makeGlow('#0B8A44'), glowInk = makeGlow('#111111');
+    const field = Array.from({ length: 130 }, () => ({ x: Math.random(), y: Math.random(), z: Math.random(), p: Math.random() * 6.28 }));
+    let W = 0, H = 0, raf = 0, frame = 0, t = 0, spin = 0, visible = true;
+    let tx = 0, ty = 0, px = 0, py = 0;
+    let green = '#0B8A44', ink = '#111111', soft = '#5F5F5F';
 
-    const COUNT = window.innerWidth > 900 ? 48000 : 22000;
-    const seeds = new Float32Array(COUNT * 4);
-    for (let i = 0; i < seeds.length; i++) seeds[i] = Math.random();
-    const attr = (name: string, data: Float32Array, size: number) => {
-      const buf = gl.createBuffer();
-      gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-      gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
-      const loc = gl.getAttribLocation(prog, name);
-      gl.enableVertexAttribArray(loc);
-      gl.vertexAttribPointer(loc, size, gl.FLOAT, false, 0, 0);
-    };
-    attr('a_seed', seeds, 4);
-    attr('a_mount', sampleTree(COUNT), 4);
-    gl.enable(gl.BLEND);
-
-    const U = (n: string) => gl.getUniformLocation(prog, n);
-    const uT = U('u_t'), uM = U('u_m'), uAspect = U('u_aspect'), uDpr = U('u_dpr'), uShift = U('u_shift'), uScale = U('u_scale'), uBoost = U('u_boost');
-    const uCam = U('u_cam'), uMouse = U('u_mouse'), uGreen = U('u_green'), uInk = U('u_ink');
-
-    /* any CSS colour to 0..1 rgb, via a one-pixel canvas */
-    const px = document.createElement('canvas');
-    px.width = px.height = 1;
-    const pctx = px.getContext('2d', { willReadFrequently: true })!;
-    const rgb = (css: string, fallback: string): [number, number, number] => {
-      pctx.clearRect(0, 0, 1, 1);
-      pctx.fillStyle = fallback;
-      pctx.fillStyle = css || fallback;
-      pctx.fillRect(0, 0, 1, 1);
-      const d = pctx.getImageData(0, 0, 1, 1).data;
-      return [d[0] / 255, d[1] / 255, d[2] / 255];
-    };
-
-    let W = 0, H = 0, raf = 0, visible = true, last = performance.now(), t = 0, frame = 0;
-    let mx = 0, my = 0, cx = 0, cy = 0, mouseX = 9, mouseY = 9;
     const resize = () => {
-      const d = Math.min(window.devicePixelRatio || 1, 1.5);
-      W = c.clientWidth; H = c.clientHeight;
-      c.width = Math.round(W * d); c.height = Math.round(H * d);
-      gl.viewport(0, 0, c.width, c.height);
-      gl.uniform1f(uDpr, d);
-      gl.uniform1f(uAspect, W / H);
-      gl.uniform1f(uShift, W > 900 ? 0.28 : 0.0);
-      gl.uniform1f(uScale, W > 900 ? 0.95 : Math.max(0.4, Math.min(0.62, (W / H) * 0.6)));
+      const d = Math.min(window.devicePixelRatio || 1, 2);
+      W = c.clientWidth;
+      H = c.clientHeight;
+      c.width = Math.round(W * d);
+      c.height = Math.round(H * d);
+      ctx.setTransform(d, 0, 0, d, 0, 0);
+    };
+
+    const project = (x: number, y: number, z: number, cx: number) => {
+      const ry = spin + px, rx = py;
+      const X = x * Math.cos(ry) + z * Math.sin(ry);
+      const Z = -x * Math.sin(ry) + z * Math.cos(ry);
+      const Y2 = y * Math.cos(rx) - Z * Math.sin(rx);
+      const Z2 = y * Math.sin(rx) + Z * Math.cos(rx);
+      const roll = 0.32;
+      const X3 = X * Math.cos(roll) - Y2 * Math.sin(roll);
+      const Y3 = X * Math.sin(roll) + Y2 * Math.cos(roll);
+      const k = 15 / (15 - Z2);
+      const s = Math.min(Math.max(H, 480), 760) / 10.5;
+      return { x: cx + X3 * k * s, y: H / 2 - Y3 * k * s, d: Math.max(0, Math.min(1, (Z2 + 4) / 8)) };
     };
 
     const draw = () => {
-      const now = performance.now();
-      t += Math.min(0.05, (now - last) / 1000);
-      last = now;
       if (frame++ % 30 === 0) {
-        const g = rgb(cssVar('--nxt-green'), '#0B8A44'), k = rgb(cssVar('--nxt-ink'), '#111111');
-        gl.uniform3fv(uGreen, g); gl.uniform3fv(uInk, k);
-        const dark = (k[0] + k[1] + k[2]) / 3 > 0.5;
-        /* light on dark glows (additive); dark on light needs ordinary blending */
-        gl.blendFunc(gl.ONE, dark ? gl.ONE : gl.ONE_MINUS_SRC_ALPHA);
-        gl.uniform1f(uBoost, dark ? 1 : 2.2);
+        green = cssVar('--nxt-green') || green;
+        ink = cssVar('--nxt-ink') || ink;
+        soft = cssVar('--nxt-ink-soft') || soft;
+        glowGreen = makeGlow(green);
+        glowInk = makeGlow(ink);
       }
-      cx += (mx - cx) * 0.05; cy += (my - cy) * 0.05;
-      /* a 28 second loop: a little snow, the pathway forms and splits, then it lets go */
-      const cyc = (t + 1.5) % 28;
-      gl.uniform1f(uT, t);
-      gl.uniform1f(uM, pulse(cyc, 1, 3, 19, 3));
-      gl.uniform2f(uCam, cx * 0.35 + Math.sin(t * 0.12) * 0.08, 0.22 + cy * 0.14);
-      gl.uniform2f(uMouse, mouseX, mouseY);
-      gl.clearColor(0, 0, 0, 0);
-      gl.clear(gl.COLOR_BUFFER_BIT);
-      gl.drawArrays(gl.POINTS, 0, COUNT);
+      t += 0.016;
+      spin += 0.004;
+      px += (tx - px) * 0.06;
+      py += (ty - py) * 0.06;
+      const cx = W > 900 ? W * 0.74 : W * 0.5;
+
+      ctx.clearRect(0, 0, W, H);
+      const A: ReturnType<typeof project>[] = [], B: ReturnType<typeof project>[] = [];
+      for (let i = 0; i < N; i++) {
+        const u = i / (N - 1), a = u * Math.PI * 2 * TURNS, y = (u - 0.5) * LEN;
+        A.push(project(Math.cos(a) * RAD, y, Math.sin(a) * RAD, cx));
+        B.push(project(Math.cos(a + Math.PI) * RAD, y, Math.sin(a + Math.PI) * RAD, cx));
+      }
+
+      /* distant stars drift with the pointer, nearer ones further */
+      field.forEach(f => {
+        ctx.globalAlpha = (0.15 + 0.5 * f.z) * (0.55 + 0.45 * Math.sin(t * 1.6 + f.p));
+        dot(glowInk, f.x * W + px * f.z * 40, f.y * H + py * f.z * 40, 2 + f.z * 4);
+      });
+
+      /* faint constellation lines instead of base pairs */
+      ctx.lineWidth = 0.8;
+      ctx.strokeStyle = soft;
+      for (let i = 4; i < N; i += 6) {
+        ctx.globalAlpha = 0.1 + 0.2 * ((A[i].d + B[i].d) / 2);
+        ctx.beginPath(); ctx.moveTo(A[i].x, A[i].y); ctx.lineTo(B[i].x, B[i].y); ctx.stroke();
+      }
+
+      /* the two strands: a thread of light with glowing dots strung on it */
+      const strand = (P: typeof A, color: string, sprite: HTMLCanvasElement, offset: number) => {
+        ctx.strokeStyle = color; ctx.globalAlpha = 0.2; ctx.lineWidth = 1;
+        ctx.beginPath(); P.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y))); ctx.stroke();
+        P.forEach((p, i) => {
+          const tw = 0.65 + 0.35 * Math.sin(t * 2.2 + i * 0.9 + offset);
+          ctx.globalAlpha = (0.35 + 0.65 * p.d) * tw;
+          dot(sprite, p.x, p.y, (i % 5 === 0 ? 14 : 7) + p.d * (i % 5 === 0 ? 14 : 8));
+        });
+      };
+      strand(B, ink, glowInk, 0);
+      strand(A, green, glowGreen, 2);
+
+      /* big bright dots orbiting the helix */
+      orbit.forEach(o => {
+        const a = t * o.s + o.p;
+        const q = project(Math.cos(a) * o.r, o.y + Math.sin(t + o.p) * 0.3, Math.sin(a) * o.r, cx);
+        ctx.globalAlpha = (0.45 + 0.55 * q.d) * (0.65 + 0.35 * Math.sin(t * 2 + o.p * 3));
+        dot(glowGreen, q.x, q.y, 22 + o.k * 70 * (0.5 + q.d));
+      });
+      ctx.globalAlpha = 1;
     };
+
     const loop = () => {
       if (!visible) return;
       draw();
@@ -257,14 +153,13 @@ const HeroPathway: React.FC = () => {
     };
     const onMove = (e: PointerEvent) => {
       const r = c.getBoundingClientRect();
-      mx = ((e.clientX - r.left) / r.width - 0.5) * 2;
-      my = ((e.clientY - r.top) / r.height - 0.5) * 2;
-      mouseX = mx; mouseY = -my;
+      ty = ((e.clientY - r.top) / r.height - 0.5) * 0.7;
+      tx = ((e.clientX - r.left) / r.width - 0.5) * 0.9;
     };
     const io = new IntersectionObserver(([entry]) => {
       const was = visible;
       visible = entry.isIntersecting;
-      if (visible && !was) { last = performance.now(); loop(); }
+      if (visible && !was) loop();
     });
 
     resize();
@@ -862,7 +757,7 @@ export const HomePage: React.FC = () => {
       <ScrollRoute />
       {/* 1. HERO: the helix is the background of the headline */}
       <section className="relative overflow-hidden border-b border-[var(--nxt-line)]">
-        <HeroPathway />
+        <HeroHelix />
         <div
           aria-hidden="true"
           className="absolute inset-0 pointer-events-none"
