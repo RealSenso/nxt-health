@@ -42,7 +42,10 @@ export async function loadBundledContent(database: Database): Promise<{ steps: n
       await col('categories').updateOne({ _id }, { $set: { ...fields, ...(priority !== undefined ? { priority } : {}) }, $unset: unset }, { upsert: true });
     }
     for (const roadmap of [SAMD_ROADMAP, ONBOARDING_ROADMAP]) {
-      for (const step of buildRoadmapSteps(roadmap)) {
+      const fresh = buildRoadmapSteps(roadmap);
+      // Steps of an earlier version of this roadmap that the new one no longer has.
+      await col('steps').deleteMany({ category_id: roadmap.category!, _id: { $nin: fresh.map(d => d.id) } });
+      for (const step of fresh) {
         const doc = toDoc(step);
         await col('steps').replaceOne({ _id: doc._id }, doc, { upsert: true });
         steps++;

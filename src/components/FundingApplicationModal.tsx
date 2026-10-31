@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Save, AlertCircle, Check, ChevronLeft, ChevronRight, Send } from 'lucide-react';
+import { X, Save, AlertCircle, Check, ChevronLeft, ChevronDown, Send } from 'lucide-react';
 import { FundingApplication, ProblemStatement, User } from '../types';
 import { store } from '../services/store';
 import { APPLICATION_STAGES, stageIndex } from '../data/applicationStages';
-import { Answers, FUNDING_FORM, isAnswered, missingRequired, sectionComplete, type FormSection, type Question } from '../data/fundingForm';
+import { Answers, FUNDING_FORM, isAnswered, missingRequired, sectionComplete, visibleQuestions, type Question } from '../data/fundingForm';
 
 interface FundingApplicationModalProps {
   isOpen: boolean;
@@ -72,16 +72,18 @@ const Ask: React.FC<{ q: Question; value: string | string[] | undefined; onChang
   );
 };
 
-/** One step of the application: a single question, or (at the end) the read-back and sign-off. */
-interface Step { section: FormSection; qs: Question[] }
-const STEPS: Step[] = FUNDING_FORM.flatMap(section => (section.id === 'declaration' ? [{ section, qs: section.questions }] : section.questions.map(q => ({ section, qs: [q] }))));
+/** The sign-off is the last chapter; the others can be opened in any order. */
+const SIGN_OFF = FUNDING_FORM.length - 1;
+const preview = (v: string | string[] | undefined) => (Array.isArray(v) ? v.join(', ') : (v || '').replace(/\s+/g, ' ')).slice(0, 90);
 
 /** The funding application: a sectioned form with a progress list, saved as a draft or submitted for review. */
 export const FundingApplicationModal: React.FC<FundingApplicationModalProps> = ({
   isOpen, onClose, currentUser, problem, existingApplication, onSubmitted,
 }) => {
   const [answers, setAnswers] = useState<Answers>({});
-  const [index, setIndex] = useState(0);
+  /** -1 is the map of chapters; otherwise the chapter being answered. */
+  const [index, setIndex] = useState(-1);
+  const [openQ, setOpenQ] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [savedNotice, setSavedNotice] = useState<'draft' | 'submitted' | null>(null);
   const [dirty, setDirty] = useState(false);
@@ -100,7 +102,8 @@ export const FundingApplicationModal: React.FC<FundingApplicationModalProps> = (
     const saved = readApplicationSession();
     const resumed = !!saved && saved.problemId === problem?.id && saved.applicationId === existingApplication?.id && saved.path === window.location.pathname;
     setAnswers(resumed ? { ...start, ...saved!.answers } : start);
-    setIndex(resumed ? Math.min(saved!.index, STEPS.length - 1) : 0);
+    setIndex(resumed ? Math.max(-1, Math.min(saved!.index, FUNDING_FORM.length - 1)) : -1);
+    setOpenQ('');
     setViewStage(null);
     setDirty(resumed);
     setErrorMessage('');
@@ -112,14 +115,10 @@ export const FundingApplicationModal: React.FC<FundingApplicationModalProps> = (
     writeApplicationSession({ path: window.location.pathname, problemId: problem.id, applicationId: existingApplication?.id, index, answers });
   }, [isOpen, problem?.id, existingApplication?.id, index, answers]);
 
-  const step = STEPS[index];
-  const section = step.section;
-  const sectionIndex = FUNDING_FORM.indexOf(section);
-  const chapterStart = (i: number) => STEPS.findIndex(s => s.section === FUNDING_FORM[i]);
+  const chapter = index >= 0 ? FUNDING_FORM[index] : null;
   const currentStage = stageIndex(existingApplication?.stage);
   const shownStage = viewStage || 'form';
   const missing = useMemo(() => missingRequired(answers), [answers]);
-  const last = index === STEPS.length - 1;
 
   if (!problem) return null;
 
@@ -143,7 +142,7 @@ export const FundingApplicationModal: React.FC<FundingApplicationModalProps> = (
   const handleSaveDraft = () => {
     if (!text('applicant_name') || !text('applicant_email')) {
       setErrorMessage('Add at least your name and email before saving a draft.');
-      setIndex(0);
+      openQuestion(0, text('applicant_name') ? 'applicant_email' : 'applicant_name');
       return;
     }
     setErrorMessage('');
@@ -157,8 +156,8 @@ export const FundingApplicationModal: React.FC<FundingApplicationModalProps> = (
   const handleSubmit = () => {
     if (missing.length) {
       const first = missing[0];
-      setIndex(STEPS.findIndex(s => s.qs.some(q => q.id === first.question.id)));
       setErrorMessage(`${missing.length} required answer${missing.length === 1 ? ' is' : 's are'} still empty. Start with “${first.question.label}”.`);
+      setIndex(SIGN_OFF);
       return;
     }
     setErrorMessage('');
@@ -178,15 +177,24 @@ export const FundingApplicationModal: React.FC<FundingApplicationModalProps> = (
 
   const doneCount = FUNDING_FORM.filter(s => sectionComplete(s, answers)).length;
   const total = FUNDING_FORM.length;
-  const pct = Math.round((STEPS.filter(s => s.qs.some(q => isAnswered(answers[q.id]))).length / STEPS.length) * 100);
+  const allQuestions = FUNDING_FORM.flatMap(s => visibleQuestions(s, answers));
+  const pct = Math.round((allQuestions.filter(q => isAnswered(answers[q.id])).length / allQuestions.length) * 100);
+  const requiredLeft = (i: number) => missing.filter(m => m.section === FUNDING_FORM[i]).length;
 
-  /** Required questions block the way forward; everything else can be skipped and returned to. */
-  const goNext = () => {
-    if (step.qs.some(q => q.required && !isAnswered(answers[q.id]))) { setErrorMessage('This one is needed before you move on.'); return; }
+  const openChapter = (i: number) => {
     setErrorMessage('');
-    setIndex(i => Math.min(STEPS.length - 1, i + 1));
+    setIndex(i);
+    const first = visibleQuestions(FUNDING_FORM[i], answers).find(q => !isAnswered(answers[q.id]));
+    setOpenQ(i === SIGN_OFF ? '' : first?.id ?? '');
   };
-  const goBack = () => { setErrorMessage(''); setIndex(i => Math.max(0, i - 1)); };
+  const openQuestion = (i: number, id: string) => { setErrorMessage(''); setIndex(i); setOpenQ(id); };
+  /** Closes the question and opens the next one that still needs an answer, in the same chapter. */
+  const nextQuestion = (id: string) => {
+    if (!chapter) return;
+    const list = visibleQuestions(chapter, answers);
+    const after = list.slice(list.findIndex(q => q.id === id) + 1);
+    setOpenQ((after.find(q => !isAnswered(answers[q.id])) ?? after[0])?.id ?? '');
+  };
 
   return (
     <AnimatePresence>
@@ -263,101 +271,155 @@ export const FundingApplicationModal: React.FC<FundingApplicationModalProps> = (
                 </motion.div>
               );
             })()}
-            <div className={`max-w-6xl mx-auto px-4 sm:px-10 py-10 grid gap-10 lg:grid-cols-[17rem_1fr] ${viewStage ? 'hidden' : ''}`}>
-              {/* the pathway: one gate per section, the line fills as sections are finished */}
-              <nav aria-label="Chapters" className="lg:sticky lg:top-6 self-start">
-                <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--nxt-ink-soft)] flex justify-between">
-                  <span>Your pitch</span><span className="text-[var(--nxt-green)]">{doneCount}/{total}</span>
-                </p>
-                <ol className="mt-5 flex lg:block gap-4 overflow-x-auto lg:overflow-visible pb-1 lg:pb-0 relative">
-                  <span aria-hidden="true" className="hidden lg:block absolute left-[11px] top-3 bottom-3 w-px bg-[var(--nxt-line)]" />
-                  <span aria-hidden="true" className="hidden lg:block absolute left-[11px] top-3 w-px bg-[var(--nxt-green)] shadow-[0_0_10px_var(--nxt-green)] transition-[height] duration-700 ease-out" style={{ height: `calc((100% - 1.5rem) * ${sectionIndex / Math.max(1, FUNDING_FORM.length - 1)})` }} />
-                  {FUNDING_FORM.map((s, i) => {
-                    const done = sectionComplete(s, answers);
-                    const current = i === sectionIndex;
-                    const within = STEPS.slice(chapterStart(i)).filter(x => x.section === s);
-                    return (
-                      <li key={s.id} className="shrink-0 lg:shrink relative">
-                        <button
-                          onClick={() => { setErrorMessage(''); setIndex(chapterStart(i)); }}
-                          aria-current={current ? 'step' : undefined}
-                          className={`w-full flex items-center gap-4 py-2.5 text-[15px] text-left whitespace-nowrap transition-colors ${current ? 'text-[var(--nxt-ink)]' : 'text-[var(--nxt-ink-soft)] hover:text-[var(--nxt-ink)]'}`}
-                        >
-                          <span className="relative w-6 h-6 shrink-0 flex items-center justify-center">
-                            {current && <span className="absolute inset-0 rounded-full border border-[var(--nxt-green)] animate-ping opacity-50" />}
-                            <span className={`relative w-6 h-6 rounded-full flex items-center justify-center text-[10px] transition-all duration-300 bg-[var(--nxt-bg)] ${done ? 'bg-[var(--nxt-green)] text-[var(--nxt-green-ink)]' : current ? 'border border-[var(--nxt-green)] text-[var(--nxt-green)] shadow-[0_0_14px_-2px_var(--nxt-green)]' : 'border border-[var(--nxt-line)]'}`}>
-                              {done ? <Check className="w-3 h-3" /> : String(i + 1).padStart(2, '0')}
-                            </span>
-                          </span>
-                          {s.title}
-                        </button>
-                        {current && within.length > 1 && (
-                          <span className="hidden lg:flex gap-1.5 pl-10 pb-2" aria-hidden="true">
-                            {within.map((w, wi) => {
-                              const at = chapterStart(i) + wi;
-                              const filled = w.qs.some(q => isAnswered(answers[q.id]));
-                              return <span key={w.qs[0].id} className={`h-1 rounded-full transition-all duration-300 ${at === index ? 'w-6 bg-[var(--nxt-green)]' : filled ? 'w-2 bg-[var(--nxt-green)]/60' : 'w-2 bg-[var(--nxt-line)]'}`} />;
-                            })}
-                          </span>
-                        )}
-                      </li>
-                    );
-                  })}
-                </ol>
-              </nav>
+            <div className={`max-w-6xl mx-auto px-4 sm:px-10 py-10 ${viewStage ? 'hidden' : ''}`}>
+              {errorMessage && (
+                <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="mb-6 max-w-3xl px-4 py-3 rounded-lg border border-[var(--nxt-peach-deep)]/40 text-[var(--nxt-peach-deep)] flex items-start gap-2 text-sm" role="alert">
+                  <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" /><span>{errorMessage}</span>
+                </motion.div>
+              )}
 
-              <div className="min-w-0 max-w-3xl">
-                {errorMessage && (
-                  <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="mb-6 px-4 py-3 rounded-lg border border-[var(--nxt-peach-deep)]/40 text-[var(--nxt-peach-deep)] flex items-start gap-2 text-sm" role="alert">
-                    <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" /><span>{errorMessage}</span>
+              <AnimatePresence mode="wait">
+                {!chapter ? (
+                  /* the map: every chapter is open from the start, in any order */
+                  <motion.div key="map" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
+                    <p className="font-mono text-sm text-[var(--nxt-green)]">Your pitch · {doneCount}/{total} chapters</p>
+                    <h2 className="mt-3 font-display font-light leading-[1.1] text-[clamp(1.8rem,3.8vw,3.1rem)] max-w-2xl">Start wherever you like.</h2>
+                    <p className="mt-3 text-[var(--nxt-ink-soft)] max-w-xl leading-relaxed">Open any chapter, answer what you can and come back. Only a few answers are required, and the sign-off tells you which.</p>
+                    <ul className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                      {FUNDING_FORM.map((s, i) => {
+                        const qs = visibleQuestions(s, answers);
+                        const given = qs.filter(q => isAnswered(answers[q.id])).length;
+                        const done = sectionComplete(s, answers);
+                        const need = requiredLeft(i);
+                        const signOff = i === SIGN_OFF;
+                        return (
+                          <motion.li key={s.id} initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 + i * 0.06, duration: 0.4 }} className={i % 3 === 1 ? 'lg:mt-8' : i % 3 === 2 ? 'lg:mt-16' : ''}>
+                            <button onClick={() => openChapter(i)} className={`group w-full h-full text-left rounded-2xl border p-6 transition-all duration-300 hover:-translate-y-1 ${done ? 'border-[var(--nxt-green)]/60 bg-[var(--nxt-green-soft)]' : 'border-[var(--nxt-line)] bg-[var(--nxt-surface)] hover:border-[var(--nxt-green)]'}`}>
+                              <span className="flex items-center justify-between">
+                                <span className="font-mono text-sm text-[var(--nxt-ink-soft)]">{String(i + 1).padStart(2, '0')}</span>
+                                <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] ${done ? 'bg-[var(--nxt-green)] text-[var(--nxt-green-ink)]' : 'border border-[var(--nxt-line)] text-transparent'}`}><Check className="w-3 h-3" /></span>
+                              </span>
+                              <span className="mt-6 block font-display font-light text-2xl tracking-[-0.01em]">{s.title}</span>
+                              <span className="mt-2 block text-[15px] text-[var(--nxt-ink-soft)] leading-snug">{s.intro}</span>
+                              <span className="mt-6 block h-px bg-[var(--nxt-line)] relative">
+                                <span className="absolute left-0 top-0 h-px bg-[var(--nxt-green)] shadow-[0_0_8px_var(--nxt-green)] transition-[width] duration-500" style={{ width: signOff ? (done ? '100%' : '0%') : `${(given / qs.length) * 100}%` }} />
+                              </span>
+                              <span className="mt-3 flex items-center justify-between text-xs">
+                                <span className="text-[var(--nxt-ink-soft)]">{signOff ? (missing.length ? 'Read back and submit' : 'Ready to submit') : `${given} of ${qs.length} answered`}</span>
+                                {need > 0 && <span className="text-[var(--nxt-peach-deep)]">{need} required</span>}
+                                {need === 0 && !done && !signOff && <span className="text-[var(--nxt-green)] opacity-0 group-hover:opacity-100 transition-opacity">Open</span>}
+                              </span>
+                            </button>
+                          </motion.li>
+                        );
+                      })}
+                    </ul>
                   </motion.div>
-                )}
-
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, x: 36 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -36 }}
-                    transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-                    className="min-h-[46vh]"
-                  >
-                    <p className="font-mono text-sm text-[var(--nxt-green)]">
-                      {section.title} <span className="text-[var(--nxt-ink-soft)]">· {last ? 'read it back' : section.questions.indexOf(step.qs[0]) === 0 ? section.intro : `${section.questions.indexOf(step.qs[0]) + 1} of ${section.questions.length}`}</span>
-                    </p>
-                    {last ? (
-                      <div className="mt-6">
-                        <h2 className="font-display font-light leading-[1.1] text-[clamp(1.6rem,3.4vw,2.7rem)]">Your pitch, read back.</h2>
-                        <ol className="mt-8 border-t border-[var(--nxt-line)]">
-                          {FUNDING_FORM.filter(s => s.id !== 'declaration').map(s => {
-                            const given = s.questions.filter(q => isAnswered(answers[q.id])).length;
-                            return (
-                              <li key={s.id} className="border-b border-[var(--nxt-line)]">
-                                <button onClick={() => { setErrorMessage(''); setIndex(STEPS.findIndex(x => x.section === s)); }} className="w-full flex items-baseline gap-4 py-3.5 text-left hover:text-[var(--nxt-green)] transition-colors">
-                                  <span className="flex-1 text-[17px] font-light">{s.title}</span>
-                                  <span className="font-mono text-xs text-[var(--nxt-ink-soft)]">{given}/{s.questions.length} answered</span>
-                                  <span className="text-xs text-[var(--nxt-green)]">Edit</span>
-                                </button>
-                              </li>
-                            );
-                          })}
-                        </ol>
-                        <div className="mt-10 space-y-6">
-                          {step.qs.map(q => <Ask key={q.id} q={q} heading={false} value={answers[q.id]} onChange={(v) => set(q.id, v)} />)}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="mt-6">
-                        <Ask q={step.qs[0]} value={answers[step.qs[0].id]} onChange={(v) => set(step.qs[0].id, v)} onEnter={goNext} />
+                ) : index === SIGN_OFF ? (
+                  <motion.div key="signoff" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }} className="max-w-3xl">
+                    <p className="font-mono text-sm text-[var(--nxt-green)]">{chapter.title}</p>
+                    <h2 className="mt-3 font-display font-light leading-[1.1] text-[clamp(1.8rem,3.8vw,3.1rem)]">Your pitch, read back.</h2>
+                    {missing.length > 0 && (
+                      <div className="mt-8 rounded-xl border border-[var(--nxt-peach-deep)]/40 px-5 py-4">
+                        <p className="text-sm text-[var(--nxt-peach-deep)]">Still needed before you can submit</p>
+                        <ul className="mt-2 space-y-1">
+                          {missing.map(m => (
+                            <li key={m.question.id}>
+                              <button onClick={() => openQuestion(FUNDING_FORM.indexOf(m.section), m.question.id)} className="text-left text-[15px] hover:text-[var(--nxt-green)] transition-colors">
+                                {m.question.type === 'checkbox' ? 'Confirm: ' : ''}{m.question.label.slice(0, 80)}{m.question.label.length > 80 ? '…' : ''} <span className="text-xs text-[var(--nxt-ink-soft)]">· {m.section.title}</span>
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
                       </div>
                     )}
+                    <div className="mt-10 space-y-10">
+                      {FUNDING_FORM.slice(0, SIGN_OFF).map((s, si) => {
+                        const rows = visibleQuestions(s, answers).filter(q => isAnswered(answers[q.id]));
+                        return (
+                          <section key={s.id}>
+                            <div className="flex items-baseline justify-between border-b border-[var(--nxt-line)] pb-2">
+                              <h3 className="font-display font-light text-xl">{s.title}</h3>
+                              <button onClick={() => openChapter(si)} className="text-xs text-[var(--nxt-green)]">Edit</button>
+                            </div>
+                            {rows.length === 0 ? <p className="mt-3 text-sm text-[var(--nxt-ink-soft)]">Nothing answered yet.</p> : (
+                              <dl className="mt-3 space-y-3">
+                                {rows.map(q => (
+                                  <div key={q.id}>
+                                    <dt className="text-xs text-[var(--nxt-ink-soft)]">{q.label}</dt>
+                                    <dd className="mt-0.5 text-[15px] font-light whitespace-pre-line">{preview(answers[q.id]) + (String(answers[q.id]).length > 90 ? '…' : '')}</dd>
+                                  </div>
+                                ))}
+                              </dl>
+                            )}
+                          </section>
+                        );
+                      })}
+                    </div>
+                    <div className="mt-12 space-y-6 border-t border-[var(--nxt-line)] pt-8">
+                      {chapter.questions.map(q => <Ask key={q.id} q={q} heading={false} value={answers[q.id]} onChange={(v) => set(q.id, v)} />)}
+                    </div>
                   </motion.div>
-                </AnimatePresence>
+                ) : (
+                  /* a chapter: every question is on the page, open whichever you want */
+                  <motion.div key={chapter.id} initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }} className="grid gap-10 lg:grid-cols-[15rem_1fr]">
+                    <nav aria-label="Chapters" className="lg:sticky lg:top-6 self-start">
+                      <button onClick={() => { setErrorMessage(''); setIndex(-1); }} className="inline-flex items-center gap-1.5 text-sm text-[var(--nxt-ink-soft)] hover:text-[var(--nxt-green)] transition-colors">
+                        <ChevronLeft className="w-4 h-4" /> All chapters
+                      </button>
+                      <ol className="mt-5 flex lg:block gap-3 overflow-x-auto lg:overflow-visible pb-1">
+                        {FUNDING_FORM.map((s, i) => {
+                          const done = sectionComplete(s, answers);
+                          return (
+                            <li key={s.id} className="shrink-0 lg:shrink">
+                              <button onClick={() => openChapter(i)} aria-current={i === index ? 'step' : undefined} className={`w-full flex items-center gap-3 py-2 text-[15px] text-left whitespace-nowrap transition-colors ${i === index ? 'text-[var(--nxt-ink)]' : 'text-[var(--nxt-ink-soft)] hover:text-[var(--nxt-ink)]'}`}>
+                                <span className={`w-2 h-2 rounded-full shrink-0 transition-all ${done ? 'bg-[var(--nxt-green)] shadow-[0_0_8px_var(--nxt-green)]' : i === index ? 'bg-[var(--nxt-ink)]' : 'border border-[var(--nxt-line)]'}`} />
+                                {s.title}
+                              </button>
+                            </li>
+                          );
+                        })}
+                      </ol>
+                    </nav>
 
-                {last && missing.length > 0 && (
-                  <p className="mt-10 text-sm text-[var(--nxt-peach-deep)]">
-                    {missing.length} required answer{missing.length === 1 ? '' : 's'} left: {Array.from(new Set(missing.map(m => m.section.title))).join(', ')}.
-                  </p>
+                    <div className="min-w-0 max-w-3xl">
+                      <p className="font-mono text-sm text-[var(--nxt-green)]">{String(index + 1).padStart(2, '0')} / {String(total).padStart(2, '0')}</p>
+                      <h2 className="mt-3 font-display font-light leading-[1.1] text-[clamp(1.8rem,3.8vw,3.1rem)]">{chapter.title}</h2>
+                      <p className="mt-3 text-[var(--nxt-ink-soft)] max-w-xl leading-relaxed">{chapter.intro}</p>
+                      <ul className="mt-10 border-t border-[var(--nxt-line)]">
+                        <AnimatePresence initial={false}>
+                          {visibleQuestions(chapter, answers).map(q => {
+                            const open = openQ === q.id;
+                            const answered = isAnswered(answers[q.id]);
+                            return (
+                              <motion.li key={q.id} layout="position" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="border-b border-[var(--nxt-line)] overflow-hidden">
+                                <button onClick={() => setOpenQ(open ? '' : q.id)} aria-expanded={open} className="w-full flex items-center gap-4 py-5 text-left">
+                                  <span className={`w-2 h-2 rounded-full shrink-0 transition-all duration-300 ${answered ? 'bg-[var(--nxt-green)] shadow-[0_0_8px_var(--nxt-green)]' : q.required ? 'bg-[var(--nxt-ink-soft)]/60' : 'border border-[var(--nxt-line)]'}`} />
+                                  <span className="flex-1 min-w-0">
+                                    <span className="block text-[clamp(1.05rem,1.8vw,1.3rem)] font-light leading-snug">{q.label}{q.required && <span className="sr-only"> (required)</span>}</span>
+                                    {!open && answered && <span className="block mt-1 text-sm text-[var(--nxt-ink-soft)] truncate">{preview(answers[q.id])}</span>}
+                                  </span>
+                                  <ChevronDown className={`w-5 h-5 shrink-0 text-[var(--nxt-green)] transition-transform duration-300 ${open ? 'rotate-180' : ''}`} />
+                                </button>
+                                {open && (
+                                  <div className="pb-7 pl-6">
+                                    <Ask q={q} heading={false} value={answers[q.id]} onChange={(v) => set(q.id, v)} onEnter={() => nextQuestion(q.id)} />
+                                    <button onClick={() => nextQuestion(q.id)} className="mt-5 text-sm text-[var(--nxt-green)] hover:underline underline-offset-4">{answered ? 'Done' : 'Skip for now'}</button>
+                                  </div>
+                                )}
+                              </motion.li>
+                            );
+                          })}
+                        </AnimatePresence>
+                      </ul>
+                      <div className="mt-8 flex items-center gap-4 text-sm">
+                        {index < SIGN_OFF - 1 && <button onClick={() => openChapter(index + 1)} className="text-[var(--nxt-ink-soft)] hover:text-[var(--nxt-green)] transition-colors">Next chapter: {FUNDING_FORM[index + 1].title}</button>}
+                        <button onClick={() => openChapter(SIGN_OFF)} className="text-[var(--nxt-ink-soft)] hover:text-[var(--nxt-green)] transition-colors">Go to sign-off</button>
+                      </div>
+                    </div>
+                  </motion.div>
                 )}
-              </div>
+              </AnimatePresence>
             </div>
           </div>
 
@@ -366,21 +428,21 @@ export const FundingApplicationModal: React.FC<FundingApplicationModalProps> = (
               <div className="absolute left-0 top-0 h-px bg-[var(--nxt-green)] shadow-[0_0_12px_var(--nxt-green)] transition-[width] duration-700 ease-out" style={{ width: `${pct}%` }} />
             </div>
             <div className="max-w-6xl mx-auto px-4 sm:px-10 py-3.5 flex flex-wrap items-center gap-3 justify-between">
-              <button onClick={goBack} disabled={index === 0} className="inline-flex items-center gap-1.5 rounded-full border border-[var(--nxt-line)] px-5 py-2.5 text-sm hover:border-[var(--nxt-green)] transition-colors disabled:opacity-30 disabled:hover:border-[var(--nxt-line)]">
-                <ChevronLeft className="w-4 h-4" /> Back
+              <button onClick={() => { setErrorMessage(''); setIndex(-1); }} disabled={index === -1} className="inline-flex items-center gap-1.5 rounded-full border border-[var(--nxt-line)] px-5 py-2.5 text-sm hover:border-[var(--nxt-green)] transition-colors disabled:opacity-30 disabled:hover:border-[var(--nxt-line)]">
+                <ChevronLeft className="w-4 h-4" /> All chapters
               </button>
               <div className="flex items-center gap-3">
                 <button id="btn-save-funding-draft" onClick={handleSaveDraft} className="inline-flex items-center gap-1.5 rounded-full px-4 py-2.5 text-sm text-[var(--nxt-ink-soft)] hover:text-[var(--nxt-ink)] transition-colors">
                   <Save className="w-4 h-4" /> Save draft
                 </button>
                 <span className="hidden sm:inline font-mono text-xs text-[var(--nxt-ink-soft)]">{pct}%</span>
-                {last ? (
+                {index === SIGN_OFF ? (
                   <button id="btn-submit-funding-application" onClick={handleSubmit} className="group inline-flex items-center gap-2 rounded-full bg-[var(--nxt-green)] text-[var(--nxt-green-ink)] px-6 py-2.5 text-sm hover:opacity-90 transition-opacity">
                     <Send className="w-4 h-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" /> Submit application
                   </button>
                 ) : (
-                  <button onClick={goNext} className="group inline-flex items-center gap-2 rounded-full bg-[var(--nxt-green)] text-[var(--nxt-green-ink)] px-6 py-2.5 text-sm hover:opacity-90 transition-opacity">
-                    Continue <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                  <button onClick={() => openChapter(SIGN_OFF)} className="inline-flex items-center gap-2 rounded-full bg-[var(--nxt-green)] text-[var(--nxt-green-ink)] px-6 py-2.5 text-sm hover:opacity-90 transition-opacity">
+                    Review and submit{missing.length > 0 && <span className="opacity-70">· {missing.length} left</span>}
                   </button>
                 )}
               </div>

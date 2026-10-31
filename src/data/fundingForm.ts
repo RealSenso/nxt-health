@@ -8,6 +8,8 @@ export interface Question {
   options?: string[];
   required?: boolean;
   placeholder?: string;
+  /** Follow-up questions that only appear when earlier answers call for them. */
+  showIf?: (answers: Answers) => boolean;
 }
 
 export interface FormSection {
@@ -63,6 +65,10 @@ export const FUNDING_FORM: FormSection[] = [
       { id: 'startup_stage', label: 'Where are you today?', type: 'select', options: STAGES, required: true },
       { id: 'results', label: 'What have you proven so far?', help: 'Pilots, users, revenue, letters of intent. Numbers are best.', type: 'long' },
       { id: 'regulated', label: 'Will it need regulatory approval?', help: 'A first view is enough. Healthcare products need a route to approval.', type: 'select', options: ['Yes', 'No', 'Not sure yet'] },
+      { id: 'regulatory_plan', label: 'What is your route to approval and clinical evidence?', help: 'Class you expect, studies you will run, who is advising you.', type: 'long', showIf: a => a.regulated === 'Yes' || a.regulated === 'Not sure yet' },
+      { id: 'first_build', label: 'What do you need to build a first version?', help: 'People, money, access to patients or data.', type: 'long', showIf: a => a.startup_stage === 'Idea' },
+      { id: 'users', label: 'How many people or patients have used it?', type: 'number', showIf: a => ['Pilot running', 'First customers', 'Revenue', 'Scaling'].includes(a.startup_stage as string) },
+      { id: 'revenue', label: 'How much revenue so far? (INR)', type: 'number', showIf: a => ['First customers', 'Revenue', 'Scaling'].includes(a.startup_stage as string) },
     ],
   },
   {
@@ -105,8 +111,13 @@ export type Answers = Record<string, string | string[]>;
 export const isAnswered = (value: string | string[] | undefined): boolean =>
   Array.isArray(value) ? value.length > 0 : !!value && value.trim() !== '' && value !== 'false';
 
+/** The questions of a chapter that apply, given what has been answered. */
+export const visibleQuestions = (section: FormSection, answers: Answers): Question[] =>
+  section.questions.filter(q => !q.showIf || q.showIf(answers));
+
+/** A chapter is done when its required questions are answered and it has at least one answer. */
 export const sectionComplete = (section: FormSection, answers: Answers): boolean =>
-  hasRequired(section) && section.questions.filter(q => q.required).every(q => isAnswered(answers[q.id]));
+  section.questions.filter(q => q.required).every(q => isAnswered(answers[q.id])) && section.questions.some(q => isAnswered(answers[q.id]));
 
 /** A section is only ticked when it has required fields and every one is filled. */
 export const hasRequired = (section: FormSection): boolean => section.questions.some(q => q.required);
