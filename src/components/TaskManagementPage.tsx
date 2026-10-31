@@ -1,4 +1,4 @@
-import { RoadmapNote, RoadmapPlaybook } from './RoadmapPlaybook';
+import { ExpertCredit, RoadmapNote, RoadmapPlaybook } from './RoadmapPlaybook';
 import { CategoryGrid } from './CategoryGrid';
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -742,6 +742,8 @@ const RoadmapTrailer: React.FC<{
           For: <span className="font-semibold text-[var(--nxt-ink)]">{selectedProblem?.title}</span>
         </p>
       </Reveal>
+
+      <ExpertCredit category={selectedCategory} />
 
       <UpgradeBanner />
 
