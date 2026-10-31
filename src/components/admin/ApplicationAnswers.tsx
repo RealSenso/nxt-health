@@ -7,7 +7,10 @@ export const ApplicationAnswers: React.FC<{ answers?: Answers }> = ({ answers })
   const sections = FUNDING_FORM
     .map(section => ({ section, rows: section.questions.filter(q => isAnswered(answers[q.id])) }))
     .filter(s => s.rows.length > 0);
-  if (sections.length === 0) return null;
+  // Answers from earlier versions of the form that no longer have a question in it.
+  const known = new Set(FUNDING_FORM.flatMap(f => f.questions.map(q => q.id)));
+  const older = Object.keys(answers).filter(id => !known.has(id) && isAnswered(answers[id]));
+  if (sections.length === 0 && older.length === 0) return null;
 
   return (
     <details className="rounded-xl border border-[var(--nxt-line)] bg-[var(--nxt-bg-soft)]">
@@ -31,6 +34,19 @@ export const ApplicationAnswers: React.FC<{ answers?: Answers }> = ({ answers })
             </dl>
           </section>
         ))}
+        {older.length > 0 && (
+          <section>
+            <h4 className="text-[11px] font-bold uppercase tracking-wider text-[var(--nxt-ink-soft)] border-b border-[var(--nxt-line)] pb-1">Earlier form</h4>
+            <dl className="mt-3 space-y-3">
+              {older.map(id => (
+                <div key={id}>
+                  <dt className="text-xs font-semibold text-[var(--nxt-ink-soft)]">{id.replace(/_/g, ' ')}</dt>
+                  <dd className="text-sm text-[var(--nxt-ink)] whitespace-pre-line mt-0.5">{Array.isArray(answers[id]) ? (answers[id] as string[]).join(', ') : answers[id]}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+        )}
       </div>
     </details>
   );

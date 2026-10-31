@@ -4,7 +4,7 @@ import { X, Save, AlertCircle, Check, ChevronLeft, ChevronRight, Send } from 'lu
 import { FundingApplication, ProblemStatement, User } from '../types';
 import { store } from '../services/store';
 import { APPLICATION_STAGES, stageIndex } from '../data/applicationStages';
-import { Answers, FUNDING_FORM, hasRequired, missingRequired, sectionComplete, type Question } from '../data/fundingForm';
+import { Answers, FUNDING_FORM, isAnswered, missingRequired, sectionComplete, type FormSection, type Question } from '../data/fundingForm';
 
 interface FundingApplicationModalProps {
   isOpen: boolean;
@@ -25,39 +25,35 @@ const writeApplicationSession = (s: ApplicationSession | null) => {
   try { if (s) sessionStorage.setItem(SESSION_KEY, JSON.stringify(s)); else sessionStorage.removeItem(SESSION_KEY); } catch { /* ignore */ }
 };
 
-const field = 'w-full text-[17px] bg-transparent border-0 border-b border-[var(--nxt-line)] px-0 py-3 text-[var(--nxt-ink)] placeholder:text-[var(--nxt-ink-soft)]/60 focus:outline-hidden focus:border-[var(--nxt-green)] focus:shadow-[0_1px_0_0_var(--nxt-green)] transition-[border-color,box-shadow] duration-300';
-const area = 'w-full text-[16px] leading-relaxed bg-[var(--nxt-surface)] border border-[var(--nxt-line)] border-l-2 rounded-lg px-4 py-3.5 text-[var(--nxt-ink)] focus:outline-hidden focus:border-[var(--nxt-green)] focus:shadow-[0_0_0_4px_var(--nxt-green-soft)] transition-[border-color,box-shadow] duration-300 resize-y';
+const field = 'w-full text-[clamp(1.2rem,2.2vw,1.6rem)] font-light bg-transparent border-0 border-b border-[var(--nxt-line)] px-0 py-3 text-[var(--nxt-ink)] placeholder:text-[var(--nxt-ink-soft)]/50 focus:outline-hidden focus:border-[var(--nxt-green)] focus:shadow-[0_1px_0_0_var(--nxt-green)] transition-[border-color,box-shadow] duration-300';
+const area = 'w-full text-[18px] font-light leading-relaxed bg-transparent border-0 border-b border-[var(--nxt-line)] px-0 py-3 text-[var(--nxt-ink)] focus:outline-hidden focus:border-[var(--nxt-green)] focus:shadow-[0_1px_0_0_var(--nxt-green)] transition-[border-color,box-shadow] duration-300 resize-none';
 
-const QuestionField: React.FC<{ q: Question; value: string | string[] | undefined; onChange: (value: string | string[]) => void }> = ({ q, value, onChange }) => {
+/** One question, asked on its own: the question is the heading and the answer is the only thing to fill in. */
+const Ask: React.FC<{ q: Question; value: string | string[] | undefined; onChange: (value: string | string[]) => void; onEnter?: () => void; heading?: boolean }> = ({ q, value, onChange, onEnter, heading = true }) => {
   const text = typeof value === 'string' ? value : '';
   const list = Array.isArray(value) ? value : [];
   const id = `q-${q.id}`;
-  const answered = Array.isArray(value) ? value.length > 0 : !!text;
+  const enter = (e: React.KeyboardEvent) => { if (e.key === 'Enter' && onEnter) { e.preventDefault(); onEnter(); } };
   return (
-    <div className="group">
-      <label htmlFor={id} className="flex items-baseline gap-2.5 text-[17px] text-[var(--nxt-ink)]">
-        <span className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 translate-y-[-2px] transition-colors duration-300 ${answered ? 'bg-[var(--nxt-green)] shadow-[0_0_8px_var(--nxt-green)]' : q.required ? 'bg-[var(--nxt-ink-soft)]/50' : 'bg-transparent border border-[var(--nxt-line)]'}`} />
-        <span>{q.label}{q.required && <span className="sr-only"> (required)</span>}</span>
-      </label>
-      {q.help && <p className="text-sm text-[var(--nxt-ink-soft)] mt-1 ml-4">{q.help}</p>}
-      <div className="mt-2.5 ml-4">
-        {q.type === 'long' && <textarea id={id} rows={5} maxLength={5000} value={text} onChange={(e) => onChange(e.target.value)} className={area} />}
-        {(q.type === 'text' || q.type === 'url') && <input id={id} type="text" maxLength={500} value={text} placeholder={q.placeholder} onChange={(e) => onChange(e.target.value)} className={field} />}
-        {q.type === 'number' && <input id={id} type="number" min={0} value={text} onChange={(e) => onChange(e.target.value)} className={`${field} max-w-xs`} />}
-        {q.type === 'select' && (
-          <select id={id} value={text} onChange={(e) => onChange(e.target.value)} className={`${field} cursor-pointer`}>
-            <option value="">Choose one</option>
-            {q.options?.map(o => <option key={o} value={o}>{o}</option>)}
-          </select>
-        )}
-        {q.type === 'multi' && (
-          <div className="flex flex-wrap gap-2" role="group" aria-labelledby={id}>
+    <div>
+      {heading && (
+        <label htmlFor={id} className="block font-display font-light leading-[1.15] tracking-[-0.01em] text-[clamp(1.6rem,3.4vw,2.7rem)]">
+          {q.label}{q.required && <span className="sr-only"> (required)</span>}
+        </label>
+      )}
+      {q.help && <p className="mt-3 text-[var(--nxt-ink-soft)] max-w-xl leading-relaxed">{q.help}</p>}
+      <div className={heading ? 'mt-9' : 'mt-3'}>
+        {q.type === 'long' && <textarea id={id} autoFocus rows={5} maxLength={5000} value={text} onChange={(e) => onChange(e.target.value)} className={area} placeholder="Type your answer" />}
+        {(q.type === 'text' || q.type === 'url') && <input id={id} autoFocus type="text" maxLength={500} value={text} placeholder={q.placeholder || 'Type your answer'} onKeyDown={enter} onChange={(e) => onChange(e.target.value)} className={field} />}
+        {q.type === 'number' && <input id={id} autoFocus type="number" min={0} value={text} placeholder="0" onKeyDown={enter} onChange={(e) => onChange(e.target.value)} className={`${field} max-w-xs`} />}
+        {(q.type === 'select' || q.type === 'multi') && (
+          <div className="flex flex-wrap gap-2.5" role="group" aria-labelledby={id}>
             {q.options?.map(o => {
-              const on = list.includes(o);
+              const on = q.type === 'multi' ? list.includes(o) : text === o;
               return (
-                <motion.button key={o} type="button" aria-pressed={on} whileTap={{ scale: 0.94 }}
-                  onClick={() => onChange(on ? list.filter(x => x !== o) : [...list, o])}
-                  className={`rounded-full border px-4 py-2 text-sm transition-colors duration-200 ${on ? 'bg-[var(--nxt-green)] text-[var(--nxt-green-ink)] border-transparent shadow-[0_0_18px_-4px_var(--nxt-green)]' : 'border-[var(--nxt-line)] text-[var(--nxt-ink-soft)] hover:text-[var(--nxt-ink)] hover:border-[var(--nxt-green)]'}`}>
+                <motion.button key={o} type="button" aria-pressed={on} whileTap={{ scale: 0.95 }}
+                  onClick={() => (q.type === 'multi' ? onChange(on ? list.filter(x => x !== o) : [...list, o]) : onChange(on ? '' : o))}
+                  className={`rounded-full border px-5 py-2.5 text-[15px] transition-colors duration-200 ${on ? 'bg-[var(--nxt-green)] text-[var(--nxt-green-ink)] border-transparent shadow-[0_0_18px_-4px_var(--nxt-green)]' : 'border-[var(--nxt-line)] text-[var(--nxt-ink-soft)] hover:text-[var(--nxt-ink)] hover:border-[var(--nxt-green)]'}`}>
                   {o}
                 </motion.button>
               );
@@ -65,16 +61,20 @@ const QuestionField: React.FC<{ q: Question; value: string | string[] | undefine
           </div>
         )}
         {q.type === 'checkbox' && (
-          <label className="flex items-start gap-3 cursor-pointer">
+          <label className="flex items-start gap-4 cursor-pointer">
             <input id={id} type="checkbox" checked={value === 'true'} onChange={(e) => onChange(e.target.checked ? 'true' : '')} className="sr-only peer" />
-            <span className="mt-0.5 w-5 h-5 shrink-0 rounded-md border border-[var(--nxt-line)] flex items-center justify-center peer-checked:bg-[var(--nxt-green)] peer-checked:border-transparent peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--nxt-green)] text-transparent peer-checked:text-[var(--nxt-green-ink)] transition-colors"><Check className="w-3.5 h-3.5" /></span>
-            <span className="text-[15px] text-[var(--nxt-ink-soft)]">I agree</span>
+            <span className="mt-1 w-6 h-6 shrink-0 rounded-full border border-[var(--nxt-line)] flex items-center justify-center peer-checked:bg-[var(--nxt-green)] peer-checked:border-transparent peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--nxt-green)] text-transparent peer-checked:text-[var(--nxt-green-ink)] transition-colors"><Check className="w-3.5 h-3.5" /></span>
+            <span className="text-[17px] font-light leading-snug">{q.label}</span>
           </label>
         )}
       </div>
     </div>
   );
 };
+
+/** One step of the application: a single question, or (at the end) the read-back and sign-off. */
+interface Step { section: FormSection; qs: Question[] }
+const STEPS: Step[] = FUNDING_FORM.flatMap(section => (section.id === 'declaration' ? [{ section, qs: section.questions }] : section.questions.map(q => ({ section, qs: [q] }))));
 
 /** The funding application: a sectioned form with a progress list, saved as a draft or submitted for review. */
 export const FundingApplicationModal: React.FC<FundingApplicationModalProps> = ({
@@ -100,7 +100,7 @@ export const FundingApplicationModal: React.FC<FundingApplicationModalProps> = (
     const saved = readApplicationSession();
     const resumed = !!saved && saved.problemId === problem?.id && saved.applicationId === existingApplication?.id && saved.path === window.location.pathname;
     setAnswers(resumed ? { ...start, ...saved!.answers } : start);
-    setIndex(resumed ? Math.min(saved!.index, FUNDING_FORM.length - 1) : 0);
+    setIndex(resumed ? Math.min(saved!.index, STEPS.length - 1) : 0);
     setViewStage(null);
     setDirty(resumed);
     setErrorMessage('');
@@ -112,11 +112,14 @@ export const FundingApplicationModal: React.FC<FundingApplicationModalProps> = (
     writeApplicationSession({ path: window.location.pathname, problemId: problem.id, applicationId: existingApplication?.id, index, answers });
   }, [isOpen, problem?.id, existingApplication?.id, index, answers]);
 
-  const section = FUNDING_FORM[index];
+  const step = STEPS[index];
+  const section = step.section;
+  const sectionIndex = FUNDING_FORM.indexOf(section);
+  const chapterStart = (i: number) => STEPS.findIndex(s => s.section === FUNDING_FORM[i]);
   const currentStage = stageIndex(existingApplication?.stage);
   const shownStage = viewStage || 'form';
   const missing = useMemo(() => missingRequired(answers), [answers]);
-  const last = index === FUNDING_FORM.length - 1;
+  const last = index === STEPS.length - 1;
 
   if (!problem) return null;
 
@@ -154,7 +157,7 @@ export const FundingApplicationModal: React.FC<FundingApplicationModalProps> = (
   const handleSubmit = () => {
     if (missing.length) {
       const first = missing[0];
-      setIndex(FUNDING_FORM.findIndex(s => s.id === first.section.id));
+      setIndex(STEPS.findIndex(s => s.qs.some(q => q.id === first.question.id)));
       setErrorMessage(`${missing.length} required answer${missing.length === 1 ? ' is' : 's are'} still empty. Start with “${first.question.label}”.`);
       return;
     }
@@ -174,8 +177,16 @@ export const FundingApplicationModal: React.FC<FundingApplicationModalProps> = (
   };
 
   const doneCount = FUNDING_FORM.filter(s => sectionComplete(s, answers)).length;
-  const total = FUNDING_FORM.filter(hasRequired).length || 1;
-  const pct = Math.min(100, Math.round((doneCount / total) * 100));
+  const total = FUNDING_FORM.length;
+  const pct = Math.round((STEPS.filter(s => s.qs.some(q => isAnswered(answers[q.id]))).length / STEPS.length) * 100);
+
+  /** Required questions block the way forward; everything else can be skipped and returned to. */
+  const goNext = () => {
+    if (step.qs.some(q => q.required && !isAnswered(answers[q.id]))) { setErrorMessage('This one is needed before you move on.'); return; }
+    setErrorMessage('');
+    setIndex(i => Math.min(STEPS.length - 1, i + 1));
+  };
+  const goBack = () => { setErrorMessage(''); setIndex(i => Math.max(0, i - 1)); };
 
   return (
     <AnimatePresence>
@@ -254,20 +265,21 @@ export const FundingApplicationModal: React.FC<FundingApplicationModalProps> = (
             })()}
             <div className={`max-w-6xl mx-auto px-4 sm:px-10 py-10 grid gap-10 lg:grid-cols-[17rem_1fr] ${viewStage ? 'hidden' : ''}`}>
               {/* the pathway: one gate per section, the line fills as sections are finished */}
-              <nav aria-label="Sections" className="lg:sticky lg:top-6 self-start">
+              <nav aria-label="Chapters" className="lg:sticky lg:top-6 self-start">
                 <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--nxt-ink-soft)] flex justify-between">
-                  <span>Your pathway</span><span className="text-[var(--nxt-green)]">{doneCount}/{total}</span>
+                  <span>Your pitch</span><span className="text-[var(--nxt-green)]">{doneCount}/{total}</span>
                 </p>
                 <ol className="mt-5 flex lg:block gap-4 overflow-x-auto lg:overflow-visible pb-1 lg:pb-0 relative">
                   <span aria-hidden="true" className="hidden lg:block absolute left-[11px] top-3 bottom-3 w-px bg-[var(--nxt-line)]" />
-                  <span aria-hidden="true" className="hidden lg:block absolute left-[11px] top-3 w-px bg-[var(--nxt-green)] shadow-[0_0_10px_var(--nxt-green)] transition-[height] duration-700 ease-out" style={{ height: `calc((100% - 1.5rem) * ${index / Math.max(1, FUNDING_FORM.length - 1)})` }} />
+                  <span aria-hidden="true" className="hidden lg:block absolute left-[11px] top-3 w-px bg-[var(--nxt-green)] shadow-[0_0_10px_var(--nxt-green)] transition-[height] duration-700 ease-out" style={{ height: `calc((100% - 1.5rem) * ${sectionIndex / Math.max(1, FUNDING_FORM.length - 1)})` }} />
                   {FUNDING_FORM.map((s, i) => {
                     const done = sectionComplete(s, answers);
-                    const current = i === index;
+                    const current = i === sectionIndex;
+                    const within = STEPS.slice(chapterStart(i)).filter(x => x.section === s);
                     return (
                       <li key={s.id} className="shrink-0 lg:shrink relative">
                         <button
-                          onClick={() => setIndex(i)}
+                          onClick={() => { setErrorMessage(''); setIndex(chapterStart(i)); }}
                           aria-current={current ? 'step' : undefined}
                           className={`w-full flex items-center gap-4 py-2.5 text-[15px] text-left whitespace-nowrap transition-colors ${current ? 'text-[var(--nxt-ink)]' : 'text-[var(--nxt-ink-soft)] hover:text-[var(--nxt-ink)]'}`}
                         >
@@ -279,6 +291,15 @@ export const FundingApplicationModal: React.FC<FundingApplicationModalProps> = (
                           </span>
                           {s.title}
                         </button>
+                        {current && within.length > 1 && (
+                          <span className="hidden lg:flex gap-1.5 pl-10 pb-2" aria-hidden="true">
+                            {within.map((w, wi) => {
+                              const at = chapterStart(i) + wi;
+                              const filled = w.qs.some(q => isAnswered(answers[q.id]));
+                              return <span key={w.qs[0].id} className={`h-1 rounded-full transition-all duration-300 ${at === index ? 'w-6 bg-[var(--nxt-green)]' : filled ? 'w-2 bg-[var(--nxt-green)]/60' : 'w-2 bg-[var(--nxt-line)]'}`} />;
+                            })}
+                          </span>
+                        )}
                       </li>
                     );
                   })}
@@ -294,21 +315,40 @@ export const FundingApplicationModal: React.FC<FundingApplicationModalProps> = (
 
                 <AnimatePresence mode="wait">
                   <motion.div
-                    key={section.id}
+                    key={index}
                     initial={{ opacity: 0, x: 36 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -36 }}
                     transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                    className="min-h-[46vh]"
                   >
-                    <p className="font-mono text-sm text-[var(--nxt-green)]">{String(index + 1).padStart(2, '0')} / {String(FUNDING_FORM.length).padStart(2, '0')}</p>
-                    <h2 className="mt-3 font-display font-light uppercase tracking-[0.04em] leading-[1.08] text-[clamp(1.8rem,3.6vw,3rem)]">{section.title}</h2>
-                    <p className="mt-3 text-[var(--nxt-ink-soft)] max-w-xl leading-relaxed">{section.intro}</p>
-
-                    <div className="mt-10 space-y-9">
-                      {section.questions.map((q, qi) => (
-                        <motion.div key={q.id} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 + qi * 0.05, duration: 0.35 }}>
-                          <QuestionField q={q} value={answers[q.id]} onChange={(v) => set(q.id, v)} />
-                        </motion.div>
-                      ))}
-                    </div>
+                    <p className="font-mono text-sm text-[var(--nxt-green)]">
+                      {section.title} <span className="text-[var(--nxt-ink-soft)]">· {last ? 'read it back' : section.questions.indexOf(step.qs[0]) === 0 ? section.intro : `${section.questions.indexOf(step.qs[0]) + 1} of ${section.questions.length}`}</span>
+                    </p>
+                    {last ? (
+                      <div className="mt-6">
+                        <h2 className="font-display font-light leading-[1.1] text-[clamp(1.6rem,3.4vw,2.7rem)]">Your pitch, read back.</h2>
+                        <ol className="mt-8 border-t border-[var(--nxt-line)]">
+                          {FUNDING_FORM.filter(s => s.id !== 'declaration').map(s => {
+                            const given = s.questions.filter(q => isAnswered(answers[q.id])).length;
+                            return (
+                              <li key={s.id} className="border-b border-[var(--nxt-line)]">
+                                <button onClick={() => { setErrorMessage(''); setIndex(STEPS.findIndex(x => x.section === s)); }} className="w-full flex items-baseline gap-4 py-3.5 text-left hover:text-[var(--nxt-green)] transition-colors">
+                                  <span className="flex-1 text-[17px] font-light">{s.title}</span>
+                                  <span className="font-mono text-xs text-[var(--nxt-ink-soft)]">{given}/{s.questions.length} answered</span>
+                                  <span className="text-xs text-[var(--nxt-green)]">Edit</span>
+                                </button>
+                              </li>
+                            );
+                          })}
+                        </ol>
+                        <div className="mt-10 space-y-6">
+                          {step.qs.map(q => <Ask key={q.id} q={q} heading={false} value={answers[q.id]} onChange={(v) => set(q.id, v)} />)}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mt-6">
+                        <Ask q={step.qs[0]} value={answers[step.qs[0].id]} onChange={(v) => set(step.qs[0].id, v)} onEnter={goNext} />
+                      </div>
+                    )}
                   </motion.div>
                 </AnimatePresence>
 
@@ -326,7 +366,7 @@ export const FundingApplicationModal: React.FC<FundingApplicationModalProps> = (
               <div className="absolute left-0 top-0 h-px bg-[var(--nxt-green)] shadow-[0_0_12px_var(--nxt-green)] transition-[width] duration-700 ease-out" style={{ width: `${pct}%` }} />
             </div>
             <div className="max-w-6xl mx-auto px-4 sm:px-10 py-3.5 flex flex-wrap items-center gap-3 justify-between">
-              <button onClick={() => setIndex(i => Math.max(0, i - 1))} disabled={index === 0} className="inline-flex items-center gap-1.5 rounded-full border border-[var(--nxt-line)] px-5 py-2.5 text-sm hover:border-[var(--nxt-green)] transition-colors disabled:opacity-30 disabled:hover:border-[var(--nxt-line)]">
+              <button onClick={goBack} disabled={index === 0} className="inline-flex items-center gap-1.5 rounded-full border border-[var(--nxt-line)] px-5 py-2.5 text-sm hover:border-[var(--nxt-green)] transition-colors disabled:opacity-30 disabled:hover:border-[var(--nxt-line)]">
                 <ChevronLeft className="w-4 h-4" /> Back
               </button>
               <div className="flex items-center gap-3">
@@ -339,8 +379,8 @@ export const FundingApplicationModal: React.FC<FundingApplicationModalProps> = (
                     <Send className="w-4 h-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" /> Submit application
                   </button>
                 ) : (
-                  <button onClick={() => setIndex(i => Math.min(FUNDING_FORM.length - 1, i + 1))} className="group inline-flex items-center gap-2 rounded-full bg-[var(--nxt-green)] text-[var(--nxt-green-ink)] px-6 py-2.5 text-sm hover:opacity-90 transition-opacity">
-                    Next section <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                  <button onClick={goNext} className="group inline-flex items-center gap-2 rounded-full bg-[var(--nxt-green)] text-[var(--nxt-green-ink)] px-6 py-2.5 text-sm hover:opacity-90 transition-opacity">
+                    Continue <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                   </button>
                 )}
               </div>
