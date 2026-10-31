@@ -312,3 +312,10 @@ p, li, dd { text-wrap: pretty; }
 /* One light, Helvetica look across every page: no heavy weights anywhere in the app. */
 .font-bold, .font-semibold, .font-extrabold, .font-black { font-weight: 500; }
 b, strong { font-weight: 500; }
+
+/* Site-wide movement (see SiteMotion): cards rise in as they scroll into view and clickable ones lift on hover. */
+.nxt-rv { opacity: 0; transform: translateY(22px); }
+.nxt-in { animation: nxt-rise 0.7s var(--nxt-ease) var(--nxt-rv-delay, 0ms) backwards; }
+@keyframes nxt-rise { from { opacity: 0; transform: translateY(22px); filter: blur(5px); } }
+.nxt-lift { transition: translate 0.3s var(--nxt-ease), border-color 0.3s, box-shadow 0.3s; }
+.nxt-lift:hover { translate: 0 -3px; border-color: var(--nxt-green); box-shadow: 0 14px 30px -18px var(--nxt-green); }

@@ -28,6 +28,7 @@ import { MessagesPage } from './components/MessagesPage';
 import { MentorsPage, MentoringPage } from './components/MentorsPage';
 import { PublicFounderPage, PublicTeamPage } from './components/PublicProfilePages';
 import { SegmentedTabs } from './components/ui/PageHeader';
+import { SiteMotion } from './components/ui/SiteMotion';
 import { AppNotification, User } from './types';
 
 const TAB_PATHS: Record<string, string> = {
@@ -115,6 +116,7 @@ export default function App() {
 
   return (
     <>
+      <SiteMotion />
       <Routes>
         <Route path="/" element={isAuthenticated ? <Navigate to="/problems" replace /> : <HomePage />} />
         <Route path="/blog" element={<BlogListPage />} />

@@ -278,10 +278,10 @@ export const FundingApplicationModal: React.FC<FundingApplicationModalProps> = (
                 </motion.div>
               )}
 
-              <AnimatePresence mode="wait">
+              <AnimatePresence mode="wait" initial={false}>
                 {!chapter ? (
                   /* the map: every chapter is open from the start, in any order */
-                  <motion.div key="map" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
+                  <motion.div key="map">
                     <p className="font-mono text-sm text-[var(--nxt-green)]">Your pitch · {doneCount}/{total} chapters</p>
                     <h2 className="mt-3 font-display font-light leading-[1.1] text-[clamp(1.8rem,3.8vw,3.1rem)] max-w-2xl">Start wherever you like.</h2>
                     <p className="mt-3 text-[var(--nxt-ink-soft)] max-w-xl leading-relaxed">Open any chapter, answer what you can and come back. Only a few answers are required, and the sign-off tells you which.</p>
@@ -293,7 +293,7 @@ export const FundingApplicationModal: React.FC<FundingApplicationModalProps> = (
                         const need = requiredLeft(i);
                         const signOff = i === SIGN_OFF;
                         return (
-                          <motion.li key={s.id} initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 + i * 0.06, duration: 0.4 }} className={i % 3 === 1 ? 'lg:mt-8' : i % 3 === 2 ? 'lg:mt-16' : ''}>
+                          <motion.li key={s.id} className={i % 3 === 1 ? 'lg:mt-8' : i % 3 === 2 ? 'lg:mt-16' : ''}>
                             <button onClick={() => openChapter(i)} className={`group w-full h-full text-left rounded-2xl border p-6 transition-all duration-300 hover:-translate-y-1 ${done ? 'border-[var(--nxt-green)]/60 bg-[var(--nxt-green-soft)]' : 'border-[var(--nxt-line)] bg-[var(--nxt-surface)] hover:border-[var(--nxt-green)]'}`}>
                               <span className="flex items-center justify-between">
                                 <span className="font-mono text-sm text-[var(--nxt-ink-soft)]">{String(i + 1).padStart(2, '0')}</span>
@@ -316,7 +316,7 @@ export const FundingApplicationModal: React.FC<FundingApplicationModalProps> = (
                     </ul>
                   </motion.div>
                 ) : index === SIGN_OFF ? (
-                  <motion.div key="signoff" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }} className="max-w-3xl">
+                  <motion.div key="signoff" className="max-w-3xl">
                     <p className="font-mono text-sm text-[var(--nxt-green)]">{chapter.title}</p>
                     <h2 className="mt-3 font-display font-light leading-[1.1] text-[clamp(1.8rem,3.8vw,3.1rem)]">Your pitch, read back.</h2>
                     {missing.length > 0 && (
@@ -362,7 +362,7 @@ export const FundingApplicationModal: React.FC<FundingApplicationModalProps> = (
                   </motion.div>
                 ) : (
                   /* a chapter: every question is on the page, open whichever you want */
-                  <motion.div key={chapter.id} initial={{ opacity: 0, y: 28, filter: 'blur(8px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }} exit={{ opacity: 0, y: -16, filter: 'blur(6px)' }} transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }} className="grid gap-10 lg:grid-cols-[17rem_1fr]">
+                  <motion.div key={chapter.id} className="grid gap-10 lg:grid-cols-[17rem_1fr]">
 <nav aria-label="Chapters" className="lg:sticky lg:top-6 self-start">
                       <button onClick={() => { setErrorMessage(''); setIndex(-1); }} className="inline-flex items-center gap-1.5 text-sm text-[var(--nxt-ink-soft)] hover:text-[var(--nxt-green)] transition-colors">
                         <ChevronLeft className="w-4 h-4" /> All chapters
@@ -399,11 +399,11 @@ export const FundingApplicationModal: React.FC<FundingApplicationModalProps> = (
                       <p className="mt-3 text-[var(--nxt-ink-soft)] max-w-xl leading-relaxed">{chapter.intro}</p>
                       <ul className="mt-10 border-t border-[var(--nxt-line)]">
                         <AnimatePresence initial={false}>
-                          {visibleQuestions(chapter, answers).map((q, qi) => {
+                          {visibleQuestions(chapter, answers).map(q => {
                             const open = openQ === q.id;
                             const answered = isAnswered(answers[q.id]);
                             return (
-                              <motion.li key={q.id} initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.4, delay: 0.12 + qi * 0.06, ease: [0.22, 1, 0.36, 1] }} className="border-b border-[var(--nxt-line)] overflow-hidden">
+                              <motion.li key={q.id} initial={false} exit={{ opacity: 0, height: 0 }} className="border-b border-[var(--nxt-line)] overflow-hidden">
                                 <button onClick={() => setOpenQ(open ? '' : q.id)} aria-expanded={open} className="w-full flex items-center gap-4 py-5 text-left">
                                   <span className={`w-2 h-2 rounded-full shrink-0 transition-all duration-300 ${answered ? 'bg-[var(--nxt-green)] shadow-[0_0_8px_var(--nxt-green)]' : q.required ? 'bg-[var(--nxt-ink-soft)]/60' : 'border border-[var(--nxt-line)]'}`} />
                                   <span className="flex-1 min-w-0">
