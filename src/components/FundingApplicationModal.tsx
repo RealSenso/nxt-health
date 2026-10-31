@@ -25,8 +25,8 @@ const writeApplicationSession = (s: ApplicationSession | null) => {
   try { if (s) sessionStorage.setItem(SESSION_KEY, JSON.stringify(s)); else sessionStorage.removeItem(SESSION_KEY); } catch { /* ignore */ }
 };
 
-const field = 'w-full text-[clamp(1.2rem,2.2vw,1.6rem)] font-light bg-transparent border-0 border-b border-[var(--nxt-line)] px-0 py-3 text-[var(--nxt-ink)] placeholder:text-[var(--nxt-ink-soft)]/50 focus:outline-hidden focus:border-[var(--nxt-green)] focus:shadow-[0_1px_0_0_var(--nxt-green)] transition-[border-color,box-shadow] duration-300';
-const area = 'w-full text-[18px] font-light leading-relaxed bg-transparent border-0 border-b border-[var(--nxt-line)] px-0 py-3 text-[var(--nxt-ink)] focus:outline-hidden focus:border-[var(--nxt-green)] focus:shadow-[0_1px_0_0_var(--nxt-green)] transition-[border-color,box-shadow] duration-300 resize-none';
+const field = 'w-full text-[clamp(1.2rem,2.2vw,1.6rem)] font-light bg-transparent border-0 border-b border-[var(--nxt-line)] px-0 py-3 text-[var(--nxt-ink)] placeholder:text-[var(--nxt-ink-soft)]/50 [outline:none] focus:[outline:none] focus:border-[var(--nxt-green)] focus:shadow-[0_1px_0_0_var(--nxt-green)] transition-[border-color,box-shadow] duration-300';
+const area = 'w-full text-[18px] font-light leading-relaxed bg-transparent border-0 border-b border-[var(--nxt-line)] px-0 py-3 text-[var(--nxt-ink)] [outline:none] focus:[outline:none] focus:border-[var(--nxt-green)] focus:shadow-[0_1px_0_0_var(--nxt-green)] transition-[border-color,box-shadow] duration-300 resize-none';
 
 /** One question, asked on its own: the question is the heading and the answer is the only thing to fill in. */
 const Ask: React.FC<{ q: Question; value: string | string[] | undefined; onChange: (value: string | string[]) => void; onEnter?: () => void; heading?: boolean }> = ({ q, value, onChange, onEnter, heading = true }) => {
@@ -362,18 +362,29 @@ export const FundingApplicationModal: React.FC<FundingApplicationModalProps> = (
                   </motion.div>
                 ) : (
                   /* a chapter: every question is on the page, open whichever you want */
-                  <motion.div key={chapter.id} initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }} className="grid gap-10 lg:grid-cols-[15rem_1fr]">
-                    <nav aria-label="Chapters" className="lg:sticky lg:top-6 self-start">
+                  <motion.div key={chapter.id} initial={{ opacity: 0, y: 28, filter: 'blur(8px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }} exit={{ opacity: 0, y: -16, filter: 'blur(6px)' }} transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }} className="grid gap-10 lg:grid-cols-[17rem_1fr]">
+<nav aria-label="Chapters" className="lg:sticky lg:top-6 self-start">
                       <button onClick={() => { setErrorMessage(''); setIndex(-1); }} className="inline-flex items-center gap-1.5 text-sm text-[var(--nxt-ink-soft)] hover:text-[var(--nxt-green)] transition-colors">
                         <ChevronLeft className="w-4 h-4" /> All chapters
                       </button>
-                      <ol className="mt-5 flex lg:block gap-3 overflow-x-auto lg:overflow-visible pb-1">
+                      <p className="mt-6 text-[11px] uppercase tracking-[0.22em] text-[var(--nxt-ink-soft)] flex justify-between">
+                        <span>Your pathway</span><span className="text-[var(--nxt-green)]">{doneCount}/{total}</span>
+                      </p>
+                      <ol className="mt-5 flex lg:block gap-4 overflow-x-auto lg:overflow-visible pb-1 lg:pb-0 relative">
+                        <span aria-hidden="true" className="hidden lg:block absolute left-[11px] top-3 bottom-3 w-px bg-[var(--nxt-line)]" />
+                        <span aria-hidden="true" className="hidden lg:block absolute left-[11px] top-3 w-px bg-[var(--nxt-green)] shadow-[0_0_10px_var(--nxt-green)] transition-[height] duration-700 ease-out" style={{ height: `calc((100% - 1.5rem) * ${index / Math.max(1, FUNDING_FORM.length - 1)})` }} />
                         {FUNDING_FORM.map((s, i) => {
                           const done = sectionComplete(s, answers);
+                          const current = i === index;
                           return (
-                            <li key={s.id} className="shrink-0 lg:shrink">
-                              <button onClick={() => openChapter(i)} aria-current={i === index ? 'step' : undefined} className={`w-full flex items-center gap-3 py-2 text-[15px] text-left whitespace-nowrap transition-colors ${i === index ? 'text-[var(--nxt-ink)]' : 'text-[var(--nxt-ink-soft)] hover:text-[var(--nxt-ink)]'}`}>
-                                <span className={`w-2 h-2 rounded-full shrink-0 transition-all ${done ? 'bg-[var(--nxt-green)] shadow-[0_0_8px_var(--nxt-green)]' : i === index ? 'bg-[var(--nxt-ink)]' : 'border border-[var(--nxt-line)]'}`} />
+                            <li key={s.id} className="shrink-0 lg:shrink relative">
+                              <button onClick={() => openChapter(i)} aria-current={current ? 'step' : undefined} className={`w-full flex items-center gap-4 py-2.5 text-[15px] text-left whitespace-nowrap transition-colors ${current ? 'text-[var(--nxt-ink)]' : 'text-[var(--nxt-ink-soft)] hover:text-[var(--nxt-ink)]'}`}>
+                                <span className="relative w-6 h-6 shrink-0 flex items-center justify-center">
+                                  {current && <span className="absolute inset-0 rounded-full border border-[var(--nxt-green)] animate-ping opacity-50" />}
+                                  <span className={`relative w-6 h-6 rounded-full flex items-center justify-center text-[10px] transition-all duration-300 bg-[var(--nxt-bg)] ${done ? 'bg-[var(--nxt-green)] text-[var(--nxt-green-ink)]' : current ? 'border border-[var(--nxt-green)] text-[var(--nxt-green)] shadow-[0_0_14px_-2px_var(--nxt-green)]' : 'border border-[var(--nxt-line)]'}`}>
+                                    {done ? <Check className="w-3 h-3" /> : String(i + 1).padStart(2, '0')}
+                                  </span>
+                                </span>
                                 {s.title}
                               </button>
                             </li>
@@ -388,11 +399,11 @@ export const FundingApplicationModal: React.FC<FundingApplicationModalProps> = (
                       <p className="mt-3 text-[var(--nxt-ink-soft)] max-w-xl leading-relaxed">{chapter.intro}</p>
                       <ul className="mt-10 border-t border-[var(--nxt-line)]">
                         <AnimatePresence initial={false}>
-                          {visibleQuestions(chapter, answers).map(q => {
+                          {visibleQuestions(chapter, answers).map((q, qi) => {
                             const open = openQ === q.id;
                             const answered = isAnswered(answers[q.id]);
                             return (
-                              <motion.li key={q.id} layout="position" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="border-b border-[var(--nxt-line)] overflow-hidden">
+                              <motion.li key={q.id} initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.4, delay: 0.12 + qi * 0.06, ease: [0.22, 1, 0.36, 1] }} className="border-b border-[var(--nxt-line)] overflow-hidden">
                                 <button onClick={() => setOpenQ(open ? '' : q.id)} aria-expanded={open} className="w-full flex items-center gap-4 py-5 text-left">
                                   <span className={`w-2 h-2 rounded-full shrink-0 transition-all duration-300 ${answered ? 'bg-[var(--nxt-green)] shadow-[0_0_8px_var(--nxt-green)]' : q.required ? 'bg-[var(--nxt-ink-soft)]/60' : 'border border-[var(--nxt-line)]'}`} />
                                   <span className="flex-1 min-w-0">
@@ -402,10 +413,10 @@ export const FundingApplicationModal: React.FC<FundingApplicationModalProps> = (
                                   <ChevronDown className={`w-5 h-5 shrink-0 text-[var(--nxt-green)] transition-transform duration-300 ${open ? 'rotate-180' : ''}`} />
                                 </button>
                                 {open && (
-                                  <div className="pb-7 pl-6">
+                                  <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="pb-7 pl-6">
                                     <Ask q={q} heading={false} value={answers[q.id]} onChange={(v) => set(q.id, v)} onEnter={() => nextQuestion(q.id)} />
                                     <button onClick={() => nextQuestion(q.id)} className="mt-5 text-sm text-[var(--nxt-green)] hover:underline underline-offset-4">{answered ? 'Done' : 'Skip for now'}</button>
-                                  </div>
+                                  </motion.div>
                                 )}
                               </motion.li>
                             );
