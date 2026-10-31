@@ -9,6 +9,7 @@ import { store } from '../services/store';
 import { useNavigate } from 'react-router-dom';
 import { PageHeader } from './ui/PageHeader';
 import { Reveal, PillButton } from './ui/Reveal';
+import { DashboardHero } from './ui/DashboardHero';
 
 interface FounderDashboardProps {
   currentUser: User;
@@ -101,6 +102,12 @@ export const FounderDashboard: React.FC<FounderDashboardProps> = ({
             <Sparkles className="w-4 h-4" /> Become a member
           </PillButton>
         )}
+      />
+
+      <DashboardHero
+        pct={projects.length ? Math.round(projects.reduce((n, p) => n + p.pct, 0) / projects.length) : 0}
+        label="Your route"
+        detail={projects.length ? `${projects.length} project${projects.length === 1 ? '' : 's'} on the way` : 'Pick a problem to start your route'}
       />
 
       {checkInDue && (

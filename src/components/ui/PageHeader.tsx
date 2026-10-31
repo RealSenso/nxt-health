@@ -13,7 +13,13 @@ interface PageHeaderProps {
 }
 
 export const PageHeader: React.FC<PageHeaderProps> = ({ icon: Icon, eyebrow, title, subtitle, actions, children }) => (
-  <header className="pb-5 border-b border-[var(--nxt-line)]">
+  <header className="relative pb-5 border-b border-[var(--nxt-line)]">
+    {/* a light that keeps travelling along the page's top line */}
+    <span aria-hidden="true" className="nxt-sweep pointer-events-none absolute -bottom-px left-0 h-px w-40 bg-gradient-to-r from-transparent via-[var(--nxt-green)] to-transparent" />
+    <svg aria-hidden="true" className="pointer-events-none absolute right-0 top-0 h-full w-1/2 max-w-xl opacity-40 hidden sm:block" preserveAspectRatio="none" viewBox="0 0 400 100">
+      <path className="nxt-flow" d="M0 90 C 90 90 110 30 200 40 S 330 80 400 10" fill="none" stroke="var(--nxt-green)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+      <circle r="3" fill="var(--nxt-green)"><animateMotion dur="6s" repeatCount="indefinite" path="M0 90 C 90 90 110 30 200 40 S 330 80 400 10" /></circle>
+    </svg>
     <div className="flex flex-col sm:flex-row sm:items-end gap-4">
       <div className="flex-1 min-w-0">
         {eyebrow && (
