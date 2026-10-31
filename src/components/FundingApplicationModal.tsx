@@ -136,6 +136,7 @@ export const FundingApplicationModal: React.FC<FundingApplicationModalProps> = (
   const previous = useRef(index);
   const dir = index >= previous.current ? 1 : -1;
   useEffect(() => { previous.current = index; }, [index]);
+  const fade = { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 }, exit: { opacity: 0, y: -10 }, transition: { duration: 0.3 } };
   const slide = { initial: { x: dir * 72 }, animate: { x: 0 }, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] as const } };
   const wipe = (n: number) => ({ initial: { clipPath: 'inset(0 100% 0 0)' }, animate: { clipPath: 'inset(0 0% 0 0)' }, transition: { duration: 0.55, delay: 0.1 + n * 0.07, ease: [0.22, 1, 0.36, 1] as const } });
   const currentStage = stageIndex(existingApplication?.stage);
@@ -300,10 +301,10 @@ export const FundingApplicationModal: React.FC<FundingApplicationModalProps> = (
                 </motion.div>
               )}
 
-              <AnimatePresence initial={false}>
+              <AnimatePresence mode="wait" initial={false}>
                 {!chapter ? (
                   /* the map: every chapter is open from the start, in any order */
-                  <motion.div key="map" {...slide}>
+                  <motion.div key="map" {...fade}>
                     <p className="font-mono text-sm text-[var(--nxt-green)]">Your pitch · {doneCount}/{total} chapters</p>
                     <h2 className="mt-3 font-display font-light leading-[1.1] text-[clamp(1.8rem,3.8vw,3.1rem)] max-w-2xl">Start wherever you like.</h2>
                     <p className="mt-3 text-[var(--nxt-ink-soft)] max-w-xl leading-relaxed">Open any chapter, answer what you can and come back. Only a few answers are required, and the sign-off tells you which.</p>
@@ -315,7 +316,7 @@ export const FundingApplicationModal: React.FC<FundingApplicationModalProps> = (
                         const need = requiredLeft(i);
                         const signOff = i === SIGN_OFF;
                         return (
-                          <motion.li key={s.id} {...wipe(i)} className={i % 3 === 1 ? 'lg:mt-8' : i % 3 === 2 ? 'lg:mt-16' : ''}>
+                          <motion.li key={s.id} initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 + i * 0.06, duration: 0.4 }} className={i % 3 === 1 ? 'lg:mt-8' : i % 3 === 2 ? 'lg:mt-16' : ''}>
                             <button onClick={() => openChapter(i)} className={`group w-full h-full text-left rounded-2xl border p-6 transition-all duration-300 hover:-translate-y-1 ${done ? 'border-[var(--nxt-green)]/60 bg-[var(--nxt-green-soft)]' : 'border-[var(--nxt-line)] bg-[var(--nxt-surface)] hover:border-[var(--nxt-green)]'}`}>
                               <span className="flex items-center justify-between">
                                 <span className="font-mono text-sm text-[var(--nxt-ink-soft)]">{String(i + 1).padStart(2, '0')}</span>
@@ -338,7 +339,7 @@ export const FundingApplicationModal: React.FC<FundingApplicationModalProps> = (
                     </ul>
                   </motion.div>
                 ) : index === SIGN_OFF ? (
-                  <motion.div key="signoff" {...slide} className="max-w-3xl">
+                  <motion.div key="signoff" {...fade} className="max-w-3xl">
                     <p className="font-mono text-sm text-[var(--nxt-green)]">{chapter.title}</p>
                     <h2 className="mt-3 font-display font-light leading-[1.1] text-[clamp(1.8rem,3.8vw,3.1rem)]">Your pitch, read back.</h2>
                     {missing.length > 0 && (
@@ -384,7 +385,7 @@ export const FundingApplicationModal: React.FC<FundingApplicationModalProps> = (
                   </motion.div>
                 ) : (
                   /* a chapter: every question is on the page, open whichever you want */
-                  <motion.div key={chapter.id} {...slide} className="grid gap-10 lg:grid-cols-[17rem_1fr]">
+                  <div key="chapter-shell" className="grid gap-10 lg:grid-cols-[17rem_1fr]">
 <nav aria-label="Chapters" className="lg:sticky lg:top-6 self-start">
                       <button onClick={() => { setErrorMessage(''); setIndex(-1); }} className="inline-flex items-center gap-1.5 text-sm text-[var(--nxt-ink-soft)] hover:text-[var(--nxt-green)] transition-colors">
                         <ChevronLeft className="w-4 h-4" /> All chapters
@@ -416,7 +417,8 @@ export const FundingApplicationModal: React.FC<FundingApplicationModalProps> = (
                       </ol>
                     </nav>
 
-                    <div className="min-w-0 max-w-3xl">
+                    <AnimatePresence mode="wait" initial={false}>
+                    <motion.div key={chapter.id} initial={{ opacity: 0, y: 28, filter: 'blur(8px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }} exit={{ opacity: 0, y: -16, filter: 'blur(6px)' }} transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }} className="min-w-0 max-w-3xl">
                       <p className="font-mono text-sm text-[var(--nxt-green)]">{String(index + 1).padStart(2, '0')} / {String(total).padStart(2, '0')}</p>
                       <h2 className="mt-3 font-display font-light leading-[1.1] text-[clamp(1.8rem,3.8vw,3.1rem)]"><Words key={chapter.id} text={chapter.title} base={0.15} /></h2>
                       <motion.p key={chapter.id + 'i'} initial={{ clipPath: 'inset(0 100% 0 0)' }} animate={{ clipPath: 'inset(0 0% 0 0)' }} transition={{ duration: 0.8, delay: 0.35, ease: [0.22, 1, 0.36, 1] }} className="mt-3 text-[var(--nxt-ink-soft)] max-w-xl leading-relaxed">{chapter.intro}</motion.p>
@@ -426,7 +428,7 @@ export const FundingApplicationModal: React.FC<FundingApplicationModalProps> = (
                             const open = openQ === q.id;
                             const answered = isAnswered(answers[q.id]);
                             return (
-                              <motion.li key={q.id} {...wipe(qi)} exit={{ height: 0 }} className="border-b border-[var(--nxt-line)] overflow-hidden">
+                              <motion.li key={q.id} initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.4, delay: 0.12 + qi * 0.06, ease: [0.22, 1, 0.36, 1] }} className="border-b border-[var(--nxt-line)] overflow-hidden">
                                 <button onClick={() => setOpenQ(open ? '' : q.id)} aria-expanded={open} className="group w-full flex items-center gap-4 py-5 text-left">
                                   <span className="relative w-3 h-3 shrink-0 flex items-center justify-center">
                                     {answered && <motion.span key={String(answered) + q.id} className="absolute inset-0 rounded-full border border-[var(--nxt-green)]" initial={{ scale: 0.4, opacity: 0.9 }} animate={{ scale: 2.6, opacity: 0 }} transition={{ duration: 0.8 }} />}
@@ -457,8 +459,9 @@ export const FundingApplicationModal: React.FC<FundingApplicationModalProps> = (
                         {index < SIGN_OFF - 1 && <button onClick={() => openChapter(index + 1)} className="text-[var(--nxt-ink-soft)] hover:text-[var(--nxt-green)] transition-colors">Next chapter: {FUNDING_FORM[index + 1].title}</button>}
                         <button onClick={() => openChapter(SIGN_OFF)} className="text-[var(--nxt-ink-soft)] hover:text-[var(--nxt-green)] transition-colors">Go to sign-off</button>
                       </div>
-                    </div>
-                  </motion.div>
+                    </motion.div>
+                    </AnimatePresence>
+                  </div>
                 )}
               </AnimatePresence>
             </div>
