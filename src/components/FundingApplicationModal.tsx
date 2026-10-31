@@ -43,9 +43,14 @@ const Ask: React.FC<{ q: Question; value: string | string[] | undefined; onChang
       )}
       {q.help && <p className="mt-3 text-[var(--nxt-ink-soft)] max-w-xl leading-relaxed">{q.help}</p>}
       <div className={heading ? 'mt-9' : 'mt-3'}>
-        {q.type === 'long' && <textarea id={id} autoFocus rows={5} maxLength={5000} value={text} onChange={(e) => onChange(e.target.value)} className={area} placeholder="Type your answer" />}
-        {(q.type === 'text' || q.type === 'url') && <input id={id} autoFocus type="text" maxLength={500} value={text} placeholder={q.placeholder || 'Type your answer'} onKeyDown={enter} onChange={(e) => onChange(e.target.value)} className={field} />}
-        {q.type === 'number' && <input id={id} autoFocus type="number" min={0} value={text} placeholder="0" onKeyDown={enter} onChange={(e) => onChange(e.target.value)} className={`${field} max-w-xs`} />}
+        {q.type === 'long' && <textarea id={id} autoFocus style={{ outline: 'none' }} rows={5} maxLength={5000} value={text} onChange={(e) => onChange(e.target.value)} className={area} placeholder="Type your answer" />}
+        {(q.type === 'text' || q.type === 'url') && <input id={id} autoFocus style={{ outline: 'none' }} type="text" maxLength={500} value={text} placeholder={q.placeholder || 'Type your answer'} onKeyDown={enter} onChange={(e) => onChange(e.target.value)} className={field} />}
+        {q.type === 'number' && <input id={id} autoFocus style={{ outline: 'none' }} type="number" min={0} value={text} placeholder="0" onKeyDown={enter} onChange={(e) => onChange(e.target.value)} className={`${field} max-w-xs`} />}
+        {(q.type === 'long' || q.type === 'text' || q.type === 'url' || q.type === 'number') && (
+          <motion.div aria-hidden="true" className="h-[2px] -mt-px origin-left bg-[var(--nxt-green)] shadow-[0_0_10px_var(--nxt-green)]"
+            animate={{ scaleX: Math.min(1, text.length / (q.type === 'long' ? 180 : q.type === 'number' ? 2 : 28)) }} transition={{ type: 'spring', stiffness: 160, damping: 24 }} />
+        )}
+        {q.type === 'long' && <p className="mt-2 text-xs font-mono text-[var(--nxt-ink-soft)]">{text.length > 0 ? `${text.trim().split(/\s+/).length} words` : ' '}</p>}
         {(q.type === 'select' || q.type === 'multi') && (
           <div className="flex flex-wrap gap-2.5" role="group" aria-labelledby={id}>
             {q.options?.map(o => {
@@ -71,6 +76,17 @@ const Ask: React.FC<{ q: Question; value: string | string[] | undefined; onChang
     </div>
   );
 };
+
+/** A heading whose words rise out of a mask, one after another. */
+const Words: React.FC<{ text: string; className?: string; base?: number }> = ({ text, className, base = 0 }) => (
+  <span className={className} aria-label={text}>
+    {text.split(' ').map((w, i) => (
+      <span key={i} aria-hidden="true" className="inline-block overflow-hidden align-bottom pb-[0.12em] -mb-[0.12em] mr-[0.26em]">
+        <motion.span className="inline-block" initial={{ y: '115%' }} animate={{ y: 0 }} transition={{ duration: 0.7, delay: base + i * 0.08, ease: [0.22, 1, 0.36, 1] }}>{w}</motion.span>
+      </span>
+    ))}
+  </span>
+);
 
 /** The sign-off is the last chapter; the others can be opened in any order. */
 const SIGN_OFF = FUNDING_FORM.length - 1;
@@ -379,6 +395,7 @@ export const FundingApplicationModal: React.FC<FundingApplicationModalProps> = (
                       <ol className="mt-5 flex lg:block gap-4 overflow-x-auto lg:overflow-visible pb-1 lg:pb-0 relative">
                         <span aria-hidden="true" className="hidden lg:block absolute left-[11px] top-3 bottom-3 w-px bg-[var(--nxt-line)]" />
                         <span aria-hidden="true" className="hidden lg:block absolute left-[11px] top-3 w-px bg-[var(--nxt-green)] shadow-[0_0_10px_var(--nxt-green)] transition-[height] duration-700 ease-out" style={{ height: `calc((100% - 1.5rem) * ${index / Math.max(1, FUNDING_FORM.length - 1)})` }} />
+                        <span aria-hidden="true" className="hidden lg:block absolute left-[8px] w-[7px] h-[7px] rounded-full bg-[var(--nxt-green)] shadow-[0_0_14px_3px_var(--nxt-green)] animate-pulse transition-[top] duration-700 ease-out" style={{ top: `calc(0.75rem + (100% - 1.5rem) * ${index / Math.max(1, FUNDING_FORM.length - 1)} - 3px)` }} />
                         {FUNDING_FORM.map((s, i) => {
                           const done = sectionComplete(s, answers);
                           const current = i === index;
@@ -388,10 +405,10 @@ export const FundingApplicationModal: React.FC<FundingApplicationModalProps> = (
                                 <span className="relative w-6 h-6 shrink-0 flex items-center justify-center">
                                   {current && <span className="absolute inset-0 rounded-full border border-[var(--nxt-green)] animate-ping opacity-50" />}
                                   <span className={`relative w-6 h-6 rounded-full flex items-center justify-center text-[10px] transition-all duration-300 bg-[var(--nxt-bg)] ${done ? 'bg-[var(--nxt-green)] text-[var(--nxt-green-ink)]' : current ? 'border border-[var(--nxt-green)] text-[var(--nxt-green)] shadow-[0_0_14px_-2px_var(--nxt-green)]' : 'border border-[var(--nxt-line)]'}`}>
-                                    {done ? <Check className="w-3 h-3" /> : String(i + 1).padStart(2, '0')}
+                                    {done ? <motion.span initial={{ scale: 0, rotate: -90 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 400, damping: 14 }}><Check className="w-3 h-3" /></motion.span> : String(i + 1).padStart(2, '0')}
                                   </span>
                                 </span>
-                                {s.title}
+                                <span className={`transition-transform duration-300 ${current ? 'translate-x-1' : ''}`}>{s.title}</span>
                               </button>
                             </li>
                           );
@@ -401,8 +418,8 @@ export const FundingApplicationModal: React.FC<FundingApplicationModalProps> = (
 
                     <div className="min-w-0 max-w-3xl">
                       <p className="font-mono text-sm text-[var(--nxt-green)]">{String(index + 1).padStart(2, '0')} / {String(total).padStart(2, '0')}</p>
-                      <h2 className="mt-3 font-display font-light leading-[1.1] text-[clamp(1.8rem,3.8vw,3.1rem)]">{chapter.title}</h2>
-                      <p className="mt-3 text-[var(--nxt-ink-soft)] max-w-xl leading-relaxed">{chapter.intro}</p>
+                      <h2 className="mt-3 font-display font-light leading-[1.1] text-[clamp(1.8rem,3.8vw,3.1rem)]"><Words key={chapter.id} text={chapter.title} base={0.15} /></h2>
+                      <motion.p key={chapter.id + 'i'} initial={{ clipPath: 'inset(0 100% 0 0)' }} animate={{ clipPath: 'inset(0 0% 0 0)' }} transition={{ duration: 0.8, delay: 0.35, ease: [0.22, 1, 0.36, 1] }} className="mt-3 text-[var(--nxt-ink-soft)] max-w-xl leading-relaxed">{chapter.intro}</motion.p>
                       <ul className="mt-10 border-t border-[var(--nxt-line)]">
                         <AnimatePresence initial={false}>
                           {visibleQuestions(chapter, answers).map((q, qi) => {
@@ -410,20 +427,27 @@ export const FundingApplicationModal: React.FC<FundingApplicationModalProps> = (
                             const answered = isAnswered(answers[q.id]);
                             return (
                               <motion.li key={q.id} {...wipe(qi)} exit={{ height: 0 }} className="border-b border-[var(--nxt-line)] overflow-hidden">
-                                <button onClick={() => setOpenQ(open ? '' : q.id)} aria-expanded={open} className="w-full flex items-center gap-4 py-5 text-left">
-                                  <span className={`w-2 h-2 rounded-full shrink-0 transition-all duration-300 ${answered ? 'bg-[var(--nxt-green)] shadow-[0_0_8px_var(--nxt-green)]' : q.required ? 'bg-[var(--nxt-ink-soft)]/60' : 'border border-[var(--nxt-line)]'}`} />
+                                <button onClick={() => setOpenQ(open ? '' : q.id)} aria-expanded={open} className="group w-full flex items-center gap-4 py-5 text-left">
+                                  <span className="relative w-3 h-3 shrink-0 flex items-center justify-center">
+                                    {answered && <motion.span key={String(answered) + q.id} className="absolute inset-0 rounded-full border border-[var(--nxt-green)]" initial={{ scale: 0.4, opacity: 0.9 }} animate={{ scale: 2.6, opacity: 0 }} transition={{ duration: 0.8 }} />}
+                                    <motion.span animate={{ scale: answered ? [0.5, 1.5, 1] : open ? 1.25 : 1 }} transition={{ duration: 0.4 }} className={`w-2 h-2 rounded-full ${answered ? 'bg-[var(--nxt-green)] shadow-[0_0_8px_var(--nxt-green)]' : q.required ? 'bg-[var(--nxt-ink-soft)]/60' : open ? 'bg-[var(--nxt-ink)]' : 'border border-[var(--nxt-line)]'}`} />
+                                  </span>
                                   <span className="flex-1 min-w-0">
-                                    <span className="block text-[clamp(1.05rem,1.8vw,1.3rem)] font-light leading-snug">{q.label}{q.required && <span className="sr-only"> (required)</span>}</span>
+                                    <span className={`block text-[clamp(1.05rem,1.8vw,1.3rem)] font-light leading-snug transition-transform duration-300 group-hover:translate-x-1.5 ${open ? 'translate-x-1.5' : ''}`}>{q.label}{q.required && <span className="sr-only"> (required)</span>}</span>
                                     {!open && answered && <span className="block mt-1 text-sm text-[var(--nxt-ink-soft)] truncate">{preview(answers[q.id])}</span>}
                                   </span>
-                                  <ChevronDown className={`w-5 h-5 shrink-0 text-[var(--nxt-green)] transition-transform duration-300 ${open ? 'rotate-180' : ''}`} />
+                                  <motion.span animate={{ rotate: open ? 180 : 0 }} transition={{ type: 'spring', stiffness: 260, damping: 18 }} className="shrink-0 text-[var(--nxt-green)]"><ChevronDown className="w-5 h-5" /></motion.span>
                                 </button>
-                                {open && (
-                                  <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="pb-7 pl-6">
-                                    <Ask q={q} heading={false} value={answers[q.id]} onChange={(v) => set(q.id, v)} onEnter={() => nextQuestion(q.id)} />
-                                    <button onClick={() => nextQuestion(q.id)} className="mt-5 text-sm text-[var(--nxt-green)] hover:underline underline-offset-4">{answered ? 'Done' : 'Skip for now'}</button>
-                                  </motion.div>
-                                )}
+                                <AnimatePresence initial={false}>
+                                  {open && (
+                                    <motion.div key="body" initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 30 }} className="overflow-hidden">
+                                      <motion.div initial={{ y: -24, clipPath: 'inset(0 0 100% 0)' }} animate={{ y: 0, clipPath: 'inset(0 0 0% 0)' }} exit={{ y: -12 }} transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }} className="pb-7 pl-6">
+                                        <Ask q={q} heading={false} value={answers[q.id]} onChange={(v) => set(q.id, v)} onEnter={() => nextQuestion(q.id)} />
+                                        <button onClick={() => nextQuestion(q.id)} className="group/n mt-5 inline-flex items-center gap-2 text-sm text-[var(--nxt-green)]">{answered ? 'Done' : 'Skip for now'} <span className="transition-transform group-hover/n:translate-x-1.5">→</span></button>
+                                      </motion.div>
+                                    </motion.div>
+                                  )}
+                                </AnimatePresence>
                               </motion.li>
                             );
                           })}
