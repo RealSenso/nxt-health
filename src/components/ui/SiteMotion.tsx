@@ -45,11 +45,19 @@ export const SiteMotion: React.FC = () => {
 
   useEffect(() => {
     let order = 0;
+    let flip = 0;
     const seen = new IntersectionObserver(entries => {
       for (const entry of entries) {
         if (!entry.isIntersecting) continue;
         const el = entry.target as HTMLElement;
         seen.unobserve(el);
+        const r = el.getBoundingClientRect();
+        const cx = (r.left + r.width / 2) / window.innerWidth;
+        // Come in from the side the element sits on, from the top or bottom when it is central, and headings from the left.
+        const dir = /^H[12]$/.test(el.tagName) ? 'l' : cx < 0.38 ? 'l' : cx > 0.62 ? 'r' : flip++ % 2 ? 't' : 'b';
+        const from = { l: ['-56px', '0px'], r: ['56px', '0px'], t: ['0px', '-40px'], b: ['0px', '40px'] }[dir];
+        el.style.setProperty('--nxt-rx', from[0]);
+        el.style.setProperty('--nxt-ry', from[1]);
         el.style.setProperty('--nxt-rv-delay', `${Math.min(order++ % 6, 5) * 70}ms`);
         el.classList.remove('nxt-rv');
         el.classList.add('nxt-in');

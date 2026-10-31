@@ -1,28 +1,34 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion, MotionProps } from 'motion/react';
 
 interface RevealProps extends MotionProps {
   children: React.ReactNode;
   className?: string;
   delay?: number;
-  y?: number;
+  /** Which edge it slides in from. Left alone, the blocks on a page take turns. */
+  from?: 'left' | 'right' | 'top' | 'bottom';
   as?: 'div' | 'span' | 'li' | 'h1' | 'h2' | 'h3' | 'p';
 }
+const EDGES = ['bottom', 'left', 'top', 'right'] as const;
+let nextEdge = 0;
+const OFFSET = { left: { x: -56 }, right: { x: 56 }, top: { y: -40 }, bottom: { y: 40 } };
+
 export const Reveal: React.FC<RevealProps> = ({
   children,
   className,
   delay = 0,
-  y = 6,
+  from,
   as = 'div',
   ...rest
 }) => {
   const Component = motion[as] as any;
+  const [edge] = useState(() => from ?? EDGES[nextEdge++ % EDGES.length]);
   return (
     <Component
       className={className}
-      initial={{ opacity: 0, y }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25, delay: Math.min(delay, 0.1), ease: [0.22, 1, 0.36, 1] }}
+      initial={{ opacity: 0, ...OFFSET[edge] }}
+      animate={{ opacity: 1, x: 0, y: 0 }}
+      transition={{ duration: 0.6, delay: Math.min(delay, 0.2), ease: [0.22, 1, 0.36, 1] }}
       {...rest}
     >
       {children}
