@@ -158,7 +158,7 @@ export const GuidePage: React.FC = () => {
 
   return (
     <PublicLayout variant="home">
-      <section className="nxt-container pt-14 sm:pt-20 pb-10 border-b border-[var(--nxt-line)]">
+      <section className="nxt-container pt-14 sm:pt-20 pb-2">
         <Eyebrow>Free guides</Eyebrow>
         <H1 className="mt-6">How to?</H1>
       </section>

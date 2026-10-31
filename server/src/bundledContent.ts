@@ -2,7 +2,9 @@ import { defaultRate } from './routes/expertPipeline.js';
 import type { Database } from './db.js';
 import { SEED_BLOGS } from './bundled/seedBlogs.js';
 import { START_IN_INDIA_ROADMAP } from './bundled/startIndiaRoadmap.js';
-import { buildRoadmapSteps, GUIDE_PROBLEM, STARTER_CATEGORIES } from './starterContent.js';
+import { SAMD_ROADMAP, SAMD_CONTRIBUTOR } from './bundled/samdRoadmap.js';
+import { ONBOARDING_ROADMAP } from './bundled/onboardingRoadmap.js';
+import { buildRoadmapSteps, CATALOG_REV, GUIDE_PROBLEM, LIVE_SLUGS, STARTER_CATEGORIES } from './starterContent.js';
 
 type Doc = Record<string, unknown> & { id: string };
 const toDoc = ({ id, ...rest }: Doc) => ({ _id: id, ...rest });
@@ -29,6 +31,25 @@ export async function loadBundledContent(database: Database): Promise<{ steps: n
       await col('steps').replaceOne({ _id: doc._id }, doc, { upsert: true });
       steps++;
     }
+  }
+
+  // Once per catalog revision: only SaMD and onboarding are open, every other roadmap is coming soon, and the bundled roadmaps are (re)loaded.
+  const meta = (await col('settings').findOne({ _id: 'catalog' })) as { rev?: number } | null;
+  if ((meta?.rev ?? 0) < CATALOG_REV) {
+    for (const c of STARTER_CATEGORIES) {
+      const { _id, priority, roadmap_note: _note, ...fields } = toDoc(c) as Record<string, unknown> & { _id: string };
+      const unset: Record<string, ''> = { roadmap_note: '', ...(priority === undefined ? { priority: '' } : {}) };
+      await col('categories').updateOne({ _id }, { $set: { ...fields, ...(priority !== undefined ? { priority } : {}) }, $unset: unset }, { upsert: true });
+    }
+    for (const roadmap of [SAMD_ROADMAP, ONBOARDING_ROADMAP]) {
+      for (const step of buildRoadmapSteps(roadmap)) {
+        const doc = toDoc(step);
+        await col('steps').replaceOne({ _id: doc._id }, doc, { upsert: true });
+        steps++;
+      }
+    }
+    await col('categories').updateOne({ _id: SAMD_ROADMAP.category! }, { $set: { playbook: SAMD_ROADMAP.playbook, contributor: SAMD_CONTRIBUTOR } });
+    await col('settings').updateOne({ _id: 'catalog' }, { $set: { rev: CATALOG_REV, live: LIVE_SLUGS } }, { upsert: true });
   }
 
   // The project that holds the free guide in Roadmaps.

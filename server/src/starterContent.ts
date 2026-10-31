@@ -74,6 +74,7 @@ interface CategoryDef {
  */
 const CATEGORY_DEFS: CategoryDef[] = [
   { slug: 'samd', name: 'SaMD', description: 'Software that itself performs a medical function', example: 'AI radiology diagnosis, clinical decision support', complexity: 'very_high', complexity_note: 'Software lifecycle + clinical evidence + cybersecurity + regulation' },
+  { slug: 'startup-onboarding', name: 'Get onboarded', description: 'How a startup earns a place on the platform: three steps, three tests', example: 'Apply, ICP and positioning, interview and video' },
   { slug: 'medical-device', name: 'Medical Device', description: 'Physical device used for diagnosis, monitoring or treatment', example: 'Portable ECG, infusion device, surgical device', complexity: 'very_high', complexity_note: 'Design controls, testing, QMS, regulatory approval, manufacturing' },
   { slug: 'marketplace-network', name: 'Marketplace / Network', description: 'Connects healthcare participants', example: 'Specialist network, doctor-startup network', complexity: 'low', complexity_note: 'Low regulatory burden; mainly business, technology, contracts and operations' },
   { slug: 'healthcare-services', name: 'Healthcare Services', description: 'Solves problem through people/process rather than technology', example: 'Specialty care management, home healthcare', complexity: 'low', complexity_note: 'Primarily service design, clinical governance, staffing and operations' },
@@ -108,17 +109,20 @@ const CATEGORY_DEFS: CategoryDef[] = [
   { slug: 'start-in-india', name: 'How to start a startup in India', description: 'A free step-by-step guide from idea to an incorporated, compliant and funded company', example: 'Incorporation, DPIIT recognition, IP, funding, compliance', guide: true },
 ];
 
-/** How many of the first categories are open to founders: SaMD, Medical Device, then the six priority "green" categories. */
-export const LIVE_CATEGORY_COUNT = 8;
+/** Roadmaps that are open to founders: all others are shown as coming soon. */
+export const LIVE_SLUGS = ['samd', 'startup-onboarding'];
+
+/** Bump when the set of open roadmaps changes, so existing databases pick it up once. */
+export const CATALOG_REV = 2;
 
 /** Categories that are open because they have a checklist written for them, in addition to the first six. */
-const DEDICATED_ROADMAP_SLUGS = ['medical-device', 'samd', 'start-in-india'];
+const DEDICATED_ROADMAP_SLUGS = ['medical-device', 'samd', 'start-in-india', 'startup-onboarding'];
 
 const categoryId = (slug: string) => `cat-${slug}`;
 
 export const STARTER_CATEGORIES: Doc[] = CATEGORY_DEFS.map((def, index) => {
   const dedicated = DEDICATED_ROADMAP_SLUGS.includes(def.slug);
-  const live = index < LIVE_CATEGORY_COUNT || !!def.guide;
+  const live = LIVE_SLUGS.includes(def.slug) || !!def.guide;
   return {
     id: categoryId(def.slug),
     name: def.name,
@@ -126,7 +130,7 @@ export const STARTER_CATEGORIES: Doc[] = CATEGORY_DEFS.map((def, index) => {
     example: def.example,
     order: index + 1,
     coming_soon: !live,
-    ...(index < LIVE_CATEGORY_COUNT ? { priority: index + 1 } : {}),
+    ...(LIVE_SLUGS.includes(def.slug) ? { priority: LIVE_SLUGS.indexOf(def.slug) + 1 } : {}),
     ...(def.guide ? { free_access: true, guide: true } : {}),
     ...(def.complexity ? { complexity: def.complexity, complexity_note: def.complexity_note } : {}),
     ...(live && !dedicated && def.slug !== 'marketplace-network'

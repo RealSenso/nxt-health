@@ -3,12 +3,29 @@ import { ChevronDown, Info } from 'lucide-react';
 import type { Category } from '../types';
 
 /** A note above a roadmap that was adapted from another category's checklist. */
-export const RoadmapNote: React.FC<{ category: Category | null }> = ({ category }) =>
-  category?.roadmap_note ? (
-    <p className="flex items-start gap-2.5 rounded-2xl border border-[var(--nxt-line)] bg-[var(--nxt-bg-soft)] px-5 py-4 text-[15px] text-[var(--nxt-ink-soft)]">
-      <Info className="w-5 h-5 mt-0.5 shrink-0 text-[var(--nxt-ink)]" /> {category.roadmap_note}
-    </p>
-  ) : null;
+export const RoadmapNote: React.FC<{ category: Category | null }> = ({ category }) => {
+  const who = category?.contributor;
+  if (!category?.roadmap_note && !who) return null;
+  return (
+    <div className="space-y-3">
+      {category.roadmap_note && (
+        <p className="flex items-start gap-2.5 rounded-2xl border border-[var(--nxt-line)] bg-[var(--nxt-bg-soft)] px-5 py-4 text-[15px] text-[var(--nxt-ink-soft)]">
+          <Info className="w-5 h-5 mt-0.5 shrink-0 text-[var(--nxt-ink)]" /> {category.roadmap_note}
+        </p>
+      )}
+      {who && (
+        <div className="rounded-2xl border border-[var(--nxt-line)] bg-[var(--nxt-surface)] px-5 py-4">
+          <p className="text-xs uppercase tracking-[0.18em] text-[var(--nxt-green)]">Shaped with</p>
+          <p className="mt-1 text-[17px] font-light text-[var(--nxt-ink)]">
+            {who.name} <span className="text-[var(--nxt-ink-soft)]">· {who.title}</span>
+          </p>
+          <p className="mt-1 text-[15px] font-light text-[var(--nxt-ink-soft)]">{who.note}</p>
+          <a href={who.linkedin} target="_blank" rel="noreferrer" className="mt-2 inline-block text-sm text-[var(--nxt-green)] underline underline-offset-4">LinkedIn profile</a>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const Panel: React.FC<{ title: string; hint?: string; defaultOpen?: boolean; children: React.ReactNode }> = ({ title, hint, defaultOpen, children }) => (
   <details open={defaultOpen} className="group rounded-3xl border border-[var(--nxt-line)] bg-[var(--nxt-surface)]">

@@ -308,3 +308,7 @@ p, li, dd { text-wrap: pretty; }
 @keyframes nxt-dash { to { stroke-dashoffset: -200; } }
 .nxt-flow { stroke-dasharray: 6 14; animation: nxt-dash 7s linear infinite; }
 .nxt-flow-slow { animation-duration: 14s; animation-direction: reverse; }
+
+/* One light, Helvetica look across every page: no heavy weights anywhere in the app. */
+.font-bold, .font-semibold, .font-extrabold, .font-black { font-weight: 500; }
+b, strong { font-weight: 500; }

@@ -145,6 +145,8 @@ export interface Category {
   complexity?: Complexity;
   complexity_note?: string;
   roadmap_note?: string;
+  /** The expert whose guidance shaped this roadmap. */
+  contributor?: { name: string; title: string; linkedin: string; note: string };
   /** Open to every signed-in person, member or not. */
   free_access?: boolean;
   /** A reading guide with its own page, not a product category to build a project in. */
